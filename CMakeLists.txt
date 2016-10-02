@@ -13,11 +13,23 @@ if( CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
         set(CMAKE_CXX_FLAGS_RELEASE "-O3")
     endif()
 endif()
-
-include_directories(${PROJECT_SOURCE_DIR}/include)
-
-# Add gmock only if it has not been added by a parental project
 add_subdirectory(external/symbolic_integers)
+
+include_directories(external/spdlog/include)
+include_directories(external/symbolic_integers/include)
+include_directories(include)
+
+# dl is needed for dynamic loading of the shared library generated
+link_libraries(dl)
+## curl is needed for downloading of files, used in utils
+#link_libraries(curl)
+link_libraries(symints)
+
+set(METADIFF_SOURCES
+        ${PROJECT_SOURCE_DIR}/src/utils.cpp
+        ${PROJECT_SOURCE_DIR}/src/print.cpp)
+# Add gmock only if it has not been added by a parental project
+add_executable(try src/test.cpp ${METADIFF_SOURCES})
 
 # Build tests
 #add_subdirectory(tests)
