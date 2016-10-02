@@ -4,6 +4,9 @@ project(metadiff-core)
 if( CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
     # Standalone build
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+    if(NOT DEFINED BUILD_EXAMPLES)
+        set(BUILD_EXAMPLES 1)
+    endif()
     if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
         set(CMAKE_CXX_FLAGS "-Wall -Werror=return-type -Wno-unknown-pragmas -Wno-sign-compare")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wwrite-strings -Wno-unused")
@@ -12,24 +15,30 @@ if( CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
         set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
         set(CMAKE_CXX_FLAGS_RELEASE "-O3")
     endif()
+else()
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/symints")
 endif()
+
+# Add symbolic_integers
 add_subdirectory(external/symbolic_integers)
-
-include_directories(external/spdlog/include)
 include_directories(external/symbolic_integers/include)
+# Add spdlog
+include_directories(external/spdlog/include)
+# Add my include directories
 include_directories(include)
-
-# dl is needed for dynamic loading of the shared library generated
+# Link with symints, we use static libs
+link_libraries(symints_s)
+# Link with dl, for dynamic loading of the shared library generated
 link_libraries(dl)
 ## curl is needed for downloading of files, used in utils
 #link_libraries(curl)
-link_libraries(symints)
 
 set(METADIFF_SOURCES
         ${PROJECT_SOURCE_DIR}/src/utils.cpp
         ${PROJECT_SOURCE_DIR}/src/print.cpp)
 # Add gmock only if it has not been added by a parental project
 add_executable(try src/test.cpp ${METADIFF_SOURCES})
+add_dependencies(try symints_s)
 
 # Build tests
 #add_subdirectory(tests)
