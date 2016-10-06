@@ -36,22 +36,6 @@ namespace md{
                     f64 = 12
         };
 
-        const dataType default_promotion_table[13][13] = {
-                {b8,u8,u16,u32,u64,i8,i16,i32,i64,f8,f16,f32,f64},
-                {u8,u8,u16,u32,u64,i8,i16,i32,i64,f8,f16,f32,f64},
-                {u16,u16,u16,u32,u64,i16,i16,i32,i64,f16,f16,f32,f64},
-                {u32,u32,u32,u32,u64,i32,i32,i32,i64,f32,f32,f32,f64},
-                {u64,u64,u64,u64,u64,i64,i64,i64,i64,f64,f64,f64,f64},
-                {i8,i8,i16,i32,i64,i8,i16,i32,i64,f8,f16,f32,f64},
-                {i16,i16,i16,i32,i64,i16,i16,i32,i64,f16,f16,f32,f64},
-                {i32,i32,i32,i32,i64,i32,i32,i32,i64,f32,f32,f32,f64},
-                {i64,i64,i64,i64,i64,i64,i64,i64,i64,f64,f64,f64,f64},
-                {f8,f8,f16,f32,f64,f8,f16,f32,f64,f8,f16,f32,f64},
-                {f16,f16,f16,f32,f64,f16,f16,f32,f64,f16,f16,f32,f64},
-                {f32,f32,f32,f32,f64,f32,f32,f32,f64,f32,f32,f32,f64},
-                {f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64}
-        };
-
         /** This will be used for multy-device support */
         enum deviceType {
             /** Represents a host with one or more CPUs */
@@ -84,6 +68,25 @@ namespace md{
                     RAISE = 2
         };
 
+        /** The default promotion table for data types */
+        const dataType default_promotion_table[13][13] = {
+                {b8,u8,u16,u32,u64,i8,i16,i32,i64,f8,f16,f32,f64},
+                {u8,u8,u16,u32,u64,i8,i16,i32,i64,f8,f16,f32,f64},
+                {u16,u16,u16,u32,u64,i16,i16,i32,i64,f16,f16,f32,f64},
+                {u32,u32,u32,u32,u64,i32,i32,i32,i64,f32,f32,f32,f64},
+                {u64,u64,u64,u64,u64,i64,i64,i64,i64,f64,f64,f64,f64},
+                {i8,i8,i16,i32,i64,i8,i16,i32,i64,f8,f16,f32,f64},
+                {i16,i16,i16,i32,i64,i16,i16,i32,i64,f16,f16,f32,f64},
+                {i32,i32,i32,i32,i64,i32,i32,i32,i64,f32,f32,f32,f64},
+                {i64,i64,i64,i64,i64,i64,i64,i64,i64,f64,f64,f64,f64},
+                {f8,f8,f16,f32,f64,f8,f16,f32,f64,f8,f16,f32,f64},
+                {f16,f16,f16,f32,f64,f16,f16,f32,f64,f16,f16,f32,f64},
+                {f32,f32,f32,f32,f64,f32,f32,f32,f64,f32,f32,f32,f64},
+                {f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64}
+        };
+
+        /** For Operators wich can auto infer arguments */
+        const short auto_infer = 100;
     }
 }
 #endif //METADIFF_CORE_ENUMS_H

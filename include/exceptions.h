@@ -7,125 +7,136 @@
 
 namespace md{
     namespace core {
-
+        /**
+         * Abstract class for graph nodes
+         */
         class GraphError : public std::exception {
         public:
+            /** List of nodes involved in the error */
             NodeVec const nodes;
-            std::string const msg;
 
-            GraphError() : msg("") {};
+            GraphError() {};
 
-            GraphError(NodeVec const nodes,
-                       std::string const msg) :
-                    nodes(nodes), msg(msg) {};
+            GraphError(NodeVec const nodes) :
+                    nodes(nodes) {};
+
+            virtual void log(std::shared_ptr<spdlog::logger> const logger,
+                             spdlog::level::level_enum const level = spdlog::level::err) const = 0;
 
             const char *what() const throw() {
-                return msg.c_str();
+                return "A GraphError occurred";
             }
         };
 
+        typedef std::shared_ptr<GraphError> Error;
+
+        /**
+         * The error is raised when the user requests a gradient to a non-scalar value
+         */
         class UnsupportedGradient : public GraphError {
         public:
             UnsupportedGradient() : GraphError() {};
 
             UnsupportedGradient(Node node) :
-                    GraphError(NodeVec{node},
-                               "Error: Taking gradient is only possible with respect to scalar objectives. "
-                               + to_string(node)){};
+                    GraphError(NodeVec{node}) {};
+
+            void log(std::shared_ptr<spdlog::logger> const logger,
+                     spdlog::level::level_enum const level = spdlog::level::err) const;
         };
 
-        class WrongGradient : public GraphError {
-        public:
-            WrongGradient() : GraphError() {};
 
-            WrongGradient(NodeVec inputs, std::string op_name) :
-                    GraphError(inputs,
-                               "Error: The gradient node with id " + std::to_string(inputs[1]->id) +
-                               " was sent to node with id " + std::to_string(inputs[0]->id) +
-                               " and operator " + inputs[0]->op->name + " , but all its parents are constant. " +
-                               to_string(inputs)) {}
-        };
-
+        /**
+         * For any other errors
+         */
         class OtherError : public GraphError {
         public:
+            std::string msg;
             OtherError() : GraphError() {};
 
             OtherError(NodeVec inputs, std::string msg) :
-                    GraphError(inputs, "Error: " + msg + " " + to_string(inputs)) {};
+                    GraphError(inputs), msg(msg) {};
+
+            void log(std::shared_ptr<spdlog::logger> const logger,
+                     spdlog::level::level_enum const level = spdlog::level::err) const;
         };
 
+        /**
+         * An abstract class for any errors related to a specific Operator
+         */
         class OperatorError : public GraphError {
         public:
-            std::string const op_name;
-            std::string const err;
+            std::string op_name;
 
             OperatorError() : GraphError() {};
 
-            OperatorError(NodeVec inputs, std::string op_name, std::string err) :
-                    GraphError(inputs, err + " " + to_string(inputs)), op_name(op_name), err(err) {}
+            OperatorError(NodeVec const inputs, std::string const op_name) :
+                    GraphError(inputs), op_name(op_name) {};
         };
+
+
+        /**
+         * The error is raised when a gradient messsage arrive at a constant node
+         */
+        class WrongGradient : public OperatorError {
+        public:
+            WrongGradient() : OperatorError() {};
+
+            WrongGradient(NodeVec const inputs, std::string const op_name) :
+                    OperatorError(inputs, op_name) {};
+
+            void log(std::shared_ptr<spdlog::logger> const logger,
+                     spdlog::level::level_enum const level = spdlog::level::err) const;
+        };
+
 
         class ImplicitBroadcast : public OperatorError {
         public:
             ImplicitBroadcast() : OperatorError() {};
 
-            ImplicitBroadcast(NodeVec inputs, std::string op_name) :
-                    OperatorError(inputs, op_name, "Performing implicit broadcast.") {}
+            ImplicitBroadcast(NodeVec const inputs, std::string const op_name) :
+                    OperatorError(inputs, op_name) {};
+
+            void log(std::shared_ptr<spdlog::logger> const logger,
+                     spdlog::level::level_enum const level = spdlog::level::err) const;
         };
 
         class IncompatibleShapes : public OperatorError {
         public:
             IncompatibleShapes() : OperatorError() {};
 
-            IncompatibleShapes(NodeVec inputs, std::string op_name) :
-                    OperatorError(inputs, op_name, "Incompatible shapes of inputs") {}
+            IncompatibleShapes(NodeVec const inputs, std::string const op_name) :
+                    OperatorError(inputs, op_name) {};
+
+            void log(std::shared_ptr<spdlog::logger> const logger,
+                     spdlog::level::level_enum const level = spdlog::level::err) const;
         };
 
         class InvalidArguments : public OperatorError {
         public:
+            std::string reason;
             InvalidArguments() : OperatorError() {};
 
-            InvalidArguments(NodeVec inputs, std::string op_name, std::string err) :
-                    OperatorError(inputs, op_name, err) {}
+            InvalidArguments(NodeVec const inputs, std::string const op_name, std::string const reason) :
+                    OperatorError(inputs, op_name), reason(reason) {};
+
+            void log(std::shared_ptr<spdlog::logger> const logger,
+                     spdlog::level::level_enum const level = spdlog::level::err) const;
         };
 
-        class MissingRequiredInput : public std::exception {
-        private:
-            std::string generate_message() {
-                std::stringstream msg;
-                msg << "Error: Missing required input when trying to compile a function.\n"
-                    << "Missing node:" << std::endl
-                    << missing << std::endl << "Target nodes:" << std::endl;
-                for (size_t i = 0; i < targets.size(); i++) {
-                    msg << targets[i] << std::endl;
-                }
-                msg << "Provided inputs:" << std::endl;
-                for (size_t i = 0; i < inputs.size(); i++) {
-                    msg << inputs[i];
-                    if (i < inputs.size() - 1) {
-                        msg << std::endl;
-                    }
-                }
-                return msg.str();
-            }
-
+        class MissingRequiredInput : public GraphError {
         public:
             NodeVec targets;
             NodeVec inputs;
-            Node missing;
-            std::string msg;
 
-            MissingRequiredInput() : msg("") {};
+            MissingRequiredInput() : GraphError() {};
 
             MissingRequiredInput(NodeVec targets, NodeVec inputs, Node missing) :
+                    GraphError(NodeVec{missing}),
                     targets(targets),
-                    inputs(inputs),
-                    missing(missing),
-                    msg(generate_message()) {}
+                    inputs(inputs) {}
 
-            const char *what() const throw() {
-                return msg.c_str();
-            }
+            void log(std::shared_ptr<spdlog::logger> const logger,
+                     spdlog::level::level_enum const level = spdlog::level::err) const;
         };
 
         class CompilationFailed : public std::exception {
@@ -145,15 +156,18 @@ namespace md{
         class InvalidInputShape : public std::exception {
         private:
             std::string generate_message() {
-                std::stringstream msg;
-                msg << "The input to the function at index " << input_index << "(zero based), "
-                    << "corresponding to node with id " << id << " has expected shape"
-                    << "(" << expected_shape[0] << "," << expected_shape[1] << ","
-                    << expected_shape[2] << "," << expected_shape[3] << "), "
-                    << "but the provided input had shape"
-                    << "(" << provided_shape[0] << "," << provided_shape[1] << ","
-                    << provided_shape[2] << "," << provided_shape[3] << ").";
-                return msg.str();
+                return "The input to the function at index " + std::to_string(input_index) + "(zero based), "
+                        "corresponding to node with id " + std::to_string(id)
+                       + " has expected shape("
+                       + std::to_string(expected_shape[0]) +  ","
+                       + std::to_string(expected_shape[1]) + ","
+                       + std::to_string(expected_shape[2]) + ","
+                       + std::to_string(expected_shape[3]) + "), "
+                               "but the provided input had shape("
+                       + std::to_string(provided_shape[0]) + ","
+                       + std::to_string(provided_shape[1]) + ","
+                       + std::to_string(provided_shape[2]) + ","
+                       + std::to_string(provided_shape[3]) + ").";
             }
 
         public:
@@ -182,15 +196,15 @@ namespace md{
         /** Given an error executes the errorPolicy */
         inline void operate_policy(errorPolicy policy,
                                    std::shared_ptr<spdlog::logger> const logger,
-                                   GraphError const & err){
+                                   Error const & err){
             switch (policy){
                 case QUIET: return;
                 case WARN: {
-                    logger->warn(err.msg);
+                    err->log(logger, spdlog::level::warn);
                     return;
                 }
                 default: {
-                    logger->error(err.msg);
+                    err->log(logger, spdlog::level::err);
                     throw err;
                 }
             }

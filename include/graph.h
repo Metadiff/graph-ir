@@ -41,7 +41,7 @@ namespace md{
             /** The promotion table */
             dataType promotion_table[13][13];
 
-            std::vector<std::shared_ptr<NodeInternal>> nodes;
+            std::vector<std::shared_ptr<NodeData>> nodes;
             Updates updates;
 
             std::vector<std::shared_ptr<NodeGroup>> groups;
@@ -68,7 +68,7 @@ namespace md{
                 groups.push_back(std::make_shared<NodeGroup>());
             }
 
-            /** Checks if the corresponding NodeInternal is in #temporary_constants. */
+            /** Checks if the corresponding NodeData is in #temporary_constants. */
             bool is_temporary_constant(Node node) const;
 
             /** Copies the computations with value `true` in the mask to the new_graph */
@@ -84,7 +84,7 @@ namespace md{
              * Finds a node which performs the same operation
              * TODO Not implemented correctly
              */
-            Node find_same_node(std::shared_ptr<Operator> op);
+            Node find_same_node(Operator op);
 
             /** Adds the updates to the temporary updates of the graph */
             void add_temporary_updates(Updates const &updates);
@@ -100,7 +100,7 @@ namespace md{
                            NodeVec &new_targets, Updates &new_updates, NodeVec &new_inputs);
 
             /** Creates a new derived node (INTERNAL) */
-            Node derived_node(std::shared_ptr<Operator> op);
+            Node derived_node(Operator op);
 
             /** Adds an update for the shared node */
             void update_node(Node shared, Node update);
@@ -134,12 +134,12 @@ namespace md{
             Node LN_10();
 
             /** Creates a four dimensional #INPUT variable */
-            Node tensor4(dataType v_type,
+            Node tensor4(dataType data_type,
                          std::array<SymInt, 4> shape,
                          std::string name = "InputTensor");
 
             /** Creates a four dimensional #INPUT variable */
-            Node tensor4(dataType v_type,
+            Node tensor4(dataType data_type,
                          SymInt shape0,
                          SymInt shape1,
                          SymInt shape2,
@@ -147,7 +147,7 @@ namespace md{
                          std::string name = "InputTensor");
 
             /** Creates a four dimensional #INPUT variable */
-            Node tensor4(dataType v_type,
+            Node tensor4(dataType data_type,
                          std::string name = "InputTensor");
 
             /** Creates a four dimensional #INPUT variable, with the same specs as the one provided */
@@ -155,19 +155,19 @@ namespace md{
                             std::string name = "InputTensor");
 
             /** Creates a three dimensional #INPUT variable */
-            Node tensor3(dataType v_type,
+            Node tensor3(dataType data_type,
                          std::array<SymInt, 3> shape,
                          std::string name = "InputTensor3");
 
             /** Creates a three dimensional #INPUT variable */
-            Node tensor3(dataType v_type,
+            Node tensor3(dataType data_type,
                          SymInt shape0,
                          SymInt shape1,
                          SymInt shape2,
                          std::string name = "InputTensor3");
 
             /** Creates a three dimensional #INPUT variable */
-            Node tensor3(dataType v_type,
+            Node tensor3(dataType data_type,
                          std::string name = "InputTensor3");
 
             /** Creates a three dimensional #INPUT variable, with the same specs as the one provided */
@@ -175,18 +175,18 @@ namespace md{
                             std::string name = "InputTensor3");
 
             /** Creates an #INPUT matrix  */
-            Node matrix(dataType v_type,
+            Node matrix(dataType data_type,
                         std::array<SymInt, 2> shape,
                         std::string name = "InputMatrix");
 
             /** Creates an #INPUT matrix  */
-            Node matrix(dataType v_type,
+            Node matrix(dataType data_type,
                         SymInt shape0,
                         SymInt shape1,
                         std::string name = "InputMatrix");
 
             /** Creates an #INPUT matrix  */
-            Node matrix(dataType v_type,
+            Node matrix(dataType data_type,
                         std::string name = "InputMatrix");
 
             /** Creates an #INPUT matrix, with the same specs as the one provided */
@@ -194,17 +194,17 @@ namespace md{
                            std::string name = "InputMatrix");
 
             /** Creates a square #INPUT matrix  */
-            Node square_matrix(dataType v_type,
+            Node square_matrix(dataType data_type,
                                SymInt shape,
                                std::string name = "InputMatrix");
 
             /** Creates an #INPUT vector  */
-            Node vector(dataType v_type,
+            Node vector(dataType data_type,
                         SymInt shape,
                         std::string name = "InputVector");
 
             /** Creates an #INPUT vector  */
-            Node vector(dataType dtype,
+            Node vector(dataType data_type,
                         std::string name = "InputVector");
 
             /** Creates an #INPUT vector, with the same specs as the one provided */
@@ -212,23 +212,23 @@ namespace md{
                            std::string name = "InputVector");
 
             /** Creates an #INPUT scalar */
-            Node scalar(dataType dtype,
+            Node scalar(dataType data_type,
                         std::string name = "InputScalar");
 
             /** Returns an identity matrix of the given dimension size */
-            Node eye(SymInt size, dataType type);
+            Node eye(SymInt size, dataType data_type);
 
             /** Returns an identity matrix of the given dimension size */
             Node eye(SymInt size);
 
             /** Returns a matrix filled with ones with the given shape */
-            Node ones(Shape shape, dataType type);
+            Node ones(Shape shape, dataType data_type);
 
             /** Returns a matrix filled with ones with the given shape */
             Node ones(Shape shape);
 
             /** Returns a matrix filled with zeros with the given shape */
-            Node zeros(Shape shape, dataType type);
+            Node zeros(Shape shape, dataType data_type);
 
             /** Returns a matrix filled with zeros with the given shape */
             Node zeros(Shape shape);
@@ -314,7 +314,37 @@ namespace md{
 
             /** Returns a vector representing the sequence from start to end. */
             Node seq(SymInt start, SymInt end);
+
+            /** Adds nodes */
+            Node add(NodeVec nodes);
+
+            /** Multiplies nodes */
+            Node mul(NodeVec nodes);
         };
+
+        inline Graph create_graph() {
+            return std::make_shared<GraphInternal>();
+        }
+
+        /** Convenience for applying an unary operator for a derived node */
+        template<typename T>
+        Node apply(Node node) {
+            return node->graph->derived_node(std::make_shared<T>(node->graph, node));
+        }
+
+        /** Convenience for applying a binary operator trough template */
+        template<typename T>
+        Node apply(Node parent1, Node parent2) {
+            GraphInPtr graph = parent1->graph;
+            return graph->derived_node(std::make_shared<T>(graph, parent1, parent2));
+        }
+
+        /** Convenience for applying a nary operator trough template */
+        template<typename T>
+        Node apply(NodeVec parents) {
+            GraphInPtr graph = parents[0]->graph;
+            return graph->derived_node(std::make_shared<T>(graph, parents));
+        }
     }
 }
 #endif //METADIFF_CORE_GRAPH_H

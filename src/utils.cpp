@@ -40,7 +40,7 @@ namespace md{
             if((not check) or (not is_dir(path))) {
                 const int dir_err = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
                 if (-1 == dir_err) {
-                    std::cout << "Error creating directory " << path << std::endl;
+                    logger("utils", spdlog::level::info)->error("Error creating directory " + path);
                 }
             }
         }

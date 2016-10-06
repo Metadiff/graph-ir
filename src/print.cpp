@@ -3,6 +3,8 @@
 //
 
 #include "string"
+#include "iomanip"
+#include "sstream"
 #include "metadiff.h"
 
 namespace md{

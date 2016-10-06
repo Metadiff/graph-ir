@@ -35,7 +35,14 @@ link_libraries(dl)
 
 set(METADIFF_SOURCES
         ${PROJECT_SOURCE_DIR}/src/utils.cpp
-        ${PROJECT_SOURCE_DIR}/src/print.cpp)
+        ${PROJECT_SOURCE_DIR}/src/helpers.cpp
+        ${PROJECT_SOURCE_DIR}/src/node.cpp
+        ${PROJECT_SOURCE_DIR}/src/graph.cpp
+        ${PROJECT_SOURCE_DIR}/src/print.cpp
+        ${PROJECT_SOURCE_DIR}/src/exceptions.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/abstract.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/base.cpp
+        )
 # Add gmock only if it has not been added by a parental project
 add_executable(try src/test.cpp ${METADIFF_SOURCES})
 add_dependencies(try symints_s)

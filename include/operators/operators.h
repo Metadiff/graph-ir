@@ -6,5 +6,6 @@
 #define METADIFF_CORE_OPERATORS_H
 
 #include "abstract.h"
+#include "base.h"
 
 #endif //METADIFF_CORE_OPERATORS_H

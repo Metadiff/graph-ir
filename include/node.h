@@ -7,6 +7,40 @@
 
 namespace md{
     namespace core{
+
+        /**
+         * This class stores all of the data for each single node of the GraphInternal
+         */
+        class NodeData {
+        public:
+            GraphInPtr const graph;
+            size_t id;
+            std::string name;
+            Device device;
+            Operator op;
+            nodeType node_type;
+            dataType data_type;
+            Shape shape;
+            NodeVec children;
+            Group group;
+            unsigned short grad_level;
+            // Data populated by the optimizer
+            ExecutionData execution;
+
+            NodeData(GraphInPtr const graph, Device const device) :
+                    graph(graph),
+                    device(device) { }
+
+            NodeData(GraphInPtr graph,
+                     size_t id,
+                     std::string name,
+                     Device device,
+                     Operator op,
+                     unsigned short grad_level,
+                     Group group);
+        };
+
+
         /** This is the API wrapper around the internal storage for each node - NodeData */
         class Node {
         private:
@@ -27,12 +61,20 @@ namespace md{
 
             /** Unwraps the pointer to the underlying NodeData.
              * Exits the program if the pointer has expired */
-            std::shared_ptr<NodeData> unwrap() const;
+            std::shared_ptr<NodeData> unwrap() const{
+                if (ptr.expired()) {
+                    utils::logger("XXX::node::XXX")->error("Trying to access a Node whose pointer has expired");
+                    throw 1;
+                }
+                return ptr.lock();
+            }
 
             /**
              * This operator is overloaded to call class: unwrap()
              */
-            std::shared_ptr<NodeData> operator->() const;
+            std::shared_ptr<NodeData> operator->() const{
+                return unwrap();
+            }
 
             /** Copies the node to another graph, by using the ancestors
              * provided from the new graph */
@@ -182,51 +224,6 @@ namespace md{
 
             Node binary_cross_entropy_logit(Node node);
 
-        };
-
-        /**
-         * This class stores all of the data for each single node of the GraphInternal
-         */
-        class NodeData {
-        public:
-            GraphInPtr const graph;
-            size_t id;
-            std::string name;
-            Device device;
-            Operator op;
-            nodeType node_type;
-            dataType data_type;
-            Shape shape;
-            NodeVec children;
-            Group group;
-            unsigned short grad_level;
-            // Data populated by the optimizer
-            ExecutionData execution;
-
-            NodeData(GraphInPtr const graph, Device const device) :
-                    graph(graph),
-                    device(device) { }
-
-            NodeData(GraphInPtr const graph,
-                     size_t const id,
-                     std::string const name,
-                     Device const device,
-                     Operator const op,
-                     nodeType const node_type,
-                     dataType const data_type,
-                     Shape const shape,
-                     unsigned short const grad_level,
-                     Group const group) :
-                    graph(graph),
-                    id(id),
-                    name(name),
-                    device(device),
-                    op(op),
-                    node_type(node_type),
-                    data_type(data_type),
-                    shape(shape),
-                    group(group),
-                    grad_level(grad_level) { }
         };
     }
 }

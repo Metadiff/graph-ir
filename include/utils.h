@@ -8,7 +8,6 @@
 //#include "curl/curl.h"
 #include <sys/stat.h>
 #include "fstream"
-#include "spdlog/spdlog.h"
 #include "spdlog/sinks/dist_sink.h"
 
 namespace md{
