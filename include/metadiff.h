@@ -4,6 +4,7 @@
 
 #ifndef METADIFF_CORE_METADIFF_H
 #define METADIFF_CORE_METADIFF_H
+#include "iostream"
 
 #include "symbolic_integers.h"
 #include "spdlog/spdlog.h"
@@ -12,14 +13,14 @@
 #include "props.h"
 #include "definitions.h"
 #include "helpers.h"
-#include "node.h"
 #include "shared.h"
+#include "node.h"
 #include "graph.h"
-#include "abstract_operator.h"
 #include "print.h"
 #include "exceptions.h"
-#include "operators/operators.h"
-
+#include "operators.h"
+#include "visual.h"
+#include "optimization.h"
 
 //#include "core_impl.h"
 //#include "operators.h"

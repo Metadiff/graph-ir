@@ -20,6 +20,11 @@ namespace md{
         Operator get_base_op(Operator const op);
 
         /**
+         * Skips any alias operators to get the base node
+         */
+        Node get_base_node(Node node);
+
+        /**
           * Helper function to validate axes argument
           * Checks if each axes is a distinct integer between [0,3]
           */
@@ -29,12 +34,19 @@ namespace md{
          * Helper function to verify shapes of elementwise operators
          * Verifies that the shapes of the inputs are equal
          */
-        Shape verify_elementwise_shapes(NodeVec nodes);
+        Shape verify_elementwise_shapes(NodeVec nodes, std::shared_ptr<spdlog::logger> logger);
 
         /**
          * Tries to evaluate that two nodes are symbolically equals
          */
         bool symbolic_equals(Node const & node1, Node const & node2);
+
+        /**
+         * Finds all of the axis which are not 1
+         * @param node
+         * @return
+         */
+        Axes auto_infer_axes(Node node);
     }
 }
 #endif //METADIFF_CORE_HELPERS_H

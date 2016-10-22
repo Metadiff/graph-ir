@@ -41,8 +41,19 @@ set(METADIFF_SOURCES
         ${PROJECT_SOURCE_DIR}/src/print.cpp
         ${PROJECT_SOURCE_DIR}/src/exceptions.cpp
         ${PROJECT_SOURCE_DIR}/src/operators/abstract.cpp
-        ${PROJECT_SOURCE_DIR}/src/operators/base.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/input.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/constant.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/special.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/shape.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/logical.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/arithmetic.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/reduction.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/elementwise.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/linalg.cpp
+        ${PROJECT_SOURCE_DIR}/src/operators/optimized.cpp
+        ${PROJECT_SOURCE_DIR}/src/visual/cytoscape.cpp
         )
+
 # Add gmock only if it has not been added by a parental project
 add_executable(try src/test.cpp ${METADIFF_SOURCES})
 add_dependencies(try symints_s)

@@ -58,99 +58,108 @@ namespace md{
             return ptr->graph->is_temporary_constant(this);
         }
 
-        bool Node::is_scalar() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            for (int i = 0; i < 4; i++) {
-                if (ptr->shape[i] != 1) {
-                    return false;
+        int Node::dims() const {
+            for(auto i=0; i<4; ++i){
+                if(unwrap()->shape[3-i] != 1){
+                    return 4-i;
                 }
             }
-            return true;
+            return 0;
         }
 
-        bool Node::is_vector() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            for (int i = 1; i < 4; i++) {
-                if (ptr->shape[i] != 1) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        bool Node::is_vector_strict() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            for (int i = 0; i < 1; i++) {
-                if (ptr->shape[i] == 1) {
-                    return false;
-                }
-            }
-            for (int i = 1; i < 4; i++) {
-                if (ptr->shape[i] != 1) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        bool Node::is_matrix() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            for (int i = 2; i < 4; i++) {
-                if (ptr->shape[i] != 1) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        bool Node::is_matrix_strict() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            for (int i = 0; i < 2; i++) {
-                if (ptr->shape[i] == 1) {
-                    return false;
-                }
-            }
-            for (int i = 2; i < 4; i++) {
-                if (ptr->shape[i] != 1) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        bool Node::is_tensor3() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            for (int i = 3; i < 4; i++) {
-                if (ptr->shape[i] != 1) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        bool Node::is_tensor3_strict() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            for (int i = 0; i < 3; i++) {
-                if (ptr->shape[i] == 1) {
-                    return false;
-                }
-            }
-            for (int i = 3; i < 4; i++) {
-                if (ptr->shape[i] != 1) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        bool Node::is_tensor4_strict() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            for (int i = 0; i < 4; i++) {
-                if (ptr->shape[i] == 1) {
-                    return false;
-                }
-            }
-            return true;
-        }
+//        bool Node::is_scalar() const {
+//            std::shared_ptr<NodeData> ptr = unwrap();
+//            for (int i = 0; i < 4; i++) {
+//                if (ptr->shape[i] != 1) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
+//
+//        bool Node::is_vector() const {
+//            std::shared_ptr<NodeData> ptr = unwrap();
+//            for (int i = 1; i < 4; i++) {
+//                if (ptr->shape[i] != 1) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
+//
+//        bool Node::is_vector_strict() const {
+//            std::shared_ptr<NodeData> ptr = unwrap();
+//            for (int i = 0; i < 1; i++) {
+//                if (ptr->shape[i] == 1) {
+//                    return false;
+//                }
+//            }
+//            for (int i = 1; i < 4; i++) {
+//                if (ptr->shape[i] != 1) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
+//
+//        bool Node::is_matrix() const {
+//            std::shared_ptr<NodeData> ptr = unwrap();
+//            for (int i = 2; i < 4; i++) {
+//                if (ptr->shape[i] != 1) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
+//
+//        bool Node::is_matrix_strict() const {
+//            std::shared_ptr<NodeData> ptr = unwrap();
+//            for (int i = 0; i < 2; i++) {
+//                if (ptr->shape[i] == 1) {
+//                    return false;
+//                }
+//            }
+//            for (int i = 2; i < 4; i++) {
+//                if (ptr->shape[i] != 1) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
+//
+//        bool Node::is_tensor3() const {
+//            std::shared_ptr<NodeData> ptr = unwrap();
+//            for (int i = 3; i < 4; i++) {
+//                if (ptr->shape[i] != 1) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
+//
+//        bool Node::is_tensor3_strict() const {
+//            std::shared_ptr<NodeData> ptr = unwrap();
+//            for (int i = 0; i < 3; i++) {
+//                if (ptr->shape[i] == 1) {
+//                    return false;
+//                }
+//            }
+//            for (int i = 3; i < 4; i++) {
+//                if (ptr->shape[i] != 1) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
+//
+//        bool Node::is_tensor4_strict() const {
+//            std::shared_ptr<NodeData> ptr = unwrap();
+//            for (int i = 0; i < 4; i++) {
+//                if (ptr->shape[i] == 1) {
+//                    return false;
+//                }
+//            }
+//            return true;
+//        }
     }
 }

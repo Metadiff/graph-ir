@@ -9,13 +9,13 @@ namespace md{
         class Properties{
         public:
             std::string http_proxy;
-            std::string group_root;
+            std::string base_group_prefix;
             char group_delimiter;
 
             Properties():
                     http_proxy("HTTP_PROXY"),
-                    group_root("_root"),
-                    group_delimiter('/')
+                    base_group_prefix("Grads"),
+                    group_delimiter('.')
             {};
         };
 

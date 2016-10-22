@@ -24,22 +24,38 @@ namespace md{
             /** The children groups */
             std::vector<std::weak_ptr<NodeGroup>> children;
 
-            NodeGroup() :
-                    name(utils::props()->group_root),
-                    full_name(utils::props()->group_root) { };
-
             NodeGroup(const std::string name,
                       const std::weak_ptr<NodeGroup> parent) :
                     name(name),
                     parent(parent) {
-                if (parent.lock()->full_name == utils::props()->group_root) {
+                if(is_base() or parent.lock()->parent.expired()){
+                    // Base group or direct child of a base group
                     full_name = name;
                 } else {
                     full_name = parent.lock()->full_name;
                     full_name += utils::props()->group_delimiter;
                     full_name += name;
                 }
+                std::replace(full_name.begin(), full_name.end(), ' ', '_');
             };
+
+            bool is_base() const{
+                return parent.expired();
+            };
+
+            std::string base_full_name(){
+                if(is_base()){
+                    return full_name;
+                }
+                auto p = parent.lock();
+                while(not p->parent.expired()){
+                    p = p->parent.lock();
+                }
+                std::string name = p->full_name;
+                name += utils::props()->group_delimiter;
+                name += full_name;
+                return name;
+            }
         };
 
         /** A symbolic integer is a Polynomial */

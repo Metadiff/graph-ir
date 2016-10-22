@@ -111,6 +111,23 @@ namespace md{
                      spdlog::level::level_enum const level = spdlog::level::err) const;
         };
 
+        class TypePromotion: public OperatorError{
+        public:
+            dataType from;
+            dataType to;
+
+            TypePromotion() : OperatorError() {};
+
+            TypePromotion(NodeVec const inputs,
+                          std::string const op_name,
+                          dataType from,
+                          dataType to) :
+                    OperatorError(inputs, op_name), from(from), to(to) {};
+
+            void log(std::shared_ptr<spdlog::logger> const logger,
+                     spdlog::level::level_enum const level = spdlog::level::err) const;
+        };
+
         class InvalidArguments : public OperatorError {
         public:
             std::string reason;

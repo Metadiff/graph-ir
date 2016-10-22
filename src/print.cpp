@@ -76,21 +76,19 @@ namespace md{
 
         std::string to_string(Node node){
             std::stringstream ss;
-            ss << "|"  << std::setw(4) << node->id << " | " << node->node_type << "| "
-               << node->shape << " | " << node->data_type << " | " << node->op->name;
+            ss << "|"  << std::setw(4) << node->id << "|" << std::setw(12) << node->node_type << "|"
+            << std::setw(20) << node->shape << "|" << node->data_type << "|" << node->op->name;
             return ss.str();
         }
 
         std::string to_string(NodeVec nodes){
             std::stringstream ss;
-            ss << "Nodes:\n";
             for (size_t i = 0; i < nodes.size(); i++) {
                 ss << nodes[i];
                 if (i < nodes.size() - 1) {
                     ss << std::endl;
                 }
             }
-            ss << std::endl;
             return ss.str();
         }
     }

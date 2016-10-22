@@ -11,10 +11,9 @@ namespace md{
                                                      std::vector<Node> &messages) const {
                 logger()->debug("Sending gradient message with id {} from {} to {}",
                                 msg->id, owner->id, target);
-
                 if (not messages[target].ptr.expired()) {
                     // If not first message add them and then send the sum
-                    messages[target] = msg->graph->add({messages[target], msg});
+                    messages[target] = msg->graph->add(messages[target], msg);
                 } else {
                     // If first just send it
                     messages[target] = msg;
@@ -30,12 +29,8 @@ namespace md{
 
                 // Sets the current group to _root/gradient0/parent_group
                 Group current_group = graph->current_group;
-                Group top_level = graph->get_group("Gradients " + std::to_string(graph->grad_level));
                 Group owner_group = this->owner->group;
-                std::string group_name = top_level.lock()->full_name;
-                group_name += utils::props()->group_delimiter;
-                group_name += owner_group.lock()->full_name;
-                Group grad_group = graph->get_group(group_name);
+                Group grad_group = graph->get_or_create_group_from_base(owner_group.lock()->full_name);
                 graph->current_group = grad_group;
 
                 // Retrieves the gradient messages representing the total gradient with respect to this node
@@ -83,14 +78,34 @@ namespace md{
                 graph->current_group = current_group;
             }
 
-            NodeVec AbstractOperator::get_ancestors() const {
-                NodeVec parents = get_parents();
-                NodeVec arguments = get_arguments();
-                for (int i = 0; i < arguments.size(); i++) {
-                    parents.push_back(arguments[i]);
+            dataType AbstractOperator::get_data_type() const {
+                auto parents = get_parents();
+                dataType max = b8;
+                for (size_t i = 0; i < parents.size(); i++) {
+                    if(parents[i]->data_type > max){
+                        max = parents[i]->data_type;
+                    }
                 }
-                return parents;
+                if(max < i8){
+                    return static_cast<dataType >(1 + (graph->max_int - 1) % 4);
+                } else if(max < f8){
+                    return graph->max_int;
+                } else {
+                    return graph->max_float;
+                }
             }
+
+            unsigned short AbstractOperator::get_grad_level() const {
+                auto ancestors = get_ancestors();
+                unsigned short max_grad_level = 0;
+                for (auto i = 0; i < ancestors.size(); ++i) {
+                    if (ancestors[i]->grad_level > max_grad_level) {
+                        max_grad_level = ancestors[i]->grad_level;
+                    }
+                }
+                return max_grad_level;
+            };
+
         }
     }
 }

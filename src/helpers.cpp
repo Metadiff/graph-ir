@@ -19,6 +19,10 @@ namespace md{
             return base_op;
         }
 
+        Node get_base_node(Node node){
+            return get_base_op(node->op)->owner;
+        }
+
         bool validate_axes(Axes axes) {
             if (axes.size() > 4) {
                 return false;
@@ -36,7 +40,7 @@ namespace md{
             return true;
         }
 
-        Shape verify_elementwise_shapes(NodeVec nodes) {
+        Shape verify_elementwise_shapes(NodeVec nodes, std::shared_ptr<spdlog::logger> logger) {
             Shape max_shape = nodes[0]->shape;
             for (int i = 1; i < nodes.size(); i++) {
                 Shape node_shape = nodes[i]->shape;
@@ -51,11 +55,11 @@ namespace md{
                     for (int j = 0; j < 4; j++) {
                         if (node_shape[j] == 1 and max_shape[j] != 1) {
                             auto err = std::make_shared<IncompatibleShapes>(nodes, nodes[0]->op->name);
-                            err->log(nodes[0]->op->logger());
+                            err->log(logger);
                             throw err;
                         } else if (node_shape[j] != 1 and max_shape[j] != 1 and node_shape[j] != max_shape[j]) {
                             auto err = std::make_shared<IncompatibleShapes>(nodes, nodes[0]->op->name);
-                            err->log(nodes[0]->op->logger());
+                            err->log(logger);
                             throw err;
                         }
                     }
@@ -81,5 +85,15 @@ namespace md{
                 return base_op1->equals(base_op2) or base_op2->equals(base_op1);
             }
         };
+
+        Axes auto_infer_axes(Node node){
+            Axes axes;
+            for(short i=0; i<4; ++i){
+                if(node->shape[i] != 1){
+                    axes.push_back(i);
+                }
+            }
+            return axes;
+        }
     }
 }

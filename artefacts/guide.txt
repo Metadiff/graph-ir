@@ -14,3 +14,8 @@ Main header: metadiff.h - just includes everything in correct order
 #include "print.h" - defines functions for printing different classes
 #include "exceptions.h" - defines different exceptions used
 #include "operators/operators.h" - imports all of the operators
+
+
+
+# Operators guide
+Abstract Operator

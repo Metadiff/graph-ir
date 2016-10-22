@@ -4,6 +4,7 @@
 
 #ifndef METADIFF_CORE_SHARED_H
 #define METADIFF_CORE_SHARED_H
+
 namespace md{
     namespace core{
         /**
@@ -27,7 +28,7 @@ namespace md{
             dataType const data_type;
             Shape const shape;
             std::string const name;
-            Init init;
+//            Init init;
         public:
             SharedVariable(size_t const id, dataType const data_type,
                            Shape const shape, std::string const name):
@@ -36,14 +37,27 @@ namespace md{
                     shape(shape),
                     name(name) {};
 
-            void initialize(Init init = Init());
+//            void initialize(Init init = Init());
         };
 
         typedef std::shared_ptr<SharedVariable> SharedVar;
 
+        inline std::shared_ptr<std::vector<SharedVar>> get_all_shared(){
+            static std::shared_ptr<std::vector<SharedVar>> shared_vars;
+            if(not shared_vars){
+                shared_vars = std::make_shared<std::vector<SharedVar>>();
+            }
+            return shared_vars;
+        }
+
         inline SharedVar get_shared(size_t const id){
-            static std::vector<SharedVar> shared_vars;
-            return shared_vars[id];
+            return get_all_shared()->at(id);
+        }
+
+        inline SharedVar make_shared(dataType data_type, Shape shape, std::string name){
+            SharedVar var = std::make_shared<SharedVariable>(get_all_shared()->size(), data_type, shape, name);
+            get_all_shared()->push_back(var);
+            return get_all_shared()->back();
         }
     }
 }

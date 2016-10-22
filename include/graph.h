@@ -5,6 +5,8 @@
 #ifndef METADIFF_CORE_GRAPH_H
 #define METADIFF_CORE_GRAPH_H
 
+#include "math.h"
+
 namespace md{
     namespace core{
 
@@ -31,11 +33,9 @@ namespace md{
             /** Error policy for implicit broadcasts */
             errorPolicy broadcast_err_policy;
             /** Error policy for type promotions */
-            errorPolicy type_promotion_err_policy;
+            errorPolicy promotion_err_policy;
             /** Error policy for implicit cast */
             errorPolicy cast_err_policy;
-            /** TODO maybe I don't need this anymore integer count */
-            size_t sym_integer_count;
             /** Current gradient level */
             unsigned short grad_level;
             /** The promotion table */
@@ -44,7 +44,9 @@ namespace md{
             std::vector<std::shared_ptr<NodeData>> nodes;
             Updates updates;
 
+            std::vector<std::shared_ptr<NodeGroup>> base_groups;
             std::vector<std::shared_ptr<NodeGroup>> groups;
+            Group current_base_group;
             Group current_group;
 
             NodeVec temporary_constants;
@@ -56,20 +58,20 @@ namespace md{
                     max_float(f32),
                     max_int(i32),
                     broadcast_err_policy(WARN),
-                    type_promotion_err_policy(WARN),
+                    promotion_err_policy(WARN),
                     cast_err_policy(WARN),
-                    sym_integer_count(0),
                     grad_level(0){
                 for(auto i=0; i<13; ++i){
                     for(auto j=0; j<13; ++j){
                         promotion_table[i][j] = default_promotion_table[i][j];
                     }
                 }
-                groups.push_back(std::make_shared<NodeGroup>());
+                base_groups.push_back(std::make_shared<NodeGroup>(
+                        utils::props()->base_group_prefix + "0",
+                        std::weak_ptr<NodeGroup>()));
+                current_base_group = base_groups[0];
+                current_group = base_groups[0];
             }
-
-            /** Checks if the corresponding NodeData is in #temporary_constants. */
-            bool is_temporary_constant(Node node) const;
 
             /** Copies the computations with value `true` in the mask to the new_graph */
             NodeVec copy(GraphInPtr new_graph, std::vector<bool> mask) const;
@@ -80,58 +82,72 @@ namespace md{
             /** Returns an array masking all ancestors of the marked nodes */
             std::vector<bool> get_ancestors_mask(NodeVec marked) const;
 
-            /**
-             * Finds a node which performs the same operation
-             * TODO Not implemented correctly
-             */
-            Node find_same_node(Operator op);
-
             /** Adds the updates to the temporary updates of the graph */
             void add_temporary_updates(Updates const &updates);
 
             /** Removes all temporary updates of the graph */
             void clear_temporary_updates();
 
+            /** Checks if the corresponding NodeData is in #temporary_constants. */
+            bool is_temporary_constant(Node node) const;
+
             /** Returns the gradients of the objective with respect to the parameters provided */
             NodeVec gradient(Node objective, NodeVec params);
 
-            /** Optimizes a graph with respect to the given nodes (INTERNAL) */
-            Graph optimize(NodeVec &targets, Updates &updates, NodeVec &inputs,
-                           NodeVec &new_targets, Updates &new_updates, NodeVec &new_inputs);
+            /** Returns the base group with the speicifed name. If it does not exists creates it. */
+            Group get_or_create_base_group(std::string name);
 
+            /** Sets the current base group to name, creates it if it does not exist */
+            void set_base_group(std::string name);
+
+            /** Sets the current base group */
+            void reset_base_group();
+
+            /** Returns the group specified by full_name. If it does not exist creates it. */
+            Group get_or_create_group_from_base(std::string full_name, Group base_group);
+
+            /** Returns the group specified by full_name. If it does not exist creates it. */
+            Group get_or_create_group_from_base(std::string full_name, std::string base_group);
+
+            Group get_or_create_group_from_base(std::string full_name);
+
+            /** Expects to pass the parent of the group */
+            Group get_or_create_group_from_parent(std::string name, Group parent);
+
+            /** Expects to pass the parent of the group */
+            Group get_or_create_group_from_parent(std::string name, std::string parent);
+
+            Group get_or_create_group(std::string name);
+
+            /** Sets the current group to the specified by the name. If it does not exists creates it */
+            void set_group_from_base(std::string full_name, std::string base_group);
+
+            /** Sets the current group to the group specified by base_name and its parent */
+            void set_group_from_base(std::string full_name);
+
+            /** Sets the current group to the group specified by base_name and its parent */
+            void set_group_from_parent(std::string name, Group parent);
+
+            /** Sets the current group to the group specified by base_name and its parent */
+            void set_group_from_parent(std::string name, std::string parent);
+
+            void set_group(std::string name);
             /** Creates a new derived node (INTERNAL) */
-            Node derived_node(Operator op);
+            Node derived_node(Operator op, std::string name = "Derived");
 
             /** Adds an update for the shared node */
             void update_node(Node shared, Node update);
 
-            /** Returns the next unused symbolic integer */
-            SymInt get_new_symbolic_integer();
-
-            /** Returns the group specified by full_name. If it does not exist creates it. */
-            Group get_group(std::string full_name);
-
-            /** Sets the current group to the specified by the name. If it does not exists creates it */
-            void set_group(std::string full_name);
-
+            /** Returns a new symbolic integer */
+            SymInt get_new_symbolic_integer() const;
             /**
-             * Sets the current group to the group specified by base_name and its parent */
-            void set_group(std::string base_name, Group parent);
+             * Finds a node which performs the same operation
+             * TODO Not implemented correctly
+             */
+            Node find_same_node(Operator op);
 
-            /** Sets the current group to #GROUP_ROOT */
-            void reset_group();
-
-            /** Returns a Node representing 'pi', with the maximum allowed floating point precision */
-            Node PI();
-
-            /** Returns a Node representing 'e', with the maximum allowed floating point precision */
-            Node E();
-
-            /** Returns a Node representing ln(2), with the maximum allowed floating point precision */
-            Node LN_2();
-
-            /** Returns a Node representing ln(10), with the maximum allowed floating point precision */
-            Node LN_10();
+            /** Looks up the max_float and max_int and limits the data_type accordingly */
+            dataType limit_type(dataType data_type) const;
 
             /** Creates a four dimensional #INPUT variable */
             Node tensor4(dataType data_type,
@@ -215,17 +231,59 @@ namespace md{
             Node scalar(dataType data_type,
                         std::string name = "InputScalar");
 
-            /** Returns an identity matrix of the given dimension size */
-            Node eye(SymInt size, dataType data_type);
+            /** Returns a Node wrapper around a shared variable */
+            Node wrap(SharedVar var);
 
-            /** Returns an identity matrix of the given dimension size */
-            Node eye(SymInt size);
+            /** Returns a Node wrapper around a SymInt */
+            Node wrap(SymInt var);
 
-            /** Returns a matrix filled with ones with the given shape */
-            Node ones(Shape shape, dataType data_type);
+            /** Returns a new symbolic integer */
+            SymInt new_sym();
 
-            /** Returns a matrix filled with ones with the given shape */
-            Node ones(Shape shape);
+            /** Returns a Node wrapper around the value. */
+            Node constant(double value, dataType data_type, Shape shape = {1, 1, 1, 1});
+
+            template <typename T>
+            /** Returns a Node wrapper around the double value. */
+            Node constant(T value, Shape shape = {1, 1, 1, 1}){
+                if (std::is_same<T, double>::value){
+                    return constant(value, f64, shape);
+                } else if (std::is_same<T, float>::value){
+                    return constant(value, f32, shape);
+                } else if (std::is_same<T, long>::value or std::is_same<T, int64_t >::value){
+                    return constant(value, i64, shape);
+                } else if (std::is_same<T, int>::value or std::is_same<T, int32_t >::value){
+                    return constant(value, i32, shape);
+                } else if (std::is_same<T, short>::value or std::is_same<T, int16_t >::value){
+                    return constant(value, i16, shape);
+                } else if (std::is_same<T, int8_t >::value){
+                    return constant(value, i8, shape);
+                } else if (std::is_same<T, unsigned long>::value or std::is_same<T, uint64_t >::value){
+                    return constant(value, u64, shape);
+                } else if (std::is_same<T, unsigned int>::value or std::is_same<T, uint32_t >::value){
+                    return constant(value, u32, shape);
+                } else if (std::is_same<T, unsigned short>::value or std::is_same<T, uint16_t >::value){
+                    return constant(value, u16, shape);
+                } else if (std::is_same<T, uint8_t >::value){
+                    return constant(value, u8, shape);
+                } else if (std::is_same<T, bool>::value){
+                    return constant(value, b8, shape);
+                } else {
+                    throw 1;
+                }
+            }
+
+            /** Returns a Node representing 'pi', with the maximum allowed floating point precision */
+            Node PI();
+
+            /** Returns a Node representing 'e', with the maximum allowed floating point precision */
+            Node E();
+
+            /** Returns a Node representing ln(2), with the maximum allowed floating point precision */
+            Node LN_2();
+
+            /** Returns a Node representing ln(10), with the maximum allowed floating point precision */
+            Node LN_10();
 
             /** Returns a matrix filled with zeros with the given shape */
             Node zeros(Shape shape, dataType data_type);
@@ -233,93 +291,266 @@ namespace md{
             /** Returns a matrix filled with zeros with the given shape */
             Node zeros(Shape shape);
 
-            /** Returns a Node wrapper around a shared variable */
-            Node shared_variable(SharedVar var, std::string name = "SharedVar");
+            /** Returns a matrix filled with ones with the given shape */
+            Node ones(Shape shape, dataType data_type);
 
-            /** Returns a Node wrapper around the value. */
-            Node constant_value(bool value, Shape shape = {1, 1, 1, 1});
+            /** Returns a matrix filled with ones with the given shape */
+            Node ones(Shape shape);
 
-            /** Returns a Node wrapper around the short value. */
-            Node constant_value(unsigned short value, Shape shape = {1, 1, 1, 1});
-
-            /** Returns a Node wrapper around the int value. */
-            Node constant_value(unsigned int value, Shape shape = {1, 1, 1, 1});
-
-            /** Returns a Node wrapper around the long value. */
-            Node constant_value(unsigned long value, Shape shape = {1, 1, 1, 1});
-
-            /** Returns a Node wrapper around the short value. */
-            Node constant_value(short value, Shape shape = {1, 1, 1, 1});
-
-            /** Returns a Node wrapper around the int value. */
-            Node constant_value(int value, Shape shape = {1, 1, 1, 1});
-
-            /** Returns a Node wrapper around the long value. */
-            Node constant_value(long value, Shape shape = {1, 1, 1, 1});
-
-            /** Returns a Node wrapper around the float value. */
-            Node constant_value(float value, Shape shape = {1, 1, 1, 1});
-
-            /** Returns a Node wrapper around the double value. */
-            Node constant_value(double value, Shape shape = {1, 1, 1, 1});
-
-            Node wrap(Node value){
-                return value;
-            }
-
-            Node wrap(SharedVar value){
-                return shared_variable(value);
-            }
-
-            Node wrap(SymInt value);
-
-            Node wrap(bool value){
-                return constant_value(value);
-            }
-
-            Node wrap(unsigned short value){
-                return constant_value(value);
-            }
-
-            Node wrap(unsigned int value){
-                return constant_value(value);
-            }
-
-            Node wrap(unsigned long value){
-                return constant_value(value);
-            }
-
-            Node wrap(short value){
-                return constant_value(value);
-            }
-
-            Node wrap(int value){
-                return constant_value(value);
-            }
-
-            Node wrap(long value){
-                return constant_value(value);
-            }
-
-            Node wrap(float value){
-                return constant_value(value);
-            }
-
-            Node wrap(double value){
-                return constant_value(value);
-            }
+            /** Returns a new node, which has the same value, but is considered as constant */
+            Node make_constant(Node node);
 
             /** Returns a vector representing the sequence from start to end. */
-            Node seq(SymInt start, SymInt end, dataType dtype);
+            Node range(SymInt start, SymInt end, dataType data_type);
 
             /** Returns a vector representing the sequence from start to end. */
-            Node seq(SymInt start, SymInt end);
+            Node range(SymInt start, SymInt end);
 
-            /** Adds nodes */
+            /** Returns an identity matrix of the given dimension size */
+            Node eye(SymInt size, dataType data_type);
+
+            /** Returns an identity matrix of the given dimension size */
+            Node eye(SymInt size);
+
+            /** Casts the node to the type specified */
+            Node cast(Node node, dataType data_type);
+
+            /** Broadcasts the node to a specific shape */
+            Node broadcast(Node node, Shape shape);
+
+            /** Makes an alias of the original node */
+            Node alias(Node node);
+
+            /** Extracts the diagonal of a matrix or for a vector makes a matrix whose diagonal is that */
+            Node diag(Node node);
+
+            /** Reshapes a tensor */
+            Node reshape(Node node, Shape shape);
+
+            /** Reorders the dimensions of a tensor */
+            Node reorder(Node node, Axes axes);
+
+            /** Transposes a matrix or a vector, for higher order tensors, switches the last 2 dimensions */
+            Node transpose(Node node);
+
+            /** Applies not elementwise */
+            Node logical_not(Node node);
+
+            /** Applies and elementwise */
+            Node logical_and(Node node1, Node node2);
+
+            /** Applies or elementwise */
+            Node logical_or(Node node1, Node node2);
+
+            /** node1 > node2 */
+            Node greater_than(Node node1, Node node2);
+
+            /** node1 < node2 */
+            Node less_than(Node node1, Node node2);
+
+            /** node1 >= node2 */
+            Node greater_than_or_equal(Node node1, Node node2);
+
+            /** node1 <= node2 */
+            Node less_than_or_equal(Node node1, Node node2);
+
+            /** node1 == node2 */
+            Node equals(Node node1, Node node2);
+
+            /** node1 != node2 */
+            Node not_equals(Node node1, Node node2);
+
+            /** node1 == node2 up to a tolerance */
+            Node approx_equals(Node node1, Node node2, double tol = 1e-9);
+
+            /** isNan */
+            Node isNan(Node node);
+
+            /** isInf */
+            Node isInf(Node node);
+
+            /** Selects elementwise each chinels */
+            Node select(Node condition, Node if_true, Node if_false);
+
+            /** Performs addition on all of the nodes */
             Node add(NodeVec nodes);
+
+            /** Performs addition on the two nodes */
+            Node add(Node node1, Node node2);
+
+            /** Performs addition on the two nodes */
+            Node add(Node node1, Node node2, Node node3);
+
+            /** Performs addition on the two nodes */
+            Node add(Node node1, Node node2, Node node3, Node node4);
+
+            /** Returns the negation of the node */
+            Node neg(Node node);
+
+            /** node1 - node2 **/
+            Node neg(Node node1, Node node2);
 
             /** Multiplies nodes */
             Node mul(NodeVec nodes);
+
+            /** Multiplies nodes */
+            Node mul(Node node1, Node node2);
+
+            /** Multiplies nodes */
+            Node mul(Node node1, Node node2, Node node3);
+
+            /** Multiplies nodes */
+            Node mul(Node node1, Node node2, Node node3, Node node4);
+
+            /** Returns the inverse  */
+            Node div(Node node);
+
+            /** node1 / node2 **/
+            Node div(Node node1, Node node2);
+
+            /** node1 // node2 **/
+            Node int_div(Node node1, Node node2);
+
+            /** node1 % node2 **/
+            Node int_mod(Node node1, Node node2);
+
+            /** Sums the node along the axis */
+            Node sum(Node node, Axes axes);
+
+            /** Sums the node along the axis */
+            Node sum(Node node, short axis = auto_infer);
+
+            /** Takes the mean along the axis */
+            Node mean(Node node, Axes axes);
+
+            /** Takes the mean along the axis */
+            Node mean(Node node, short axis = auto_infer);
+
+            /** Takes the product along the axis */
+            Node prod(Node node, Axes axes);
+
+            /** Takes the product along the axis */
+            Node prod(Node node, short axis = auto_infer);
+
+            /** Reduction with operator AND */
+            Node all_true(Node node, Axes axes);
+
+            /** Reduction with operator AND */
+            Node all_true(Node node, short axis = auto_infer);
+
+            /** Reduction with operator OR */
+            Node any_true(Node node, Axes axes);
+
+            /** Reduction with operator OR */
+            Node any_true(Node node, short axis = auto_infer);
+
+            Node square(Node node);
+
+            Node sqrt(Node node);
+
+            Node exp(Node node);
+
+            Node log(Node node);
+
+            Node log10(Node node);
+
+            Node abs(Node node);
+
+            Node log1p(Node node);
+
+            Node sin(Node node);
+
+            Node cos(Node node);
+
+            Node tan(Node node);
+
+            Node cot(Node node);
+
+            Node sinh(Node node);
+
+            Node cosh(Node node);
+
+            Node tanh(Node node);
+
+            Node coth(Node node);
+
+            Node pow(Node node, Node power);
+
+            Node gemm(NodeVec nodes, std::vector<bool> transpositions);
+
+            Node dot(Node left, Node right, bool transpose_left = false, bool transpose_right = false);
+
+            Node matrix_inverse(Node node);
+
+            Node determinant(Node node);
+
+            Node log_det(Node node);
+
+            Node trace(Node );
+
+            Node softplus(Node node, double threshold = 40);
+
+            Node log_sum_exp(Node node, Axes axes, double threshold = 10);
+
+            Node log_sum_exp(Node node, short axis = auto_infer, double threshold = 10);
+
+            Node sigmoid(Node node);
+
+            Node softmax(Node node, Axes axes);
+
+            Node softmax(Node node, short axis = auto_infer);
+
+            Node binary_cross_entropy_logits(Node p, Node q_logits);
+
+            Node categorical_cross_entropy_logits(Node p, Node q_logits);
+
+
+
+//            Node wrap(Node value){
+//                return value;
+//            }
+//
+//            Node wrap(SharedVar value){
+//                return shared_variable(value);
+//            }
+//
+//            Node wrap(SymInt value);
+//
+//            Node wrap(bool value){
+//                return constant_value(value);
+//            }
+//
+//            Node wrap(unsigned short value){
+//                return constant_value(value);
+//            }
+//
+//            Node wrap(unsigned int value){
+//                return constant_value(value);
+//            }
+//
+//            Node wrap(unsigned long value){
+//                return constant_value(value);
+//            }
+//
+//            Node wrap(short value){
+//                return constant_value(value);
+//            }
+//
+//            Node wrap(int value){
+//                return constant_value(value);
+//            }
+//
+//            Node wrap(long value){
+//                return constant_value(value);
+//            }
+//
+//            Node wrap(float value){
+//                return constant_value(value);
+//            }
+//
+//            Node wrap(double value){
+//                return constant_value(value);
+//            }
         };
 
         inline Graph create_graph() {
@@ -329,21 +560,32 @@ namespace md{
         /** Convenience for applying an unary operator for a derived node */
         template<typename T>
         Node apply(Node node) {
-            return node->graph->derived_node(std::make_shared<T>(node->graph, node));
+            auto g = node->graph;
+            return g->derived_node(std::make_shared<T>(g, node));
         }
 
         /** Convenience for applying a binary operator trough template */
         template<typename T>
-        Node apply(Node parent1, Node parent2) {
-            GraphInPtr graph = parent1->graph;
-            return graph->derived_node(std::make_shared<T>(graph, parent1, parent2));
+        Node apply(Node node1, Node node2) {
+            // TODO verify the nodes are part of the same graph
+            auto g = node1->graph;
+            return g->derived_node(std::make_shared<T>(g, node1, node2));
+        }
+
+        /** Convenience for applying a binary operator trough template */
+        template<typename T>
+        Node apply(Node node1, Node node2, Node node3) {
+            // TODO verify the nodes are part of the same graph
+            auto g = node1->graph;
+            return g->derived_node(std::make_shared<T>(g, node1, node2, node3));
         }
 
         /** Convenience for applying a nary operator trough template */
         template<typename T>
-        Node apply(NodeVec parents) {
-            GraphInPtr graph = parents[0]->graph;
-            return graph->derived_node(std::make_shared<T>(graph, parents));
+        Node apply(NodeVec nodes) {
+            // TODO verify the nodes are part of the same graph
+            auto g = nodes[0]->graph;
+            return g->derived_node(std::make_shared<T>(g, nodes));
         }
     }
 }

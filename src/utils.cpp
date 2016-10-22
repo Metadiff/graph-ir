@@ -46,9 +46,15 @@ namespace md{
         }
 
         /* TODO - make this cross-platform */
-        std::string make_temp_dir() {
-            std::string path = std::tmpnam(nullptr);
-            return path;
+        std::string make_temp_dir(std::string& path_template) {
+            char template_str[path_template.length() + 6];
+            for(auto i=0; i<path_template.length(); ++i){
+                template_str[i] = path_template[i];
+            }
+            for(auto i=0; i<6; ++i){
+                template_str[i] = 'X';
+            }
+            return std::string(mkdtemp(template_str));
         };
 
         std::string join_paths(std::vector<std::string> paths){

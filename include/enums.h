@@ -48,14 +48,14 @@ namespace md{
         enum nodeType {
             /** The node represents a constant */
                     CONSTANT = 0,
-            /** The node is derived from a constant, trough one or more Operator */
+            /** The node is derived from a constant, trough operators, but have no dependencies on any inputs */
                     CONSTANT_DERIVED = 1,
-            /** The node is an input. It can be either function input or a shared variable */
+            /** The node represents an input */
                     INPUT = 2,
-            /** The node is derived from an input, trough one or more Operator */
+            /** The node is derived from an input, trough one operators */
                     INPUT_DERIVED = 3,
-            /** The node is derived from an input, trough one or more Operator, but is Constant (no gradients) */
-                    INPUT_DERIVED_CONSTANT = 4
+            /** The node is derived from an input, trough one operators, but in a non-differentiable manner */
+                    INPUT_DERIVED_NON_DIFF = 4
         };
 
         /** An error policy defines how should we behave when an error occurs */
@@ -87,6 +87,16 @@ namespace md{
 
         /** For Operators wich can auto infer arguments */
         const short auto_infer = 100;
+
+        /** The three monitor options */
+        enum monitorRole {
+            /** Print the statement */
+            PRINT = 0,
+            /** Add to returned monitors */
+            RETURN = 1,
+            /** Log to the logging directory */
+            LOG = 2
+        };
     }
 }
 #endif //METADIFF_CORE_ENUMS_H

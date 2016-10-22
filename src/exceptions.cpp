@@ -30,7 +30,7 @@ namespace md {
         void ImplicitBroadcast::log(std::shared_ptr<spdlog::logger> const logger,
                                     const spdlog::level::level_enum level) const {
             logger->log(level,
-                        "Implicit broadcast in operator {} of nodes: {}",
+                        "Implicit broadcast in operator {} of nodes:\n{}",
                         op_name,
                         to_string(nodes));
         }
@@ -42,6 +42,17 @@ namespace md {
                         op_name,
                         to_string(nodes));
         }
+
+        void TypePromotion::log(std::shared_ptr<spdlog::logger> const logger,
+                                const spdlog::level::level_enum level) const {
+            logger->log(level,
+                        "Promoting expected type {} to {} in operator {}.\nNodes: {}",
+                        from,
+                        to,
+                        op_name,
+                        to_string(nodes));
+        }
+
 
         void InvalidArguments::log(std::shared_ptr<spdlog::logger> const logger,
                                    const spdlog::level::level_enum level) const {
@@ -58,6 +69,7 @@ namespace md {
                                 "Missing node: {}\nTarget nodes: {}\nProvided inputs: {}",
                         to_string(nodes[0]), to_string(targets), to_string(inputs));
         }
+
     }
 }
 //                std::string msg = "";
