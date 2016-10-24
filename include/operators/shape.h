@@ -13,11 +13,10 @@ namespace md{
              * 1. If parent is a square matrix returns a vector of the diagonal elements
              * 2. If parent is a vector returns a square matrix, whose diagonal is equal to the parent
              */
-            class Diagonal : public UnaryOperator {
+            class Diagonal : public MorphOperator {
             public:
-                bool parent_is_matrix;
                 Diagonal(GraphInPtr graph, Node parent) :
-                        UnaryOperator("Diag", graph, parent) {
+                        AbstractOperator("Diagonal", graph), UnaryOperator(parent) {
                     if (parent.dims() > 2) {
                         auto err = std::make_shared<InvalidArguments>
                                 (NodeVec{parent}, name, "Parent is not a matrix or a vector.");
@@ -50,12 +49,12 @@ namespace md{
             };
 
             /** Reshapes the input to a specified shape */
-            class Reshape : public UnaryOperator {
+            class Reshape : public MorphOperator {
             public:
                 Shape shape;
 
                 Reshape(GraphInPtr graph, Node parent, Shape shape) :
-                        UnaryOperator("Reshape", graph, parent),
+                        AbstractOperator("Reshape", graph), UnaryOperator(parent),
                         shape(shape) {
                     if (elements_number(parent->shape) != elements_number(shape)) {
                         auto err = std::make_shared<InvalidArguments>
@@ -77,27 +76,27 @@ namespace md{
                     return graph->reshape(my_grad, parent->shape);
                 }
 
-                bool equals(Operator const op) const {
-                    if (name == op->name) {
-                        auto cast_op = std::static_pointer_cast<const Reshape>(op);
-                        return symbolic_equals(parent, cast_op->parent) and shape == cast_op->shape;
-                    }
-                    return false;
-                }
+//                bool equals(Operator const op) const {
+//                    if (name == op->name) {
+//                        auto cast_op = std::static_pointer_cast<const Reshape>(op);
+//                        return symbolic_equals(parent, cast_op->parent) and shape == cast_op->shape;
+//                    }
+//                    return false;
+//                }
             };
 
 
             /**
              * Reorders the axis of tensor
              */
-            class Reorder : public UnaryOperator {
+            class Reorder : public MorphOperator {
             public:
                 Axes order;
 
                 Reorder(GraphInPtr graph,
                         Node parent,
                         Axes order) :
-                        UnaryOperator("Reorder", graph, parent),
+                        AbstractOperator("Reorder", graph), UnaryOperator(parent),
                         order(order) {
                     std::shared_ptr<GraphError> err;
                     if (order.size() > 4) {
@@ -133,13 +132,13 @@ namespace md{
                         if (0 > order[i] or order[i] > 4) {
                             err = std::make_shared<InvalidArguments>
                                     (NodeVec{parent}, name,
-                                                        "The ordering must contain elements in the range [0,3]");
+                                     "The ordering must contain elements in the range [0,3]");
                             break;
                         }
                         if (checks[order[i]]) {
                             err = std::make_shared<InvalidArguments>
                                     (NodeVec{this->parent}, name,
-                                                        "The ordering must not have repeating elements");
+                                     "The ordering must not have repeating elements");
                             break;
                         }
                         checks[i] = true;
@@ -178,13 +177,13 @@ namespace md{
                     return graph->reorder(my_grad, reverse_order(order));
                 }
 
-                bool equals(Operator const op) const {
-                    if (name == op->name) {
-                        auto cast_op = std::static_pointer_cast<const Reorder>(op);
-                        return symbolic_equals(parent, cast_op->parent) and order == cast_op->order;
-                    }
-                    return false;
-                }
+//                bool equals(Operator const op) const {
+//                    if (name == op->name) {
+//                        auto cast_op = std::static_pointer_cast<const Reorder>(op);
+//                        return symbolic_equals(parent, cast_op->parent) and order == cast_op->order;
+//                    }
+//                    return false;
+//                }
             };
         }
 

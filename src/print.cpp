@@ -36,16 +36,16 @@ namespace md{
             }
         }
 
-        std::string to_string(nodeType node_type) {
-            switch (node_type){
-                case CONSTANT: return "Const";
-                case CONSTANT_DERIVED: return "ConstDerived";
-                case INPUT: return "Input";
-                case INPUT_DERIVED: return "InputDerived";
-                default: return "InputDerivedConst";
-//                case INPUT_DERIVED_CONSTANT: return "InputDerivedConst";
-            }
-        }
+//        std::string to_string(nodeType node_type) {
+//            switch (node_type){
+//                case CONSTANT: return "Const";
+//                case CONSTANT_DERIVED: return "ConstDerived";
+//                case INPUT: return "Input";
+//                case INPUT_DERIVED: return "InputDerived";
+//                default: return "InputDerivedNonDiff";
+////                case INPUT_DERIVED_CONSTANT: return "InputDerivedConst";
+//            }
+//        }
 
         std::string to_string(errorPolicy policy) {
             switch (policy){
@@ -76,8 +76,9 @@ namespace md{
 
         std::string to_string(Node node){
             std::stringstream ss;
-            ss << "|"  << std::setw(4) << node->id << "|" << std::setw(12) << node->node_type << "|"
-            << std::setw(20) << node->shape << "|" << node->data_type << "|" << node->op->name;
+            ss << "|"  << std::setw(4) << node->id << "|" << std::setw(12)
+               << int(node->is_input_dependent) << int(node->is_differentiable) << "|"
+               << std::setw(20) << node->shape << "|" << node->data_type << "|" << node->op->name;
             return ss.str();
         }
 

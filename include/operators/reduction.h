@@ -8,12 +8,12 @@ namespace md{
     namespace core{
         namespace op{
             /** Summation along an axes */
-            class Sum : public Reduction {
+            class Sum : public MorphReductionOperator {
             public:
                 Sum(GraphInPtr graph,
                     Node parent,
                     Axes axes) :
-                        Reduction("Sum", graph, parent, axes) {};
+                AbstractOperator("Sum", graph), UnaryOperator(parent), ReductionOperator(axes) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sum>(graph, ancestors[0], axes);
@@ -25,12 +25,29 @@ namespace md{
             };
 
             /** Mean along axes */
-            class Mean : public Reduction {
+            class Product : public MorphReductionOperator {
+            public:
+                Product(GraphInPtr graph,
+                        Node parent,
+                        Axes axes) :
+                        AbstractOperator("Product", graph), UnaryOperator(parent), ReductionOperator(axes) {};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<Product>(graph, ancestors[0], axes);
+                }
+
+                Node get_parent_grad(Node my_grad, short index) {
+                    return graph->div(my_grad, parent);
+                }
+            };
+
+            /** Mean along axes */
+            class Mean : public FloatReductionOperator {
             public:
                 Mean(GraphInPtr graph,
-                    Node parent,
-                    Axes axes) :
-                        Reduction("Mean", graph, parent, axes) {};
+                     Node parent,
+                     Axes axes) :
+                        AbstractOperator("Mean", graph), UnaryOperator(parent), ReductionOperator(axes) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Mean>(graph, ancestors[0], axes);
@@ -46,29 +63,33 @@ namespace md{
             };
 
             /** Mean along axes */
-            class Product : public Reduction {
+            class Variance : public FloatReductionOperator {
             public:
-                Product(GraphInPtr graph,
+                Variance(GraphInPtr graph,
                      Node parent,
                      Axes axes) :
-                        Reduction("Product", graph, parent, axes) {};
+                        AbstractOperator("Variance", graph), UnaryOperator(parent), ReductionOperator(axes) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Product>(graph, ancestors[0], axes);
+                    return std::make_shared<Mean>(graph, ancestors[0], axes);
                 }
 
                 Node get_parent_grad(Node my_grad, short index) {
-                    return graph->div(my_grad, parent);
+                    SymInt N = 0;
+                    for(auto i=0; i < axes.size(); ++i){
+                        N = N * axes[i];
+                    }
+                    return graph->broadcast(graph->div(my_grad, graph->wrap(N)), parent->shape);
                 }
             };
 
             /** Essentially reduction with operator AND along axes */
-            class AllTrue : public Reduction {
+            class AllTrue : public LogicalReductionOperator {
             public:
                 AllTrue(GraphInPtr graph,
                         Node parent,
                         Axes axes) :
-                        Reduction("AllTrue", graph, parent, axes) {};
+                        AbstractOperator("AllTrue", graph), UnaryOperator(parent), ReductionOperator(axes) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<AllTrue>(graph, ancestors[0], axes);
@@ -86,12 +107,12 @@ namespace md{
             };
 
             /** Essentially reduction with operator OR along axes */
-            class AnyTrue : public Reduction {
+            class AnyTrue : public LogicalReductionOperator {
             public:
                 AnyTrue(GraphInPtr graph,
                         Node parent,
                         Axes axes) :
-                        Reduction("AnyTrue", graph, parent, axes) {};
+                        AbstractOperator("AnyTrue", graph), UnaryOperator(parent), ReductionOperator(axes) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<AnyTrue>(graph, ancestors[0], axes);

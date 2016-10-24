@@ -17,7 +17,7 @@ namespace md {
                               double value,
                               dataType data_type,
                               Shape shape) :
-                        ConstantOperator("ConstValue", graph, data_type),
+                        AbstractOperator("ConstValue", graph), ConstantOperator(data_type),
                         shape(shape), value(value) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -28,37 +28,40 @@ namespace md {
                     return shape;
                 }
 
-                bool equals(Operator const op) const {
-                    if (name == op->name) {
-                        auto cast_op = std::static_pointer_cast<const ConstantValue>(op);
-                        return shape == cast_op->shape and data_type == cast_op->data_type and
-                               value == cast_op->value;
-                    }
-                    return false;
-                }
+//                bool equals(Operator const op) const {
+//                    if (name == op->name) {
+//                        auto cast_op = std::static_pointer_cast<const ConstantValue>(op);
+//                        return shape == cast_op->shape and data_type == cast_op->data_type and
+//                               value == cast_op->value;
+//                    }
+//                    return false;
+//                }
             };
 
-            /** The operator provides a view of the parent which is constant.
-             * This implies that the gradient with respect to the result is always 0. */
-            class MakeConstant : public UnaryOperator {
+            /** Operator for wrapping Symbolic Integers */
+            class SymIntWrapper : public ConstantOperator {
             public:
-                MakeConstant(GraphInPtr graph,
-                             Node parent) :
-                        UnaryOperator("MakeConst", graph, parent) {};
+                SymInt value;
+
+                SymIntWrapper(GraphInPtr graph, SymInt value) :
+                        AbstractOperator("SymInt", graph), ConstantOperator(graph->max_int),
+                        value(value) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<MakeConstant>(graph, ancestors[0]);
+                    return std::make_shared<SymIntWrapper>(graph, value);
                 }
 
-                nodeType get_node_type() const {
-                    return CONSTANT_DERIVED;
-                };
-
-                Node get_parent_grad(Node my_grad, short index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
-                    err->log(logger());
-                    throw err;
+                Shape get_shape() const {
+                    return Shape{1, 1, 1, 1};
                 }
+
+//                bool equals(Operator const op) const {
+//                    if (this->name == op->name) {
+//                        auto cast_op = std::static_pointer_cast<const SymIntWrapper>(op);
+//                        return cast_op->value == value;
+//                    }
+//                    return false;
+//                }
             };
 
             /** A vector of the sequence from 'start' to 'end' */
@@ -68,7 +71,7 @@ namespace md {
                 SymInt end;
 
                 Range(GraphInPtr graph, SymInt start, SymInt end, dataType data_type) :
-                        ConstantOperator("Range", graph, data_type),
+                        AbstractOperator("Range", graph), ConstantOperator(data_type),
                         start(start), end(end) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -79,14 +82,14 @@ namespace md {
                     return {end - start, 1, 1, 1};
                 }
 
-                bool equals(Operator const op) const {
-                    if (ConstantOperator::equals(op)) {
-                        auto cast_op = std::static_pointer_cast<const Range>(op);
-                        return start == cast_op->start and end == cast_op->end;
-                    } else {
-                        return false;
-                    }
-                }
+//                bool equals(Operator const op) const {
+//                    if (ConstantOperator::equals(op)) {
+//                        auto cast_op = std::static_pointer_cast<const Range>(op);
+//                        return start == cast_op->start and end == cast_op->end;
+//                    } else {
+//                        return false;
+//                    }
+//                }
             };
 
             /** Matrix identity */
@@ -94,7 +97,7 @@ namespace md {
             public:
                 SymInt size;
                 Eye(GraphInPtr graph, SymInt size, dataType data_type) :
-                        ConstantOperator("Eye", graph, data_type),
+                        AbstractOperator("Eye", graph),  ConstantOperator(data_type),
                         size(size){}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -105,13 +108,13 @@ namespace md {
                     return {size, size, 1, 1};
                 }
 
-                bool equals(Operator const op) const {
-                    if (name == op->name) {
-                        auto cast_op = std::static_pointer_cast<const Eye>(op);
-                        return size == cast_op->size;
-                    }
-                    return false;
-                }
+//                bool equals(Operator const op) const {
+//                    if (name == op->name) {
+//                        auto cast_op = std::static_pointer_cast<const Eye>(op);
+//                        return size == cast_op->size;
+//                    }
+//                    return false;
+//                }
             };
 
 

@@ -18,9 +18,10 @@ namespace md{
                 name(name),
                 device(device),
                 op(op),
-                node_type(op->get_node_type()),
                 data_type(op->get_data_type()),
                 shape(op->get_shape()),
+                is_input_dependent(op->is_input_dependent()),
+                is_differentiable(op->is_differentiable()),
                 group(group),
                 grad_level(grad_level) { }
 
@@ -36,26 +37,17 @@ namespace md{
             graph->nodes.push_back(node);
             node->device = ptr->device;
             node->name = ptr->name;
-            node->node_type = ptr->node_type;
+            node->is_input_dependent = ptr->is_input_dependent;
+            node->is_differentiable = ptr->is_differentiable;
             node->data_type = ptr->data_type;
             node->shape = ptr->shape;
             node->op = ptr->op->copy_to(graph, ancestors);
             node->grad_level = ptr->grad_level;
-//        node->value = ptr->value;
-//        node->shared = ptr->shared;
             node->execution = ptr->execution;
             node->group = ptr->group;
             for (size_t i = 0; i < ancestors.size(); i++) {
                 ancestors[i]->children.push_back(node);
             }
-        }
-
-        bool Node::is_constant() const {
-            std::shared_ptr<NodeData> ptr = unwrap();
-            if (ptr->node_type == CONSTANT or ptr->node_type == CONSTANT_DERIVED) {
-                return true;
-            }
-            return ptr->graph->is_temporary_constant(this);
         }
 
         int Node::dims() const {

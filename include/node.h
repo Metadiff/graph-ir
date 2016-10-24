@@ -18,9 +18,10 @@ namespace md{
             std::string name;
             Device device;
             Operator op;
-            nodeType node_type;
             dataType data_type;
             Shape shape;
+            bool is_input_dependent;
+            bool is_differentiable;
             NodeVec children;
             Group group;
             unsigned short grad_level;
@@ -80,7 +81,9 @@ namespace md{
              * provided from the new graph */
             void copy_to(const GraphInPtr graph, NodeVec ancestors) const;
 
-            bool is_constant() const;
+            bool is_input_dependent() const;
+
+            bool is_differentiable() const;
 
             int dims() const;
 

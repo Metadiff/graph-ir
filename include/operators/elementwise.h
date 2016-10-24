@@ -8,11 +8,28 @@ namespace md{
     namespace core {
         namespace op {
 
+            /** Absolute value */
+            class Abs : public MorphElementwiseOperator {
+            public:
+                Abs(GraphInPtr graph, Node parent) :
+                        AbstractOperator("Abs", graph), UnaryOperator(parent) {};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<Abs>(graph, ancestors[0]);
+                }
+
+                Node get_parent_grad(Node my_grad, short index) {
+                    Node zero = graph->constant(0);
+                    zero->grad_level = my_grad->grad_level;
+                    return graph->mul(my_grad, graph->greater_than(parent, zero));
+                }
+            };
+
             /** Explicit operator for square */
-            class Square : public UnaryOperator {
+            class Square : public FloatUnaryElementwiseOperator {
             public:
                 Square(GraphInPtr graph, Node parent) :
-                        UnaryOperator("Square", graph, parent) {};
+                AbstractOperator("Square", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Square>(graph, ancestors[0]);
@@ -26,10 +43,10 @@ namespace md{
             };
 
             /** Square root */
-            class Sqrt : public FloatUnaryOperator {
+            class Sqrt : public FloatUnaryElementwiseOperator {
             public:
                 Sqrt(GraphInPtr graph, Node parent) :
-                FloatUnaryOperator("Sqrt", graph, parent) {};
+                        AbstractOperator("Sqrt", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sqrt>(graph, ancestors[0]);
@@ -43,10 +60,10 @@ namespace md{
             };
 
             /** Exponential */
-            class Exp : public FloatUnaryOperator {
+            class Exp : public FloatUnaryElementwiseOperator {
             public:
                 Exp(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Exp", graph, parent) {};
+                        AbstractOperator("Exp", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Exp>(graph, ancestors[0]);
@@ -58,10 +75,10 @@ namespace md{
             };
 
             /** Logarithm */
-            class Log : public FloatUnaryOperator {
+            class Log : public FloatUnaryElementwiseOperator {
             public:
                 Log(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Log", graph, parent) {};
+                        AbstractOperator("Log", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Log>(graph, ancestors[0]);
@@ -73,10 +90,10 @@ namespace md{
             };
 
             /** Logarithm in base 10 */
-            class Log10 : public FloatUnaryOperator {
+            class Log10 : public FloatUnaryElementwiseOperator {
             public:
                 Log10(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Log10", graph, parent) {};
+                        AbstractOperator("Log10", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Log>(graph, ancestors[0]);
@@ -87,29 +104,12 @@ namespace md{
                 }
             };
 
-            /** Absolute value */
-            class Abs : public UnaryOperator {
-            public:
-                Abs(GraphInPtr graph, Node parent) :
-                        UnaryOperator("Abs", graph, parent) {};
-
-                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Abs>(graph, ancestors[0]);
-                }
-
-                Node get_parent_grad(Node my_grad, short index) {
-                    Node zero = graph->constant(0);
-                    zero->grad_level = my_grad->grad_level;
-                    return graph->mul(my_grad, graph->greater_than(parent, zero));
-                }
-            };
-
             /** Logarithm of x + 1 */
-            class Log1p : public FloatUnaryOperator {
+            class Log1p : public FloatUnaryElementwiseOperator {
             public:
                 Log1p(GraphInPtr graph,
                       Node parent) :
-                        FloatUnaryOperator("Log1p", graph, parent) {};
+                        AbstractOperator("Log1p", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Log1p>(graph, ancestors[0]);
@@ -121,10 +121,10 @@ namespace md{
             };
 
             /** Trigonometric sine function */
-            class Sin : public FloatUnaryOperator {
+            class Sin : public FloatUnaryElementwiseOperator {
             public:
                 Sin(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Sin", graph, parent) {};
+                        AbstractOperator("Sin", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sin>(graph, ancestors[0]);
@@ -136,10 +136,10 @@ namespace md{
             };
 
             /** Trigonometric cosine function */
-            class Cos : public FloatUnaryOperator {
+            class Cos : public FloatUnaryElementwiseOperator {
             public:
                 Cos(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Cos", graph, parent) {};
+                        AbstractOperator("Cos", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Cos>(graph, ancestors[0]);
@@ -151,10 +151,10 @@ namespace md{
             };
 
             /** Trigonometric tangent function */
-            class Tan : public FloatUnaryOperator {
+            class Tan : public FloatUnaryElementwiseOperator {
             public:
                 Tan(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Tan", graph, parent) {};
+                        AbstractOperator("Tan", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Tan>(graph, ancestors[0]);
@@ -166,10 +166,10 @@ namespace md{
             };
 
             /** Trigonometric cotangent function */
-            class Cot : public FloatUnaryOperator {
+            class Cot : public FloatUnaryElementwiseOperator {
             public:
                 Cot(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Cot", graph, parent) {};
+                        AbstractOperator("Cot", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Cot>(graph, ancestors[0]);
@@ -181,10 +181,10 @@ namespace md{
             };
 
             /** Hyperbolic sine function */
-            class Sinh : public FloatUnaryOperator {
+            class Sinh : public FloatUnaryElementwiseOperator {
             public:
                 Sinh(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Sinh", graph, parent) {};
+                        AbstractOperator("Sinh", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sinh>(graph, ancestors[0]);
@@ -196,10 +196,10 @@ namespace md{
             };
 
             /** Hyperbolic cosine function */
-            class Cosh : public FloatUnaryOperator {
+            class Cosh : public FloatUnaryElementwiseOperator {
             public:
                 Cosh(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Cosh", graph, parent) {};
+                        AbstractOperator("Cosh", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Cosh>(graph, ancestors[0]);
@@ -211,10 +211,10 @@ namespace md{
             };
 
             /** Hyperbolic tangent function */
-            class Tanh : public FloatUnaryOperator {
+            class Tanh : public FloatUnaryElementwiseOperator {
             public:
                 Tanh(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Tanh", graph, parent) {};
+                        AbstractOperator("Tanh", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Tanh>(graph, ancestors[0]);
@@ -227,10 +227,10 @@ namespace md{
             };
 
             /** Hyperbolic cotangent function */
-            class Coth : public FloatUnaryOperator {
+            class Coth : public FloatUnaryElementwiseOperator {
             public:
                 Coth(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Coth", graph, parent) {};
+                        AbstractOperator("Coth", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Coth>(graph, ancestors[0]);
@@ -244,18 +244,14 @@ namespace md{
             };
 
             /** Takes the first input to the power of the second elementwise */
-            class Pow : public ElementwiseBinary {
+            class Pow : public BinaryFloatElementwiseOperator {
             public:
                 Pow(GraphInPtr graph, Node parent1, Node parent2) :
-                        ElementwiseBinary("Pow", graph, parent1, parent2) {};
+                        AbstractOperator("Pow", graph), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Pow>(graph, ancestors[0], ancestors[1]);
                 }
-
-                dataType get_data_type() const {
-                    return graph->max_float;
-                };
 
                 Node get_parent_grad(Node my_grad, short index) {
                     Node product = graph->mul(my_grad, owner);

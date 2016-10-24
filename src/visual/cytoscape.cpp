@@ -63,7 +63,7 @@ namespace md{
                   << "    shape: 'ellipse'," << std::endl
                   << "    expanded: 'false'," << std::endl
                   << "    Name: '" << node->name << "'," << std::endl
-                  << "    Type: '" << node->node_type << "'," << std::endl
+                  << "    Type: '" << int(node->is_input_dependent) << int(node->is_differentiable) << "'," << std::endl
                   << "    Data: '" << node->data_type << "'," << std::endl
                   << "    Shape: '" << shape_js(node->shape) << "'," << std::endl
                   << "    Parents: '[";

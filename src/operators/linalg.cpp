@@ -13,7 +13,7 @@ namespace md{
                 nodes[i] = get_base_node(nodes[i]);
             }
             // Standard
-            auto op = std::make_shared<op::MatrixMultiplication>(this, nodes, transpositions);
+            auto op = std::make_shared<op::MatrixMul>(this, nodes, transpositions);
             return derived_node(op);
         }
 

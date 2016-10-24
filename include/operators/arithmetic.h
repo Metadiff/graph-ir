@@ -9,10 +9,10 @@ namespace md {
     namespace core {
         namespace op {
             /** Addition operator */
-            class Add : public ElementwiseNary {
+            class Add : public AssociativeElementwiseOperator {
             public:
                 Add(GraphInPtr graph, NodeVec parents) :
-                        ElementwiseNary("Add", graph, parents) {}
+                        AbstractOperator("Add", graph), AssociativeOperator(parents) {}
 
                 Add(GraphInPtr graph, Node parent1, Node parent2) :
                         Add(graph, {parent1, parent2}) {}
@@ -53,10 +53,10 @@ namespace md {
             };
 
             /** Unary negation */
-            class Neg : public UnaryOperator {
+            class Neg : public UnaryElementwiseOperator {
             public:
                 Neg(GraphInPtr graph, Node parent) :
-                        UnaryOperator("Neg", graph, parent) {};
+                AbstractOperator("Neg", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Neg>(graph, ancestors[0]);
@@ -65,16 +65,21 @@ namespace md {
                 Node get_parent_grad(Node my_grad, short index) {
                     return graph->neg(my_grad);
                 };
+
+                dataType get_data_type() const {
+                    // If unsigned make it signed
+                    if(parent->data_type < i8){
+                        return static_cast<dataType>(parent->data_type + 4);
+                    }
+                    return parent->data_type;
+                }
             };
 
             /** Elementwise multiplication */
-            class Mul : public ElementwiseNary {
+            class Mul : public AssociativeElementwiseOperator {
             public:
                 Mul(GraphInPtr graph, NodeVec parents) :
-                        ElementwiseNary("Mul", graph, parents) {};
-
-                Mul(GraphInPtr graph, Node p1, Node p2) :
-                        ElementwiseNary("Mul", graph, {p1, p2}) {};
+                        AbstractOperator("Mul", graph), AssociativeOperator(parents) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Mul>(graph, ancestors);
@@ -119,13 +124,13 @@ namespace md {
             };
 
             /** Unary division (inverse) */
-            class Div : public FloatUnaryOperator {
+            class Division : public FloatUnaryElementwiseOperator {
             public:
-                Div(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Div", graph, parent) {};
+                Division(GraphInPtr graph, Node parent) :
+                        AbstractOperator("Division", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Div>(graph, ancestors[0]);
+                    return std::make_shared<Division>(graph, ancestors[0]);
                 }
 
                 Node get_parent_grad(Node my_grad, short index) {
@@ -135,15 +140,15 @@ namespace md {
             };
 
             /** Integer dicision */
-            class IntDiv : public BinaryOperator {
+            class IntDiv : public BinaryIntegerElementwiseOperator{
             public:
                 IntDiv(GraphInPtr graph, Node parent1, Node parent2) :
-                        BinaryOperator("IntDiv", graph, parent1, parent2) {
+                AbstractOperator("IntDiv", graph), BinaryOperator(parent1, parent2){
                     // TODO check types of parent1 and parent2 and cast them to ints if needed
                 };
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Div>(graph, ancestors[0]);
+                    return std::make_shared<IntDiv>(graph, ancestors[0], ancestors[1]);
                 }
 
                 dataType get_data_type() const {
@@ -158,15 +163,15 @@ namespace md {
             };
 
             /** Integer reminder */
-            class IntMod : public BinaryOperator {
+            class IntMod : public BinaryIntegerElementwiseOperator {
             public:
                 IntMod(GraphInPtr graph, Node parent1, Node parent2) :
-                        BinaryOperator("IntMod", graph, parent1, parent2) {
+                        AbstractOperator("IntMod", graph), BinaryOperator(parent1, parent2){
                     // TODO check types of parent1 and parent2 and cast them to ints if needed
                 };
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Div>(graph, ancestors[0]);
+                    return std::make_shared<IntMod>(graph, ancestors[0], ancestors[1]);
                 }
 
                 dataType get_data_type() const {

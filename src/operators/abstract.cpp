@@ -7,6 +7,88 @@
 namespace md{
     namespace core{
         namespace op{
+            NodeVec AbstractOperator::get_ancestors() const {
+                auto ancestors = get_parents();
+                auto arguments = get_arguments();
+                std::copy (ancestors.begin(), ancestors.end(), std::back_inserter(arguments));
+                return ancestors;
+            }
+
+            NodeVec AbstractOperator::get_arguments() const {
+                return NodeVec{};
+            }
+
+            bool AbstractOperator::is_input_dependent() const {
+                auto arguments = get_arguments();
+                for(auto i=0; i<arguments.size(); ++i){
+                    if(arguments[i]->is_input_dependent){
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            bool AbstractOperator::is_differentiable() const {
+                auto parents = get_parents();
+                for(auto i=0; i<parents.size(); ++i){
+                    if(parents[i]->is_differentiable){
+                        return true;
+                    }
+                }
+                return false;
+            }
+//            nodeType AbstractOperator::get_node_type() const {
+//                auto is_non_diff = false;
+//                auto parents = get_parents();
+//                for(auto i=0; i < parents.size(); ++i){
+//                    if(parents[i]->node_type > INPUT_DERIVED_NON_DIFF){
+//                        return INPUT_DERIVED;
+//                    }
+//                    if(parents[i]->node_type == INPUT_DERIVED_NON_DIFF){
+//                        is_non_diff = true;
+//                    }
+//                }
+//                if(is_non_diff){
+//                    return INPUT_DERIVED_NON_DIFF;
+//                }
+//                auto arguments = get_arguments();
+//                for(auto i=0; i < arguments.size(); ++i){
+//                    if(arguments[i]->node_type > CONSTANT_DERIVED){
+//                        return INPUT_DERIVED_NON_DIFF;
+//                    }
+//                }
+//                return CONSTANT_DERIVED;
+//            };
+
+//            dataType AbstractOperator::get_data_type() const {
+//                dataType max = b8;
+//                auto parents = get_parents();
+//                for (size_t i = 0; i < parents.size(); i++) {
+//                    if(parents[i]->data_type > max){
+//                        max = parents[i]->data_type;
+//                    }
+//                }
+//                if(max < i8){
+//                    return static_cast<dataType >(1 + (graph->max_int - 1) % 4);
+//                } else if(max < f8){
+//                    return graph->max_int;
+//                } else {
+//                    return graph->max_float;
+//                }
+//            }
+
+            /** Calculates what should be the resulting NodeData#grad_level */
+            unsigned short AbstractOperator::get_grad_level() const {
+                auto ancestors = get_ancestors();
+                unsigned short max_grad_level = 0;
+                for (auto i = 0; i < ancestors.size(); ++i) {
+                    if (ancestors[i]->grad_level > max_grad_level) {
+                        max_grad_level = ancestors[i]->grad_level;
+                    }
+                }
+                return max_grad_level;
+            };
+
             void AbstractOperator::send_grad_message(size_t target, Node msg,
                                                      std::vector<Node> &messages) const {
                 logger()->debug("Sending gradient message with id {} from {} to {}",
@@ -50,7 +132,7 @@ namespace md{
                 NodeVec parents = get_parents();
                 bool constant = name != "Input" and name != "Shared";
                 for (int i = 0; i < parents.size(); i++) {
-                    if (not parents[i].is_constant()) {
+                    if (parents[i]->is_differentiable) {
                         constant = false;
                         break;
                     }
@@ -63,7 +145,7 @@ namespace md{
 
                 // Compute and send gradients only to non constant nodes
                 for (short i = 0; i < parents.size(); i++) {
-                    if (not parents[i].is_constant()) {
+                    if (parents[i]->is_differentiable) {
                         Node parent_grad = get_parent_grad(my_grad, i);
                         if (parent_grad->name == "Derived Node" or parent_grad->name == "") {
                             parent_grad->name = "Grad msg " + std::to_string(owner->id) + "->"
@@ -77,35 +159,6 @@ namespace md{
                 }
                 graph->current_group = current_group;
             }
-
-            dataType AbstractOperator::get_data_type() const {
-                auto parents = get_parents();
-                dataType max = b8;
-                for (size_t i = 0; i < parents.size(); i++) {
-                    if(parents[i]->data_type > max){
-                        max = parents[i]->data_type;
-                    }
-                }
-                if(max < i8){
-                    return static_cast<dataType >(1 + (graph->max_int - 1) % 4);
-                } else if(max < f8){
-                    return graph->max_int;
-                } else {
-                    return graph->max_float;
-                }
-            }
-
-            unsigned short AbstractOperator::get_grad_level() const {
-                auto ancestors = get_ancestors();
-                unsigned short max_grad_level = 0;
-                for (auto i = 0; i < ancestors.size(); ++i) {
-                    if (ancestors[i]->grad_level > max_grad_level) {
-                        max_grad_level = ancestors[i]->grad_level;
-                    }
-                }
-                return max_grad_level;
-            };
-
         }
     }
 }

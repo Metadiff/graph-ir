@@ -50,7 +50,7 @@ namespace md{
 
         Node GraphInternal::make_constant(Node node){
             // If already a constant do nothing
-            if(node->node_type == CONSTANT or node->node_type == CONSTANT_DERIVED){
+            if(not node->is_differentiable){
                 return alias(node);
             }
             // Standard

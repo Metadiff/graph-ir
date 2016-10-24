@@ -10,11 +10,11 @@ namespace md {
         namespace op {
 
             /** Logarithm of exp(x) + 1 */
-            class Softplus : public FloatUnaryOperator {
+            class Softplus : public FloatUnaryElementwiseOperator {
             public:
                 double threshold;
                 Softplus(GraphInPtr graph, Node parent, double threshold = 50) :
-                        FloatUnaryOperator("Softplus", graph, parent),
+                        AbstractOperator("Softplus", graph), UnaryOperator(parent),
                         threshold(threshold){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -27,13 +27,12 @@ namespace md {
             };
 
             /** Logarithm of sum exp(x_i) */
-            class LogSumExp : public Reduction {
+            class LogSumExp : public FloatReductionOperator {
             public:
                 double threshold;
                 LogSumExp(GraphInPtr graph, Node parent, Axes axes, double threshold = 10) :
-                        Reduction("LogSumExp", graph, parent, axes),
-                        threshold(threshold){
-                };
+                        AbstractOperator(name, graph), UnaryOperator(parent), ReductionOperator(axes),
+                        threshold(threshold){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LogSumExp>(graph, ancestors[0], axes, threshold);
@@ -50,10 +49,10 @@ namespace md {
 
 
             /** Logistic function */
-            class Sigmoid : public FloatUnaryOperator {
+            class Sigmoid : public FloatUnaryElementwiseOperator {
             public:
                 Sigmoid(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Sigmoid", graph, parent) {};
+                        AbstractOperator("Sigmoid", graph), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sigmoid>(graph, ancestors[0]);
@@ -65,11 +64,11 @@ namespace md {
             };
 
             /** Softmax function */
-            class Softmax : public FloatUnaryOperator {
+            class Softmax : public FloatUnaryElementwiseOperator {
             public:
                 short axis;
                 Softmax(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Softmax", graph, parent) {
+                        AbstractOperator("Softmax", graph), UnaryOperator(parent) {
                     if(parent.dims() < 1){
                         // TODO raise an error
                     }
@@ -89,11 +88,11 @@ namespace md {
             /**
              * The binary cross entropy of p and q = sigmoid(x)
              */
-            class BinaryCrossEntropyLogits: public ElementwiseBinary {
+            class BinaryCrossEntropyLogits: public BinaryFloatElementwiseOperator {
             public:
                 Node softplus_x, softplus_minus_x;
                 BinaryCrossEntropyLogits(GraphInPtr graph, Node p, Node x):
-                        ElementwiseBinary("BinaryCrossEntropyLogits", graph, p, x){
+                        AbstractOperator("BinaryCrossEntropyLogits", graph), BinaryOperator(p, x){
                     softplus_x = graph->softplus(x);
                     softplus_minus_x = graph->softplus(graph->neg(x));
                 }
@@ -126,11 +125,11 @@ namespace md {
             /**
              * Categorical crossnetropy p and q = softmax(x)
              */
-            class CategoricalCrossEntropyLogits: public ElementwiseBinary {
+            class CategoricalCrossEntropyLogits: public BinaryFloatElementwiseOperator {
             public:
                 Node log_z;
                 CategoricalCrossEntropyLogits(GraphInPtr graph, Node p, Node x):
-                        ElementwiseBinary("CategoricalCrossEntropyLogits", graph, p, x){
+                        AbstractOperator("CategoricalCrossEntropyLogits", graph), BinaryOperator(p, x){
                     log_z = graph->log_sum_exp(x);
                 }
 

@@ -73,17 +73,15 @@ namespace md{
             if (node1->id == node2->id) {
                 return true;
             }
-            if (node1->node_type != node2->node_type) {
+            if(node1->is_input_dependent != node2->is_input_dependent){
                 return false;
             }
-            nodeType node_type = node1->node_type;
-            if (node_type == INPUT) {
+            if(node1->is_differentiable != node2->is_differentiable){
                 return false;
-            } else {
-                auto base_op1 = get_base_op(node1->op);
-                auto base_op2 = get_base_op(node2->op);
-                return base_op1->equals(base_op2) or base_op2->equals(base_op1);
             }
+            auto base_op1 = get_base_op(node1->op);
+            auto base_op2 = get_base_op(node2->op);
+            return base_op1->equals(base_op2) or base_op2->equals(base_op1);
         };
 
         Axes auto_infer_axes(Node node){

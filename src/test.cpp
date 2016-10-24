@@ -44,6 +44,8 @@ md::Graph build_model(){
     auto error = g->square(g->neg(h, inputs[0]));
     auto loss = g->sum(error);
     auto grads = g->gradient(loss, params);
+    auto a = g->logical_not(grads[0]);
+    auto b = g->greater_than(grads[0], g->add(grads[0], g->constant(1)));
     return g;
 }
 

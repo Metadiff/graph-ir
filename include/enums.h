@@ -44,19 +44,20 @@ namespace md{
                     GPU = 1
         };
 
-        /** Each compute Node is one of these types */
-        enum nodeType {
-            /** The node represents a constant */
-                    CONSTANT = 0,
-            /** The node is derived from a constant, trough operators, but have no dependencies on any inputs */
-                    CONSTANT_DERIVED = 1,
-            /** The node represents an input */
-                    INPUT = 2,
-            /** The node is derived from an input, trough one operators */
-                    INPUT_DERIVED = 3,
-            /** The node is derived from an input, trough one operators, but in a non-differentiable manner */
-                    INPUT_DERIVED_NON_DIFF = 4
-        };
+//        /** Each compute Node is one of these types */
+//        enum nodeType {
+//            /** The node represents a constant */
+//                    CONSTANT = 0,
+//            /** The node is derived from a constant, trough operators, but have no dependencies on any inputs */
+//                    CONSTANT_DERIVED = 1,
+//            /** The node is derived from an input, trough one operators, but in a non-differentiable manner */
+//                    INPUT_DERIVED_NON_DIFF = 2,
+//            /** The node represents an input */
+//                    INPUT = 3,
+//            /** The node is derived from an input, trough one operators */
+//                    INPUT_DERIVED = 4,
+//
+//        };
 
         /** An error policy defines how should we behave when an error occurs */
         enum errorPolicy {
@@ -90,12 +91,14 @@ namespace md{
 
         /** The three monitor options */
         enum monitorRole {
+            /** Do nothing */
+            SILENT = 0,
             /** Print the statement */
-            PRINT = 0,
+            PRINT = 1,
             /** Add to returned monitors */
-            RETURN = 1,
+            RETURN = 2,
             /** Log to the logging directory */
-            LOG = 2
+            LOG = 3
         };
     }
 }

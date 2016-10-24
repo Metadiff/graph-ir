@@ -9,13 +9,13 @@ namespace md{
     namespace core {
         namespace op {
             /** General Matrix-Matrix Multiplication (GEMM) */
-            class MatrixMultiplication : public NaryOperator {
+            class MatrixMul : public AssociativeOperator {
             public:
                 std::vector<bool> transpositions;
-                MatrixMultiplication(GraphInPtr graph,
-                                     NodeVec parents,
-                                     std::vector<bool> transpositions) :
-                        NaryOperator("MatrixMul", graph, parents),
+                MatrixMul(GraphInPtr graph,
+                          NodeVec parents,
+                          std::vector<bool> transpositions) :
+                        AbstractOperator("MatrixMul", graph), AssociativeOperator(parents),
                         transpositions(transpositions){
                     Error err;
                     if (parents[0].dims() > 2) {
@@ -29,7 +29,7 @@ namespace md{
                             transpositions.push_back(false);
                         }
                     }
-                    shape = parents[0]->shape;
+                    Shape shape = parents[0]->shape;
                     SymInt temp;
                     if(transpositions[0]){
                         temp = shape[0];
@@ -56,16 +56,16 @@ namespace md{
                 }
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<MatrixMultiplication>(graph, ancestors, transpositions);
+                    return std::make_shared<MatrixMul>(graph, ancestors, transpositions);
                 }
 
-                MatrixMultiplication(GraphInPtr graph,
-                                     Node parent1,
-                                     Node parent2,
-                                     bool transpose_left = false,
-                                     bool transpose_right = false) :
-                        MatrixMultiplication(graph, NodeVec{parent1, parent2},
-                                             {transpose_left, transpose_right}) {}
+//                MatrixMultiplication(GraphInPtr graph,
+//                                     Node parent1,
+//                                     Node parent2,
+//                                     bool transpose_left = false,
+//                                     bool transpose_right = false) :
+//                        MatrixMultiplication(graph, NodeVec{parent1, parent2},
+//                                             {transpose_left, transpose_right}) {}
 
                 /**
                  * For a M=ABC and grad of M being D, the gradient with respect to B is
@@ -109,27 +109,31 @@ namespace md{
                     return graph->gemm(left_mats, left_trans);
                 }
 
-                bool equals(Operator const op) const {
-                    if (name == op->name) {
-                        if (parents.size() != op->get_parents().size()) {
-                            return false;
-                        }
-                        for (int i = 0; i < parents.size(); i++) {
-                            if (not symbolic_equals(parents[i], op->get_parents()[i])) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
-                    return false;
+                Shape get_shape() const{
+                    return {parents[0]->shape[transpositions[0]], parents.back()->shape[not transpositions.back()], 1, 1};
                 }
+
+//                bool equals(Operator const op) const {
+//                    if (name == op->name) {
+//                        if (parents.size() != op->get_parents().size()) {
+//                            return false;
+//                        }
+//                        for (int i = 0; i < parents.size(); i++) {
+//                            if (not symbolic_equals(parents[i], op->get_parents()[i])) {
+//                                return false;
+//                            }
+//                        }
+//                        return true;
+//                    }
+//                    return false;
+//                }
             };
 
             /** MatrixInverse */
-            class MatrixInverse : public FloatUnaryOperator {
+            class MatrixInverse : public FloatUnaryElementwiseOperator {
             public:
                 MatrixInverse(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("MatrixInv", graph, parent) {
+                        AbstractOperator("MatrixInverse", graph), UnaryOperator(parent) {
                     if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
                         auto err = std::make_shared<InvalidArguments>
                                 (NodeVec{parent}, name, "Parent must be a square matrix.");
@@ -151,7 +155,7 @@ namespace md{
             class Determinant : public FloatUnaryOperator {
             public:
                 Determinant(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("Det", graph, parent) {
+                        AbstractOperator("Determinant", graph), UnaryOperator(parent) {
                     if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
                         auto err = std::make_shared<InvalidArguments>
                                 (NodeVec{parent}, name, "Parent must be a square matrix.");
@@ -178,7 +182,7 @@ namespace md{
             class LogDeterminant : public FloatUnaryOperator {
             public:
                 LogDeterminant(GraphInPtr graph, Node parent) :
-                        FloatUnaryOperator("LogDet", graph, parent) {
+                        AbstractOperator("LogDeterminant", graph), UnaryOperator(parent) {
                     if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
                         auto err = std::make_shared<InvalidArguments>
                                 (NodeVec{parent}, name, "Parent must be a square matrix.");
@@ -202,10 +206,11 @@ namespace md{
             };
 
             /** The trace  of a square matrix */
-            class Trace : public UnaryOperator {
+            class Trace : public MorphOperator {
             public:
                 Trace(GraphInPtr graph, Node parent) :
-                        UnaryOperator("Trace", graph, parent) {
+                        AbstractOperator("Trace", graph), UnaryOperator(parent) {
+                    // TODO if parent is b8 cast it to max_int
                     if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
                         auto err = std::make_shared<InvalidArguments>
                                 (NodeVec{parent}, name, "Parent must be a square matrix.");

@@ -112,7 +112,7 @@ namespace md{
 
         Node GraphInternal::pow(Node node, Node power){
             if(power.dims() == 0 and power->op->name == "ConstValue"){
-                auto cast_op = std::static_pointer_cast<op::ConstantValue>(power->op);
+                auto cast_op = std::dynamic_pointer_cast<op::ConstantValue>(power->op);
                 if(cast_op->value == 2){
                     return square(node);
                 }

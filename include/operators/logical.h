@@ -10,14 +10,13 @@ namespace md {
         namespace op {
 
             /** Logical not - !p */
-            class LogicalNot : public LogicalUnary {
+            class LogicalNot : public LogicalUnaryElementwise {
             public:
                 LogicalNot(GraphInPtr graph, Node parent) :
-                        LogicalUnary("LogicalNot", graph, parent) {
+                        AbstractOperator("LogicalNot", graph), UnaryOperator(parent){
                     if (parent->data_type != b8) {
                         auto err = std::make_shared<InvalidArguments>(NodeVec{parent}, name,
-                                                                      "Calling logical operator"
-                                                                              " on node of type "
+                                                                      "Calling logical not on node of type "
                                                                       + to_string(parent->data_type));
                         operate_policy(graph->cast_err_policy, logger(), err);
                         this->parent = graph->cast(parent, b8);
@@ -30,12 +29,12 @@ namespace md {
             };
 
             /** Logical and - p1 && p2 */
-            class LogicalAnd : public LogicalBinary {
+            class LogicalAnd : public LogicalBinaryElementwise {
             public:
                 LogicalAnd(GraphInPtr graph,
                            Node parent1,
                            Node parent2) :
-                        LogicalBinary("LogicalAnd", graph, parent1, parent2) {
+                        AbstractOperator("LogicalAnd", graph), BinaryOperator(parent1, parent2){
                     if (parent1->data_type != b8) {
                         auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
                                                                       "Calling logical operator"
@@ -60,12 +59,12 @@ namespace md {
             };
 
             /** Logical or - p1 || p2 */
-            class LogicalOr : public LogicalBinary {
+            class LogicalOr : public LogicalBinaryElementwise {
             public:
                 LogicalOr(GraphInPtr graph,
                           Node parent1,
                           Node parent2) :
-                        LogicalBinary("LogicalOr", graph, parent1, parent2) {
+                        AbstractOperator("LogicalOr", graph), BinaryOperator(parent1, parent2){
                     if (parent1->data_type != b8) {
                         auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
                                                                       "Calling logical operator"
@@ -90,12 +89,12 @@ namespace md {
             };
 
             /** Elementwise comparison for p1 > p2 */
-            class GreaterThan : public LogicalBinary {
+            class GreaterThan : public LogicalBinaryElementwise {
             public:
                 GreaterThan(GraphInPtr graph,
                             Node parent1,
                             Node parent2) :
-                        LogicalBinary("Gt", graph, parent1, parent2) {};
+                        AbstractOperator("GreaterThan", graph), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<GreaterThan>(graph, ancestors[0], ancestors[1]);
@@ -103,12 +102,12 @@ namespace md {
             };
 
             /** Elementwise comparison for p1 < p2 */
-            class LessThan : public LogicalBinary {
+            class LessThan : public LogicalBinaryElementwise {
             public:
                 LessThan(GraphInPtr graph,
                          Node parent1,
                          Node parent2) :
-                        LogicalBinary("Lt", graph, parent1, parent2) {};
+                        AbstractOperator("LessThan", graph), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LessThan>(graph, ancestors[0], ancestors[1]);
@@ -116,12 +115,12 @@ namespace md {
             };
 
             /** Elementwise comparison for p1 >= p2 */
-            class GreaterThanOrEqual : public LogicalBinary {
+            class GreaterThanOrEqual : public LogicalBinaryElementwise {
             public:
                 GreaterThanOrEqual(GraphInPtr graph,
                                    Node parent1,
                                    Node parent2) :
-                        LogicalBinary("Ge", graph, parent1, parent2) {};
+                        AbstractOperator("GreaterThanOrEqual", graph), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<GreaterThanOrEqual>(graph, ancestors[0], ancestors[1]);
@@ -129,12 +128,12 @@ namespace md {
             };
 
             /** Elementwise comparison for p1 <= p2 */
-            class LessThanOrEqual : public LogicalBinary {
+            class LessThanOrEqual : public LogicalBinaryElementwise {
             public:
                 LessThanOrEqual(GraphInPtr graph,
                                 Node parent1,
                                 Node parent2) :
-                        LogicalBinary("Le", graph, parent1, parent2) {};
+                        AbstractOperator("LessThanOrEqual", graph), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LessThanOrEqual>(graph, ancestors[0], ancestors[1]);
@@ -142,12 +141,12 @@ namespace md {
             };
 
             /** Elementwise comparison for p1 == p2 */
-            class Equals : public LogicalBinary {
+            class Equals : public LogicalBinaryElementwise{
             public:
                 Equals(GraphInPtr graph,
                        Node parent1,
                        Node parent2) :
-                        LogicalBinary("Eq", graph, parent1, parent2) {};
+                        AbstractOperator("Equals", graph), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Equals>(graph, ancestors[0], ancestors[1]);
@@ -155,12 +154,12 @@ namespace md {
             };
 
             /** Elementwise comparison for p1 != p2 */
-            class NotEquals : public LogicalBinary {
+            class NotEquals : public LogicalBinaryElementwise {
             public:
                 NotEquals(GraphInPtr graph,
                           Node parent1,
                           Node parent2) :
-                        LogicalBinary("NotEq", graph, parent1, parent2) {};
+                        AbstractOperator("NotEquals", graph), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<NotEquals>(graph, ancestors[0], ancestors[1]);
@@ -168,7 +167,7 @@ namespace md {
             };
 
             /**  Checks if the two nodes are equal, up to a tolerance measure */
-            class ApproximatelyEquals : public LogicalBinary {
+            class ApproximatelyEquals : public LogicalBinaryElementwise {
             public:
                 double tol;
 
@@ -176,7 +175,7 @@ namespace md {
                                     Node parent1,
                                     Node parent2,
                                     double tol) :
-                        LogicalBinary("ApproxEq", graph, parent1, parent2),
+                        AbstractOperator("ApproximatelyEquals", graph), BinaryOperator(parent1, parent2),
                         tol(tol) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -185,11 +184,10 @@ namespace md {
             };
 
             /** Verifies if any of the elements is NaN */
-            class IsNaN : public LogicalUnary {
+            class IsNaN : public LogicalUnaryElementwise {
             public:
-                IsNaN(GraphInPtr graph,
-                      Node parent) :
-                        LogicalUnary("IsNaN", graph, parent) {};
+                IsNaN(GraphInPtr const graph, Node parent) :
+                        AbstractOperator("IsNaN", graph), UnaryOperator(parent){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IsNaN>(graph, ancestors[0]);
@@ -197,11 +195,10 @@ namespace md {
             };
 
             /** Verifies if any of the elements is Inf */
-            class IsInf : public LogicalUnary {
+            class IsInf : public LogicalUnaryElementwise {
             public:
-                IsInf(GraphInPtr graph,
-                      Node parent) :
-                        LogicalUnary("IsInf", graph, parent) {};
+                IsInf(GraphInPtr const graph, Node parent) :
+                        AbstractOperator("IsInf", graph), UnaryOperator(parent){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IsInf>(graph, ancestors[0]);
@@ -265,7 +262,7 @@ namespace md {
              * Elementwise selects one of the two parents based on the condition
              * Both the parents and the condition node must be of the same size.
              */
-            class Select : public ElementwiseBinary {
+            class Select : public BinaryElementwiseOperator {
             public:
                 Node condition;
 
@@ -273,7 +270,7 @@ namespace md {
                        Node condition,
                        Node trueParent,
                        Node falseParent) :
-                        ElementwiseBinary("Select", graph, trueParent, falseParent),
+                        AbstractOperator("Select", graph), BinaryOperator(trueParent, falseParent),
                         condition(condition) {
                     if (condition->data_type != b8) {
                         auto err = std::make_shared<InvalidArguments>(NodeVec{condition, trueParent, falseParent},
@@ -284,7 +281,7 @@ namespace md {
                         this->condition = graph->cast(condition, b8);
                     }
 
-                    shape = verify_elementwise_shapes({condition, trueParent, falseParent}, logger());
+                    Shape shape = verify_elementwise_shapes({condition, trueParent, falseParent}, logger());
                     if (condition.dims() == 0) {
                         this->condition = graph->broadcast(condition, shape);
                     }
@@ -306,6 +303,10 @@ namespace md {
 
                 NodeVec get_arguments() const {
                     return NodeVec {condition};
+                }
+
+                Shape get_shape() const{
+                    return parent1->shape;
                 }
 
                 Node get_parent_grad(Node my_grad, short index) {

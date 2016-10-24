@@ -63,7 +63,7 @@ namespace md{
                 return alias(base->op->get_parents()[0]);
             }
             // Standard
-            return apply<op::Div>(node);
+            return apply<op::Division>(node);
         }
 
         Node GraphInternal::div(Node node1, Node node2){
