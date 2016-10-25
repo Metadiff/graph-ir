@@ -7,8 +7,8 @@
 namespace md {
     namespace core {
         namespace op {
-            /** The operator provides a view of the parent which is constant.
-             * This implies that the gradient with respect to the result is always 0. */
+
+            /** Single value repeated over some Shape */
             class ConstantValue : public ConstantOperator {
             public:
                 Shape shape;
@@ -38,13 +38,13 @@ namespace md {
 //                }
             };
 
-            /** Operator for wrapping Symbolic Integers */
+            /** Wrapper arround a SymInt */
             class SymIntWrapper : public ConstantOperator {
             public:
                 SymInt value;
 
                 SymIntWrapper(GraphInPtr graph, SymInt value) :
-                        AbstractOperator("SymInt", graph), ConstantOperator(graph->max_int),
+                        AbstractOperator("SymInt", graph), ConstantOperator(graph->props.max_int),
                         value(value) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -116,267 +116,6 @@ namespace md {
 //                    return false;
 //                }
             };
-
-
-//            /** Tensor filled with the same f64 value */
-//            class ConstantFloat64Value : public ConstantOperator {
-//            public:
-//                double value;
-//
-//                ConstantFloat64Value(GraphInPtr graph,
-//                                     double value,
-//                                     Shape shape) :
-//                        ConstantOperator("ConstFloat64Value", graph, shape, f64),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantFloat64Value>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same f32 value */
-//            class ConstantFloat32Value : public ConstantOperator {
-//            public:
-//                float value;
-//
-//                ConstantFloat32Value(GraphInPtr graph,
-//                                     float value,
-//                                     Shape shape) :
-//                        ConstantOperator("ConstFloat32Value", graph, shape, f32),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantFloat32Value>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same f16 value */
-//            class ConstantFloat16Value : public ConstantOperator {
-//            public:
-//                float value;
-//
-//                ConstantFloat16Value(GraphInPtr graph,
-//                                     float value,
-//                                     Shape shape) :
-//                        ConstantOperator("ConstFloat16Value", graph, shape, f16),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantFloat16Value>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same f8 value */
-//            class ConstantFloat8Value : public ConstantOperator {
-//            public:
-//                float value;
-//
-//                ConstantFloat8Value(GraphInPtr graph,
-//                                    float value,
-//                                    Shape shape) :
-//                        ConstantOperator("ConstFloat8Value", graph, shape, f8),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantFloat8Value>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same i64 value */
-//            class ConstantInt64Value : public ConstantOperator {
-//            public:
-//                int64_t value;
-//
-//                ConstantInt64Value(GraphInPtr graph,
-//                                   int64_t value,
-//                                   Shape shape) :
-//                        ConstantOperator("ConstInt64Value", graph, shape, i64),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantInt64Value>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same i32 value */
-//            class ConstantInt32Value : public ConstantOperator {
-//            public:
-//                int32_t value;
-//
-//                ConstantInt32Value(GraphInPtr graph,
-//                                   int32_t value,
-//                                   Shape shape) :
-//                        ConstantOperator("ConstInt32Value", graph, shape, i32),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantValue>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same i16 value */
-//            class ConstantInt16Value : public ConstantOperator {
-//            public:
-//                int16_t value;
-//
-//                ConstantInt16Value(GraphInPtr graph,
-//                                   int16_t value,
-//                                   Shape shape) :
-//                        ConstantOperator("ConstInt16Value", graph, shape, i16),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantValue>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same i8 value */
-//            class ConstantInt8Value : public ConstantOperator {
-//            public:
-//                int8_t value;
-//
-//                ConstantInt8Value(GraphInPtr graph,
-//                                   int8_t value,
-//                                   Shape shape) :
-//                        ConstantOperator("ConstInt8Value", graph, shape, i8),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantValue>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same u64 value */
-//            class ConstantUInt64Value : public ConstantOperator {
-//            public:
-//                uint64_t value;
-//
-//                ConstantUInt64Value(GraphInPtr graph,
-//                                   uint64_t value,
-//                                   Shape shape) :
-//                        ConstantOperator("ConstUInt64Value", graph, shape, u64),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantValue>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same u32 value */
-//            class ConstantUInt32Value : public ConstantOperator {
-//            public:
-//                uint32_t value;
-//
-//                ConstantUInt32Value(GraphInPtr graph,
-//                                   uint32_t value,
-//                                   Shape shape) :
-//                        ConstantOperator("ConstUInt32Value", graph, shape, u32),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantValue>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same u16 value */
-//            class ConstantUInt16Value : public ConstantOperator {
-//            public:
-//                uint16_t value;
-//
-//                ConstantUInt16Value(GraphInPtr graph,
-//                                   uint16_t value,
-//                                   Shape shape) :
-//                        ConstantOperator("ConstUInt16Value", graph, shape, u16),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantValue>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same i8 value */
-//            class ConstantUInt8Value : public ConstantOperator {
-//            public:
-//                uint8_t value;
-//
-//                ConstantUInt8Value(GraphInPtr graph,
-//                                  uint8_t value,
-//                                  Shape shape) :
-//                        ConstantOperator("ConstUInt8Value", graph, shape, u8),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantValue>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
-//
-//            /** Tensor filled with the same b8 value */
-//            class ConstantBoolValue : public ConstantOperator {
-//            public:
-//                bool value;
-//
-//                ConstantBoolValue(GraphInPtr graph,
-//                                   bool value,
-//                                   Shape shape) :
-//                        ConstantOperator("ConstBoolValue", graph, shape, b8),
-//                        value(value) {};
-//
-//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-//                    return std::make_shared<ConstantValue>(graph, value, shape, data_type);
-//                }
-//
-//                double get_value() const {
-//                    return value;
-//                }
-//            };
         }
     }
 }

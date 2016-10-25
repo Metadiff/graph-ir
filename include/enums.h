@@ -44,23 +44,8 @@ namespace md{
                     GPU = 1
         };
 
-//        /** Each compute Node is one of these types */
-//        enum nodeType {
-//            /** The node represents a constant */
-//                    CONSTANT = 0,
-//            /** The node is derived from a constant, trough operators, but have no dependencies on any inputs */
-//                    CONSTANT_DERIVED = 1,
-//            /** The node is derived from an input, trough one operators, but in a non-differentiable manner */
-//                    INPUT_DERIVED_NON_DIFF = 2,
-//            /** The node represents an input */
-//                    INPUT = 3,
-//            /** The node is derived from an input, trough one operators */
-//                    INPUT_DERIVED = 4,
-//
-//        };
-
         /** An error policy defines how should we behave when an error occurs */
-        enum errorPolicy {
+        enum policy {
             /** Does nothing */
                     QUIET = 0,
             /** Prints a warning */
@@ -86,20 +71,8 @@ namespace md{
                 {f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64,f64}
         };
 
-        /** For Operators wich can auto infer arguments */
+        /** For Operators wich can auto infer axes */
         const short auto_infer = 100;
-
-        /** The three monitor options */
-        enum monitorRole {
-            /** Do nothing */
-            SILENT = 0,
-            /** Print the statement */
-            PRINT = 1,
-            /** Add to returned monitors */
-            RETURN = 2,
-            /** Log to the logging directory */
-            LOG = 3
-        };
     }
 }
 #endif //METADIFF_CORE_ENUMS_H

@@ -11,25 +11,25 @@ namespace md{
             dataType limit = limit_type(data_type);
             if(limit != data_type){
                 auto err = std::make_shared<TypePromotion>(NodeVec{}, "ConstantValue", data_type, limit);
-                operate_policy(promotion_err_policy, logger(), err);
+                operate_policy(props.policies.data_type_promotion, logger(), err);
             }
             // Standard
             return derived_node(std::make_shared<op::ConstantValue>(this, value, limit, shape));
         }
 
         Node GraphInternal::PI() {
-            return constant(M_PI, max_float);
+            return constant(M_PI, props.max_float);
         }
         Node GraphInternal::E(){
-            return constant(M_E, max_float);
+            return constant(M_E, props.max_float);
         }
 
         Node GraphInternal::LN_2(){
-            return constant(M_LN2, max_float);
+            return constant(M_LN2, props.max_float);
         }
 
         Node GraphInternal::LN_10(){
-            return constant(M_LN10, max_float);
+            return constant(M_LN10, props.max_float);
         }
 
         Node GraphInternal::zeros(Shape shape, dataType data_type){
@@ -37,7 +37,7 @@ namespace md{
         }
 
         Node GraphInternal::zeros(Shape shape){
-            return constant(0.0, max_float, shape);
+            return constant(0.0, props.max_float, shape);
         }
 
         Node GraphInternal::ones(Shape shape, dataType data_type){
@@ -45,16 +45,7 @@ namespace md{
         }
 
         Node GraphInternal::ones(Shape shape){
-            return constant(1.0, max_float, shape);
-        }
-
-        Node GraphInternal::make_constant(Node node){
-            // If already a constant do nothing
-            if(not node->is_differentiable){
-                return alias(node);
-            }
-            // Standard
-            return apply<op::MakeConstant>(node);
+            return constant(1.0, props.max_float, shape);
         }
 
         Node GraphInternal::range(SymInt start, SymInt end, dataType data_type){
@@ -63,7 +54,7 @@ namespace md{
         }
 
         Node GraphInternal::range(SymInt start, SymInt end){
-            return range(start, end, max_int);
+            return range(start, end, props.max_int);
         }
 
         Node GraphInternal::eye(SymInt size, dataType data_type){
@@ -72,7 +63,7 @@ namespace md{
         }
 
         Node GraphInternal::eye(SymInt size){
-            return eye(size, max_float);
+            return eye(size, props.max_float);
         }
     }
 }

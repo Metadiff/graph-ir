@@ -8,7 +8,7 @@
 namespace md {
     namespace core {
         namespace op {
-            /** Addition operator */
+            /** Addition */
             class Add : public AssociativeElementwiseOperator {
             public:
                 Add(GraphInPtr graph, NodeVec parents) :
@@ -21,7 +21,7 @@ namespace md {
                     return std::make_shared<Add>(graph, ancestors);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return my_grad;
                 }
 
@@ -52,7 +52,7 @@ namespace md {
                 }
             };
 
-            /** Unary negation */
+            /** Negation */
             class Neg : public UnaryElementwiseOperator {
             public:
                 Neg(GraphInPtr graph, Node parent) :
@@ -62,7 +62,7 @@ namespace md {
                     return std::make_shared<Neg>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->neg(my_grad);
                 };
 
@@ -85,7 +85,7 @@ namespace md {
                     return std::make_shared<Mul>(graph, ancestors);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     // TODO change the ones and zeros to correct
                     if (parents.size() == 2) {
                         // Special case when only two parents
@@ -123,7 +123,7 @@ namespace md {
                 }
             };
 
-            /** Unary division (inverse) */
+            /** Elementwise inverse (division) */
             class Division : public FloatUnaryElementwiseOperator {
             public:
                 Division(GraphInPtr graph, Node parent) :
@@ -133,13 +133,13 @@ namespace md {
                     return std::make_shared<Division>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto result = graph->div(my_grad, graph->square(parent));
                     return graph->neg(result);
                 }
             };
 
-            /** Integer dicision */
+            /** Integer division */
             class IntDiv : public BinaryIntegerElementwiseOperator{
             public:
                 IntDiv(GraphInPtr graph, Node parent1, Node parent2) :
@@ -152,17 +152,17 @@ namespace md {
                 }
 
                 dataType get_data_type() const {
-                    return graph->max_int;
+                    return graph->props.max_int;
                 };
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
                     err->log(logger());
                     throw err;
                 }
             };
 
-            /** Integer reminder */
+            /** Integer modulus (reminder) */
             class IntMod : public BinaryIntegerElementwiseOperator {
             public:
                 IntMod(GraphInPtr graph, Node parent1, Node parent2) :
@@ -174,11 +174,7 @@ namespace md {
                     return std::make_shared<IntMod>(graph, ancestors[0], ancestors[1]);
                 }
 
-                dataType get_data_type() const {
-                    return graph->max_int;
-                };
-
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
                     err->log(logger());
                     throw err;

@@ -17,70 +17,51 @@ namespace md{
          * necessarily follows the order of creation of the variables.
          */
         class GraphInternal : public std::enable_shared_from_this<GraphInternal> {
-        private:
+        public:
+            /** Current gradient level */
+            unsigned short grad_level = 0;
+            /** The list of all of the nodes */
+            std::vector<std::shared_ptr<NodeData>> nodes;
+            /** List of all of the updates */
+            Updates updates;
+            /** List of temporary updates */
+            Updates temporary_updates;
+
+            /** List of groups */
+            std::vector<std::shared_ptr<NodeGroup>> base_groups;
+            std::vector<std::shared_ptr<NodeGroup>> groups;
+            /** Current group */
+            Group current_group;
+
             std::shared_ptr<spdlog::logger> logger() const {
                 return md::utils::logger("graph::" + name);
             }
         public:
             /** The name of the graph */
             std::string name;
-            /** The default device to use for the graph */
-            Device default_device;
-            /** The maximum floating point precision to allow (See #dType) */
-            dataType max_float;
-            /** The maximum integer precision to allow (See #dType) */
-            dataType max_int;
-            /** Error policy for implicit broadcasts */
-            errorPolicy broadcast_err_policy;
-            /** Error policy for type promotions */
-            errorPolicy promotion_err_policy;
-            /** Error policy for implicit cast */
-            errorPolicy cast_err_policy;
-            /** Current gradient level */
-            unsigned short grad_level;
-            /** The promotion table */
-            dataType promotion_table[13][13];
+            /** Properties the user can assign of the graph */
+            Properties props;
 
-            std::vector<std::shared_ptr<NodeData>> nodes;
-            Updates updates;
-
-            std::vector<std::shared_ptr<NodeGroup>> base_groups;
-            std::vector<std::shared_ptr<NodeGroup>> groups;
-            Group current_base_group;
-            Group current_group;
-
-            NodeVec temporary_constants;
-            Updates temporary_updates;
-
-            GraphInternal():
-                    name("Function"),
-                    default_device(host()),
-                    max_float(f32),
-                    max_int(i32),
-                    broadcast_err_policy(WARN),
-                    promotion_err_policy(WARN),
-                    cast_err_policy(WARN),
-                    grad_level(0){
-                for(auto i=0; i<13; ++i){
-                    for(auto j=0; j<13; ++j){
-                        promotion_table[i][j] = default_promotion_table[i][j];
-                    }
-                }
-                base_groups.push_back(std::make_shared<NodeGroup>(
-                        utils::props()->base_group_prefix + "0",
-                        std::weak_ptr<NodeGroup>()));
-                current_base_group = base_groups[0];
-                current_group = base_groups[0];
+            GraphInternal(std::string name = "Function"):
+                    name(name),
+                    props(default_properties()){
+//                base_groups.push_back(std::make_shared<NodeGroup>(props.base_group_prefix + "0", this));
+//                current_base_group = base_groups[0];
+                groups.push_back(std::make_shared<NodeGroup>("", this));
+                current_group = groups[0];
             }
 
             /** Copies the computations with value `true` in the mask to the new_graph */
-            NodeVec copy(GraphInPtr new_graph, std::vector<bool> mask) const;
+            NodeVec copy(GraphInPtr new_graph, std::vector<bool> const & mask) const;
 
             /** Returns an array masking all descendants of the marked nodes */
-            std::vector<bool> get_descendants_mask(NodeVec marked) const;
+            std::vector<bool> get_descendants_mask(NodeVec& roots) const;
 
             /** Returns an array masking all ancestors of the marked nodes */
-            std::vector<bool> get_ancestors_mask(NodeVec marked) const;
+            std::vector<bool> get_ancestors_mask(NodeVec&  leafs) const;
+
+            /** Returns the intersection of the descendants mask of the roots and the ancestor mask of the leafs */
+            std::vector<bool> get_flow_tree_mask(NodeVec& roots, NodeVec& leafs) const;
 
             /** Adds the updates to the temporary updates of the graph */
             void add_temporary_updates(Updates const &updates);
@@ -88,58 +69,54 @@ namespace md{
             /** Removes all temporary updates of the graph */
             void clear_temporary_updates();
 
-            /** Checks if the corresponding NodeData is in #temporary_constants. */
-            bool is_temporary_constant(Node node) const;
+            /** Returns the gradients of f with respect to the parameters provided */
+            NodeVec gradient(Node f, NodeVec with_respect_to, bool backward_diff = true);
 
-            /** Returns the gradients of the objective with respect to the parameters provided */
-            NodeVec gradient(Node objective, NodeVec params);
+//            /** Returns the base group with the speicifed name. If it does not exists creates it. */
+//            Group get_or_create_base_group(std::string name);
+//
+//            /** Sets the current base group to name, creates it if it does not exist */
+//            void set_base_group(std::string name);
+//
+//            /** Sets the current base group */
+//            void reset_base_group();
 
-            /** Returns the base group with the speicifed name. If it does not exists creates it. */
-            Group get_or_create_base_group(std::string name);
+            Group get_or_create_group(std::string full_name);
 
-            /** Sets the current base group to name, creates it if it does not exist */
-            void set_base_group(std::string name);
+            void set_group(std::string full_name);
 
-            /** Sets the current base group */
-            void reset_base_group();
+            void push_group(std::string name);
 
-            /** Returns the group specified by full_name. If it does not exist creates it. */
-            Group get_or_create_group_from_base(std::string full_name, Group base_group);
+            void pop_group();
 
-            /** Returns the group specified by full_name. If it does not exist creates it. */
-            Group get_or_create_group_from_base(std::string full_name, std::string base_group);
+            void reset_group();
 
-            Group get_or_create_group_from_base(std::string full_name);
+//            /** Returns the group specified by full_name. If it does not exist creates it. */
+//            Group get_or_create_group(std::string name, Group parent_group);
+//
+//            /** Returns the group specified by full_name. If it does not exist creates it. */
+//            Group get_or_create_group(std::string name, std::string parent_group);
+//
+//            /** Returnst
+//            Group get_or_create_group_full(std::string full_name);
+//
+//            Group get_or_create_group(std::string name);
+//
+//            /** Sets the current group to the group specified by base_name and its parent */
+//            void set_group(std::string name, Group parent_group);
+//
+//            /** Sets the current group to the specified by the name. If it does not exists creates it */
+//            void set_group(std::string name, std::string parent_group);
+//
+//            /** Sets the current group to the group specified by base_name and its parent */
+//            void set_group(std::string name);
 
-            /** Expects to pass the parent of the group */
-            Group get_or_create_group_from_parent(std::string name, Group parent);
-
-            /** Expects to pass the parent of the group */
-            Group get_or_create_group_from_parent(std::string name, std::string parent);
-
-            Group get_or_create_group(std::string name);
-
-            /** Sets the current group to the specified by the name. If it does not exists creates it */
-            void set_group_from_base(std::string full_name, std::string base_group);
-
-            /** Sets the current group to the group specified by base_name and its parent */
-            void set_group_from_base(std::string full_name);
-
-            /** Sets the current group to the group specified by base_name and its parent */
-            void set_group_from_parent(std::string name, Group parent);
-
-            /** Sets the current group to the group specified by base_name and its parent */
-            void set_group_from_parent(std::string name, std::string parent);
-
-            void set_group(std::string name);
             /** Creates a new derived node (INTERNAL) */
             Node derived_node(Operator op, std::string name = "Derived");
 
             /** Adds an update for the shared node */
             void update_node(Node shared, Node update);
 
-            /** Returns a new symbolic integer */
-            SymInt get_new_symbolic_integer() const;
             /**
              * Finds a node which performs the same operation
              * TODO Not implemented correctly
@@ -148,6 +125,9 @@ namespace md{
 
             /** Looks up the max_float and max_int and limits the data_type accordingly */
             dataType limit_type(dataType data_type) const;
+
+            /** Returns a new symbolic integer */
+            SymInt new_sym();
 
             /** Creates a four dimensional #INPUT variable */
             Node tensor4(dataType data_type,
@@ -236,9 +216,6 @@ namespace md{
 
             /** Returns a Node wrapper around a SymInt */
             Node wrap(SymInt var);
-
-            /** Returns a new symbolic integer */
-            SymInt new_sym();
 
             /** Returns a Node wrapper around the value. */
             Node constant(double value, dataType data_type, Shape shape = {1, 1, 1, 1});
@@ -496,61 +473,16 @@ namespace md{
 
             Node sigmoid(Node node);
 
-            Node softmax(Node node, Axes axes);
-
-            Node softmax(Node node, short axis = auto_infer);
+            Node softmax(Node node);
 
             Node binary_cross_entropy_logits(Node p, Node q_logits);
 
             Node categorical_cross_entropy_logits(Node p, Node q_logits);
 
+            Node random_uniform(Shape shape);
 
+            Node random_normal(Shape shape);
 
-//            Node wrap(Node value){
-//                return value;
-//            }
-//
-//            Node wrap(SharedVar value){
-//                return shared_variable(value);
-//            }
-//
-//            Node wrap(SymInt value);
-//
-//            Node wrap(bool value){
-//                return constant_value(value);
-//            }
-//
-//            Node wrap(unsigned short value){
-//                return constant_value(value);
-//            }
-//
-//            Node wrap(unsigned int value){
-//                return constant_value(value);
-//            }
-//
-//            Node wrap(unsigned long value){
-//                return constant_value(value);
-//            }
-//
-//            Node wrap(short value){
-//                return constant_value(value);
-//            }
-//
-//            Node wrap(int value){
-//                return constant_value(value);
-//            }
-//
-//            Node wrap(long value){
-//                return constant_value(value);
-//            }
-//
-//            Node wrap(float value){
-//                return constant_value(value);
-//            }
-//
-//            Node wrap(double value){
-//                return constant_value(value);
-//            }
         };
 
         inline Graph create_graph() {

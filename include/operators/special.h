@@ -8,6 +8,7 @@
 namespace md{
     namespace core{
         namespace op{
+            /** Casting to a specified dataType */
             class Cast : public UnaryElementwiseOperator {
             public:
                 dataType data_type;
@@ -24,7 +25,7 @@ namespace md{
                     return std::make_shared<Cast>(graph, ancestors[0], data_type);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->cast(my_grad, parent->data_type);
                 }
 
@@ -37,11 +38,7 @@ namespace md{
 //                }
             };
 
-            /**
-             * Represents an alias for another node
-             * This could be particularly useful for multiple device case
-             * where an Alias with another device would mean a transfer
-             */
+            /** An alias/view of another node. */
             class Alias : public MorphElementwiseOperator {
             public:
                 Alias(GraphInPtr graph, Node parent) :
@@ -51,7 +48,7 @@ namespace md{
                     return std::make_shared<Alias>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return my_grad;
                 }
 
@@ -62,31 +59,7 @@ namespace md{
 //                }
             };
 
-            /** The operator provides a view of the parent which is constant.
-             * This implies that the gradient with respect to the result is always 0. */
-            class MakeConstant : public MorphElementwiseOperator {
-            public:
-                MakeConstant(GraphInPtr graph,
-                             Node parent) :
-                        AbstractOperator("MakeConstant", graph), UnaryOperator(parent) {};
-
-                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<MakeConstant>(graph, ancestors[0]);
-                }
-
-                bool is_differentiable() const{
-                    return false;
-                }
-
-                Node get_parent_grad(Node my_grad, short index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
-                    err->log(logger());
-                    throw err;
-                }
-            };
-
-
-            /** Broadcasts the parent to the specified shape */
+            /** Broadcasts the node to the specified shape */
             class Broadcast : public MorphOperator {
             public:
                 Shape to_shape;
@@ -130,7 +103,7 @@ namespace md{
                     return axes;
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->sum(my_grad, get_broadcast_axes());
                 }
 
@@ -141,6 +114,87 @@ namespace md{
 //                    }
 //                    return false;
 //                }
+            };
+
+            /** View of the node, which is non-differentiable */
+            class MakeConstant : public MorphElementwiseOperator {
+            public:
+                MakeConstant(GraphInPtr graph,
+                             Node parent) :
+                        AbstractOperator("MakeConstant", graph), UnaryOperator(parent) {};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<MakeConstant>(graph, ancestors[0]);
+                }
+
+                bool is_differentiable() const{
+                    return false;
+                }
+
+                Node backward_diff(Node my_grad, short index) {
+                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
+                    err->log(logger());
+                    throw err;
+                }
+            };
+
+            /** Elementwise selects one of the two parents based on the condition */
+            class Select : public BinaryElementwiseOperator {
+            public:
+                Node condition;
+
+                Select(GraphInPtr graph,
+                       Node condition,
+                       Node trueParent,
+                       Node falseParent) :
+                        AbstractOperator("Select", graph), BinaryOperator(trueParent, falseParent),
+                        condition(condition) {
+                    if (condition->data_type != b8) {
+                        auto err = std::make_shared<InvalidArguments>(NodeVec{condition, trueParent, falseParent},
+                                                                      name,
+                                                                      "Calling Select with condition of type "
+                                                                      + to_string(condition->data_type));
+                        operate_policy(graph->props.policies.cast, logger(), err);
+                        this->condition = graph->cast(condition, b8);
+                    }
+
+                    Shape shape = verify_elementwise_shapes({condition, trueParent, falseParent}, logger());
+                    if (condition.dims() == 0) {
+                        this->condition = graph->broadcast(condition, shape);
+                    }
+                    if (trueParent.dims() == 0) {
+                        this->parent1 = graph->broadcast(parent1, shape);
+                    }
+                    if (falseParent.dims() == 0) {
+                        this->parent1 = graph->broadcast(parent2, shape);
+                    }
+                };
+
+                dataType get_data_type() const {
+                    return parent1->data_type;
+                }
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<Select>(graph, ancestors[2], ancestors[0], ancestors[1]);
+                }
+
+                NodeVec get_arguments() const {
+                    return NodeVec {condition};
+                }
+
+                Shape get_shape() const{
+                    return parent1->shape;
+                }
+
+                Node backward_diff(Node my_grad, short index) {
+                    Node zero = graph->constant(0);
+                    zero->grad_level = my_grad->grad_level;
+                    if (index == 0) {
+                        return graph->select(condition, my_grad, zero);
+                    } else {
+                        return graph->select(condition, zero, my_grad);
+                    }
+                };
             };
         }
     }

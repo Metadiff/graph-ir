@@ -19,12 +19,12 @@ namespace md{
                     return std::make_shared<Sum>(graph, ancestors[0], axes);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->broadcast(my_grad, parent->shape);
                 }
             };
 
-            /** Mean along axes */
+            /** Product along axes */
             class Product : public MorphReductionOperator {
             public:
                 Product(GraphInPtr graph,
@@ -36,7 +36,7 @@ namespace md{
                     return std::make_shared<Product>(graph, ancestors[0], axes);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->div(my_grad, parent);
                 }
             };
@@ -53,7 +53,7 @@ namespace md{
                     return std::make_shared<Mean>(graph, ancestors[0], axes);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     SymInt N = 0;
                     for(auto i=0; i < axes.size(); ++i){
                         N = N * axes[i];
@@ -62,7 +62,7 @@ namespace md{
                 }
             };
 
-            /** Mean along axes */
+            /** Variance along axes */
             class Variance : public FloatReductionOperator {
             public:
                 Variance(GraphInPtr graph,
@@ -74,7 +74,7 @@ namespace md{
                     return std::make_shared<Mean>(graph, ancestors[0], axes);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     SymInt N = 0;
                     for(auto i=0; i < axes.size(); ++i){
                         N = N * axes[i];
@@ -83,7 +83,7 @@ namespace md{
                 }
             };
 
-            /** Essentially reduction with operator AND along axes */
+            /** Reducation with operator AND (&&) along an axes */
             class AllTrue : public LogicalReductionOperator {
             public:
                 AllTrue(GraphInPtr graph,
@@ -99,14 +99,14 @@ namespace md{
                     return b8;
                 };
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
                     err->log(logger());
                     throw err;
                 }
             };
 
-            /** Essentially reduction with operator OR along axes */
+            /** Reducation with operator OR (||) along an axes */
             class AnyTrue : public LogicalReductionOperator {
             public:
                 AnyTrue(GraphInPtr graph,
@@ -122,7 +122,7 @@ namespace md{
                     return b8;
                 };
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
                     err->log(logger());
                     throw err;

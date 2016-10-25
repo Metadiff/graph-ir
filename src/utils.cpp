@@ -90,6 +90,19 @@ namespace md{
             return fwrite(buffer, size, nmemb, out->stream);
         }
 
+        /* TODO - make this cross-platform */
+        long long file_size(std::string file_name) {
+            struct stat st;
+            if (stat(file_name.c_str(), &st) == -1)
+                return 0;
+            return ((long long)st.st_size);
+        }
+
+        /* TODO - make this cross-platform */
+        int unpack_gz(std::string gz_path){
+            return system(("gzip -d -f " + gz_path).c_str());
+        }
+
 //        void download_file(std::string url, std::string local_path){
 //            CURL *curl;
 //            CURLcode res;
@@ -115,18 +128,5 @@ namespace md{
 //            }
 //            curl_global_cleanup();
 //        }
-
-        /* TODO - make this cross-platform */
-        long long file_size(std::string file_name) {
-            struct stat st;
-            if (stat(file_name.c_str(), &st) == -1)
-                return 0;
-            return ((long long)st.st_size);
-        }
-
-        /* TODO - make this cross-platform */
-        int unpack_gz(std::string gz_path){
-            return system(("gzip -d -f " + gz_path).c_str());
-        }
     }
 }

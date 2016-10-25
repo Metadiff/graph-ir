@@ -10,8 +10,8 @@
 #include "spdlog/spdlog.h"
 #include "utils.h"
 #include "enums.h"
-#include "props.h"
 #include "definitions.h"
+#include "props.h"
 #include "helpers.h"
 #include "shared.h"
 #include "node.h"
@@ -19,13 +19,7 @@
 #include "print.h"
 #include "exceptions.h"
 #include "operators.h"
-#include "visual.h"
+#include "export.h"
 #include "optimization.h"
-
-//#include "core_impl.h"
-//#include "operators.h"
-//#include "visual.h"
-//#include "backends.h"
-//#include "api.h"
 
 #endif //METADIFF_CORE_METADIFF_H

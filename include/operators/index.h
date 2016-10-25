@@ -55,7 +55,7 @@ namespace metadiff{
 //                return false;
 //            }
 //
-//            Node get_parent_grad(Node my_grad, size_t index);
+//            Node backward_diff(Node my_grad, size_t index);
 //        };
 //
 //        /**
@@ -102,16 +102,16 @@ namespace metadiff{
 //                return false;
 //            }
 //
-//            Node get_parent_grad(Node my_grad, size_t index);
+//            Node backward_diff(Node my_grad, size_t index);
 //
 //        };
 //
-//        Node Slice::get_parent_grad(Node my_grad, size_t index) {
+//        Node Slice::backward_diff(Node my_grad, size_t index) {
 //            return graph->derived_node(
 //                    std::make_shared<SliceGrad>(graph, my_grad, this->index, axis, owner.unwrap()->shape));
 //        }
 //
-//        Node SliceGrad::get_parent_grad(Node my_grad, size_t index) {
+//        Node SliceGrad::backward_diff(Node my_grad, size_t index) {
 //            return graph->derived_node(std::make_shared<Slice>(graph, my_grad, this->index, axis));
 //        }
 //
@@ -165,7 +165,7 @@ namespace metadiff{
 //                return false;
 //            }
 //
-//            Node get_parent_grad(Node my_grad, size_t index);
+//            Node backward_diff(Node my_grad, size_t index);
 //        };
 //
 //        /**
@@ -211,15 +211,15 @@ namespace metadiff{
 //                return false;
 //            }
 //
-//            Node get_parent_grad(Node my_grad, size_t index);
+//            Node backward_diff(Node my_grad, size_t index);
 //        };
 //
-//        Node Index::get_parent_grad(Node my_grad, size_t index) {
+//        Node Index::backward_diff(Node my_grad, size_t index) {
 //            return graph->derived_node(
 //                    std::make_shared<IndexGrad>(graph, my_grad, this->index, axis, owner.unwrap()->shape[axis]));
 //        }
 //
-//        Node IndexGrad::get_parent_grad(Node my_grad, size_t index) {
+//        Node IndexGrad::backward_diff(Node my_grad, size_t index) {
 //            return graph->derived_node(std::make_shared<Index>(graph, my_grad, this->index, axis));
 //        }
 //

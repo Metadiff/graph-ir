@@ -16,31 +16,31 @@ md::Graph build_model(){
     std::string layers[10] {"Inputs", "Encoder 1", "Encoder 2", "Encoder 3", "Encoder 4",
                             "Decoder 3", "Decoder 2", "Decoder 1", "Output Layer", "Objective"};
     // Input data
-    g->set_group_from_base(layers[0]);
+    g->set_group(layers[0]);
     md::NodeVec inputs = {g->matrix(md::f32, {d[0], batch_size}, "Input")};
     // Parameters
     md::NodeVec params;
     md::SharedVar var;
     for(int i=1;i<9;i++){
-        g->set_group_from_base(layers[i]);
+        g->set_group(layers[i]);
         var = md::make_shared(md::f32, {d[i], d[i-1], 1, 1}, "W_" + std::to_string(i));
         params.push_back(g->wrap(var));
         var = md::make_shared(md::f32, {d[i], 1, 1, 1}, "b_" + std::to_string(i));
         params.push_back(g->wrap(var));
     }
     // First layer
-    g->set_group_from_base(layers[1]);
+    g->set_group(layers[1]);
     auto h = g->tanh(g->add(g->dot(params[0], inputs[0]), params[1]));
     // All layers except one
     for(int i=1;i<7;i++){
-        g->set_group_from_base(layers[i+1]);
+        g->set_group(layers[i+1]);
         h = g->tanh(g->add(g->dot(params[2*i], h), params[2*i+1]));
     }
     // Calculate only logits here
-    g->set_group_from_base(layers[8]);
+    g->set_group(layers[8]);
     h = g->add(g->dot(params[14], h), params[15]);
     // Loss
-    g->set_group_from_base(layers[9]);
+    g->set_group(layers[9]);
     auto error = g->square(g->neg(h, inputs[0]));
     auto loss = g->sum(error);
     auto grads = g->gradient(loss, params);

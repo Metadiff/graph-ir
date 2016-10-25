@@ -5,9 +5,9 @@
 #ifndef METADIFF_CORE_VISUAL_GRAPHVIZ_H
 #define METADIFF_CORE_VISUAL_GRAPHVIZ_H
 
-//namespace md{
-//    namespace visual{
-//
-//    }
-//}
+namespace md{
+    namespace graphviz{
+        // TODO
+    }
+}
 #endif //METADIFF_CORE_VISUAL_GRAPHVIZ_H

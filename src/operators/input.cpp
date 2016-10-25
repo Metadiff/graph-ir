@@ -15,7 +15,7 @@ namespace md{
                     shared_from_this().get(),
                     nodes.size(),
                     name,
-                    default_device,
+                    props.default_device,
                     op,
                     0,
                     current_group);
@@ -39,13 +39,7 @@ namespace md{
 
         Node GraphInternal::tensor4(dataType data_type,
                                     std::string name) {
-            Shape shape = {
-                    get_new_symbolic_integer(),
-                    get_new_symbolic_integer(),
-                    get_new_symbolic_integer(),
-                    get_new_symbolic_integer()
-            };
-            return tensor4(data_type, shape, name);
+            return tensor4(data_type,  {new_sym(), new_sym(), new_sym(), new_sym()}, name);
         }
 
         Node GraphInternal::tensor4_as(Node node, std::string name) {
@@ -73,10 +67,7 @@ namespace md{
 
         Node GraphInternal::tensor3(dataType data_type,
                                     std::string name) {
-            auto shape0 = get_new_symbolic_integer();
-            auto shape1 = get_new_symbolic_integer();
-            auto shape2 = get_new_symbolic_integer();
-            return tensor3(data_type, shape0, shape1, shape2, name);
+            return tensor3(data_type,  new_sym(), new_sym(), new_sym());
         }
 
 
@@ -115,9 +106,7 @@ namespace md{
 
         Node GraphInternal::matrix(dataType data_type,
                                    std::string name) {
-            auto shape0 = get_new_symbolic_integer();
-            auto shape1 = get_new_symbolic_integer();
-            return matrix(data_type, shape0, shape1, name);
+            return matrix(data_type, new_sym(), new_sym(), name);
         }
 
 
@@ -149,8 +138,7 @@ namespace md{
 
         Node GraphInternal::vector(dataType data_type,
                                    std::string name) {
-            auto shape0 = get_new_symbolic_integer();
-            return vector(data_type, shape0, name);
+            return vector(data_type, new_sym(), name);
         }
 
 

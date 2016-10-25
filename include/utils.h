@@ -14,8 +14,8 @@ namespace md{
     namespace utils{
         /** This is the main logger sink used by Metadiff */
         inline std::shared_ptr<spdlog::sinks::dist_sink_st> log_sink(){
-            static const std::shared_ptr<spdlog::sinks::dist_sink_st> md_sink(new spdlog::sinks::dist_sink_st());
-            return md_sink;
+                static const std::shared_ptr<spdlog::sinks::dist_sink_st> md_sink(new spdlog::sinks::dist_sink_st());
+                return md_sink;
         }
 
 
@@ -63,14 +63,14 @@ namespace md{
         /** Helper writes stream to files */
         size_t write_steram_to_file(void *buffer, size_t size, size_t nmemb, void *stream);
 
-//        /** A helper function to download a file from a url */
-//        void download_file(std::string url, std::string local_path);
-
         /** Returns the size of a file in bytes */
         long long file_size(std::string file_name);
 
         /** Unzips a file */
         int unpack_gz(std::string gz_path);
+
+        //        /** A helper function to download a file from a url */
+        //        void download_file(std::string url, std::string local_path);
     }
 }
 

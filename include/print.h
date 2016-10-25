@@ -20,15 +20,9 @@ namespace md{
             return f << to_string(device_type);
         }
 
-//        std::string to_string(nodeType node_type);
-//
-//        inline std::ostream &operator<<(std::ostream &f, const nodeType node_type) {
-//            return f << to_string(node_type);
-//        }
+        std::string to_string(policy policy);
 
-        std::string to_string(errorPolicy policy);
-
-        inline std::ostream &operator<<(std::ostream &f, const errorPolicy policy) {
+        inline std::ostream &operator<<(std::ostream &f, const policy policy) {
             return f << to_string(policy);
         }
 

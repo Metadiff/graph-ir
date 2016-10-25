@@ -74,7 +74,7 @@ namespace md{
                  * @param index
                  * @return
                  */
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     NodeVec left_mats, right_mats;
                     std::vector<bool> left_trans, right_trans;
                     for (auto i = 0; i < index; ++i) {
@@ -146,7 +146,7 @@ namespace md{
                     return std::make_shared<MatrixInverse>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->neg(graph->gemm({owner, my_grad, owner}, {true, false, true}));
                 }
             };
@@ -172,7 +172,7 @@ namespace md{
                     return {1, 1, 1, 1};
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, owner, graph->transpose(graph->matrix_inverse(parent)));
                 }
 
@@ -199,7 +199,7 @@ namespace md{
                     return {1, 1, 1, 1};
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, graph->transpose(graph->matrix_inverse(parent)));
                 }
 
@@ -227,45 +227,12 @@ namespace md{
                     return {1, 1, 1, 1};
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     Node eye = graph->eye(parent->shape[0]);
                     eye->grad_level = my_grad->grad_level;
                     return graph->mul(my_grad, eye);
                 }
             };
-//        namespace core {
-//            Node Node::transpose() {
-//                // TODO a.transpose().transpose() = a
-//                return apply<op::Transpose>(this);
-//            }
-//
-//            Node Node::dot(NodeVec nodes) {
-//                // TODO a dot a.inv() = eye
-//                // TODO a.transpose() */dot b.transpose() = (a */dot b).transpose()
-//                return apply<op::MatrixMultiplication>(nodes);
-//            };
-//
-//            Node Node::dot(Node node1, Node node2) {
-//                return Node::dot(NodeVec{node1, node2});
-//            };
-//
-//            Node Node::minv() {
-//                // TODO a.minv().minv() = a
-//                return apply<op::MatrixInverse>(this);
-//            }
-//
-//            Node Node::det() {
-//                return apply<op::Determinant>(this);
-//            }
-//
-//            Node Node::logdet() {
-//                return apply<op::LogDeterminant>(this);
-//            }
-//
-//            Node Node::trace() {
-//                return apply<op::Trace>(this);
-//            }
-//        }
         }
     }
 }

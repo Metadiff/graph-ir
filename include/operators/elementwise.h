@@ -18,14 +18,14 @@ namespace md{
                     return std::make_shared<Abs>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     Node zero = graph->constant(0);
                     zero->grad_level = my_grad->grad_level;
                     return graph->mul(my_grad, graph->greater_than(parent, zero));
                 }
             };
 
-            /** Explicit operator for square */
+            /** Squre */
             class Square : public FloatUnaryElementwiseOperator {
             public:
                 Square(GraphInPtr graph, Node parent) :
@@ -35,7 +35,7 @@ namespace md{
                     return std::make_shared<Square>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     Node two = graph->constant(2);
                     two->grad_level = my_grad->grad_level;
                     return graph->mul(my_grad, two, parent);
@@ -52,7 +52,7 @@ namespace md{
                     return std::make_shared<Sqrt>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     Node two = graph->constant(2);
                     two->grad_level = my_grad->grad_level;
                     return graph->div(my_grad, graph->mul(two, owner));
@@ -69,7 +69,7 @@ namespace md{
                     return std::make_shared<Exp>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, owner);
                 }
             };
@@ -84,7 +84,7 @@ namespace md{
                     return std::make_shared<Log>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->div(my_grad, parent);
                 }
             };
@@ -99,7 +99,7 @@ namespace md{
                     return std::make_shared<Log>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->div(my_grad, graph->mul(parent, graph->LN_10()));
                 }
             };
@@ -115,12 +115,12 @@ namespace md{
                     return std::make_shared<Log1p>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, graph->sigmoid(parent));
                 }
             };
 
-            /** Trigonometric sine function */
+            /** Trigonometric sine */
             class Sin : public FloatUnaryElementwiseOperator {
             public:
                 Sin(GraphInPtr graph, Node parent) :
@@ -130,12 +130,12 @@ namespace md{
                     return std::make_shared<Sin>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, graph->cos(parent));
                 }
             };
 
-            /** Trigonometric cosine function */
+            /** Trigonometric cosine */
             class Cos : public FloatUnaryElementwiseOperator {
             public:
                 Cos(GraphInPtr graph, Node parent) :
@@ -145,12 +145,12 @@ namespace md{
                     return std::make_shared<Cos>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, graph->neg(graph->sin(parent)));
                 }
             };
 
-            /** Trigonometric tangent function */
+            /** Trigonometric tangent */
             class Tan : public FloatUnaryElementwiseOperator {
             public:
                 Tan(GraphInPtr graph, Node parent) :
@@ -160,12 +160,12 @@ namespace md{
                     return std::make_shared<Tan>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->div(my_grad, graph->square(graph->cos(parent)));
                 }
             };
 
-            /** Trigonometric cotangent function */
+            /** Trigonometric cotangent */
             class Cot : public FloatUnaryElementwiseOperator {
             public:
                 Cot(GraphInPtr graph, Node parent) :
@@ -175,12 +175,12 @@ namespace md{
                     return std::make_shared<Cot>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->neg(graph->div(my_grad, graph->square(graph->sin(parent))));
                 }
             };
 
-            /** Hyperbolic sine function */
+            /** Hyperbolic sine */
             class Sinh : public FloatUnaryElementwiseOperator {
             public:
                 Sinh(GraphInPtr graph, Node parent) :
@@ -190,12 +190,12 @@ namespace md{
                     return std::make_shared<Sinh>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, graph->cosh(parent));
                 }
             };
 
-            /** Hyperbolic cosine function */
+            /** Hyperbolic cosine */
             class Cosh : public FloatUnaryElementwiseOperator {
             public:
                 Cosh(GraphInPtr graph, Node parent) :
@@ -205,12 +205,12 @@ namespace md{
                     return std::make_shared<Cosh>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, graph->sinh(parent));
                 }
             };
 
-            /** Hyperbolic tangent function */
+            /** Hyperbolic tangent */
             class Tanh : public FloatUnaryElementwiseOperator {
             public:
                 Tanh(GraphInPtr graph, Node parent) :
@@ -220,13 +220,13 @@ namespace md{
                     return std::make_shared<Tanh>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     Node derivative = graph->neg(graph->constant(1), graph->square(owner));
                     return graph->mul(my_grad, derivative);
                 }
             };
 
-            /** Hyperbolic cotangent function */
+            /** Hyperbolic cotangent */
             class Coth : public FloatUnaryElementwiseOperator {
             public:
                 Coth(GraphInPtr graph, Node parent) :
@@ -236,7 +236,7 @@ namespace md{
                     return std::make_shared<Coth>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto one = graph->constant(1);
                     Node derivative = graph->neg(one, graph->square(owner));
                     return graph->mul(my_grad, derivative);
@@ -253,7 +253,7 @@ namespace md{
                     return std::make_shared<Pow>(graph, ancestors[0], ancestors[1]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     Node product = graph->mul(my_grad, owner);
                     if (index == 0) {
                         Node factor = graph->div(parent2, parent1);
@@ -264,83 +264,6 @@ namespace md{
                 }
             };
         }
-
-//        namespace core {
-//            Node Node::square() {
-//                return apply<op::Square>(this);
-//            }
-//
-//            Node Node::exp() {
-//                return apply<op::Exp>(this);
-//            }
-//
-//            Node Node::sigmoid() {
-//                GraphInPtr graph = unwrap()->graph;
-//                return graph->constant_value(1.0) / (graph->constant_value(1.0) + this->neg().exp());
-//            }
-//
-//            Node Node::log() {
-//                return apply<op::Log>(this);
-//            }
-//
-//            Node Node::log10() {
-//                return apply<op::Log10>(this);
-//            }
-//
-//            Node Node::abs() {
-//                return apply<op::Abs>(this);
-//            }
-//
-//            Node Node::log1p() {
-//                return apply<op::Log1p>(this);
-//            }
-//
-//            Node Node::softplus(int threshold) {
-//                if (threshold <= 0) {
-//                    return exp().log1p();
-//                } else {
-//                    Node condition = this->ge(unwrap()->graph->constant_value(threshold));
-//                    return condition.select(this, this->exp().log1p());
-//                }
-//            }
-//
-//            Node Node::sin() {
-//                return apply<op::Sin>(this);
-//            }
-//
-//            Node Node::cos() {
-//                return apply<op::Cos>(this);
-//            }
-//
-//            Node Node::tan() {
-//                return apply<op::Tan>(this);
-//            }
-//
-//            Node Node::cot() {
-//                return apply<op::Cot>(this);
-//            }
-//
-//            Node Node::sinh() {
-//                return apply<op::Sinh>(this);
-//            }
-//
-//            Node Node::cosh() {
-//                return apply<op::Cosh>(this);
-//            }
-//
-//            Node Node::tanh() {
-//                return apply<op::Tanh>(this);
-//            }
-//
-//            Node Node::coth() {
-//                return apply<op::Coth>(this);
-//            }
-//
-//            Node Node::pow(Node power) {
-//                std::shared_ptr<NodeInternal> ptr = unwrap();
-//                return ptr->graph->derived_node(std::make_shared<op::Pow>(ptr->graph, this, power));
-//            }
-//        }
     }
 }
 

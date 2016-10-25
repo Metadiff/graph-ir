@@ -4,17 +4,21 @@
 
 #ifndef METADIFF_CORE_OPERATORS_ABSTRACT_H
 #define METADIFF_CORE_OPERATORS_ABSTRACT_H
+
 namespace md {
     namespace core {
         namespace op {
-            /** Abstract class for operators */
+            /** The abstract class for all operatros */
             class AbstractOperator {
             protected:
-                AbstractOperator(): name("."), graph(nullptr) {};
-            public:
+                /** This should never be called directly, it exists ONLY because of virtual inheritance */
+                AbstractOperator(): name(""), graph(nullptr) {};
+
+                /** Easy way to get logging for the corresponding operator */
                 std::shared_ptr<spdlog::logger> logger() const {
                     return md::utils::logger("operator::" + name);
                 }
+            public:
                 /** Unique name of the concrete Operator class */
                 std::string const name;
                 /** Pointer to the owning GraphInternal */
@@ -22,59 +26,50 @@ namespace md {
                 /** Pointer to the owning Node */
                 Node owner;
 
+                /** The Node owner should be set by the graph after creating the output Node */
                 AbstractOperator(std::string const name,
                                  GraphInPtr const graph) :
                         name(name),  graph(graph) {};
 
-                /** Copies the operator to a new graph, by using the ancestors
-                 * provided from the new graph. See Node::copy_to(GraphInPtr graph, NodeVec ancestors)
-                 * */
+                /** Copies the operator to a separate graph with the corresponding ancestors there */
                 virtual Operator copy_to(GraphInPtr graph, NodeVec ancestors) const = 0;
 
-                /** Calculates what should be the resulting NodeData#shape */
-                virtual Shape get_shape() const = 0;
-
-                /** Returns the parents NodeVec of this operator */
-                virtual NodeVec get_parents() const  = 0;
-
-                virtual bool is_input_dependent() const;
-
-                virtual bool is_differentiable() const;
-
-                /** Calculates what should be the resulting NodeData#dtype */
+                /** Calculates the dataType for the output Node based on its ancestors*/
                 virtual dataType get_data_type() const = 0;
 
-                /** Returns the arguments NodeVec of this operator */
+                /** Calculates the Shape for the output Node based on its ancestors*/
+                virtual Shape get_shape() const = 0;
+
+                /** Calculates if the output Node is input dependent based on its ancestors*/
+                virtual bool is_input_dependent() const;
+
+                /** Calculates if the output Node is differentiable dependent based on its ancestors*/
+                virtual bool is_differentiable() const;
+
+                /** Calculates the maximum grad level of its ancestors */
+                unsigned short get_grad_level() const;
+
+                /** Returns the parents of this operator (all ancestors influencing in differentiable way) */
+                virtual NodeVec get_parents() const  = 0;
+
+                /** Returns the arguments of this operator (all ancestors influencing in non-differentiable way) */
                 virtual NodeVec get_arguments() const;
 
                 /** Returns the union of the parents and arguments */
-                NodeVec get_ancestors() const;
+                virtual NodeVec get_ancestors() const;
 
-                /** Calculates what should be the resulting NodeData#grad_level */
-                unsigned short get_grad_level() const;
+                /** Returns the gradient with respect to the paret at index during Backward Differentiation */
+                virtual Node backward_diff(Node my_grad, short index) = 0;
 
-                /**
-                 * A function which should compute and return the gradient with respect
-                 * to the parent and the specified index, given the gradient of the owner node
-                 */
-                virtual Node get_parent_grad(Node my_grad, short index) = 0;
+                /** Combines the gradients of all of the children of the operator. This is relevant only for
+                 * multy-output operators, for all others this is just add */
+                virtual Node backward_diff_combine(NodeVec grads) const;
 
-                /**
-                 * Sends a gradient message from this Operator to the parent with id target.
-                 * If the target has no gradient messages, then just inserts the new message,
-                 * otherwise it adds it to the already existing message
-                 * (e.g. accumulates the gradients)
-                 *
-                 * See: generate_gradients(NodeVec &messages)
-                 */
-                void send_grad_message(size_t target,
-                                       Node msg,
-                                       NodeVec &messages) const;
+                /** TODO */
+                virtual Node forward_diff(Node my_grad, short index);
 
-                /** Generates gradient messages for all parents of this Operator.
-                 * See: send_grad_message(size_t target, Node msg, NodeVec &messages)
-                 */
-                void generate_gradients(NodeVec &messages);
+                /** The method generates and sends the gradients for all parents, provided the incoming gradient messages */
+                void backward_diff(std::vector<NodeVec> &messages, std::vector<bool>& flow_tree);
 
                 /**
                  * TODO this and the symbolic_equals are things which aren't yet well done
@@ -95,7 +90,6 @@ namespace md {
                 }
             };
 
-            /** Operators which do not have any parents */
             class OrphanOperator: public virtual AbstractOperator {
             public:
 
@@ -103,14 +97,13 @@ namespace md {
                     return NodeVec {};
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
                     err->log(logger());
                     throw err;
                 }
             };
 
-            /** Operators which are inputs */
             class InputOperator: public virtual OrphanOperator {
             public:
                 bool is_input_dependent() const{
@@ -122,8 +115,8 @@ namespace md {
                 }
             };
 
-            /** Operators which represent a constant expression */
-            class ConstantOperator : public virtual OrphanOperator, public virtual NonDifferentiableOperator {
+            class ConstantOperator : public virtual OrphanOperator,
+                                     public virtual NonDifferentiableOperator {
             public:
                 dataType data_type;
 
@@ -141,29 +134,26 @@ namespace md {
                     return b8;
                 };
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
                     err->log(logger());
                     throw err;
                 }
             };
 
-            /** Operators which always return integer values */
             class IntegerOperator: public virtual AbstractOperator{
             public:
                 dataType get_data_type() const{
-                    return graph->max_int;
+                    return graph->props.max_int;
                 }
             };
 
-            /** Operators which always return float values */
             class FloatOperator: public virtual AbstractOperator{
             public:
                 dataType get_data_type() const{
-                    return graph->max_float;
+                    return graph->props.max_float;
                 }
             };
-
 
             class ElementwiseOperator: public virtual AbstractOperator{
             public:
@@ -199,7 +189,6 @@ namespace md {
                 };
             };
 
-            /** Abstract class for any operators that can be applied to more than two nodes */
             class AssociativeOperator : public virtual AbstractOperator {
             protected:
                 AssociativeOperator() {};
@@ -224,7 +213,6 @@ namespace md {
                 }
             };
 
-            /** Operators which preserve the data_type of their parent */
             class MorphOperator: public virtual UnaryOperator {
             protected:
                 MorphOperator(): UnaryOperator() {};
@@ -234,7 +222,6 @@ namespace md {
                 }
             };
 
-            /** Abstract class for binary logical operators */
             class ReductionOperator : public virtual UnaryOperator {
             protected:
                 ReductionOperator(): UnaryOperator() {};
@@ -273,7 +260,6 @@ namespace md {
                     return p_shape;
                 }
             };
-
 
             class UnaryElementwiseOperator: public virtual UnaryOperator,
                                             public virtual ElementwiseOperator {};

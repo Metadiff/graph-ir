@@ -8,7 +8,7 @@
 namespace md {
     namespace core {
         namespace op {
-            /** Operator for input variables */
+            /** Input variables */
             class Input : public InputOperator {
             public:
                 dataType  data_type;
@@ -31,7 +31,7 @@ namespace md {
                 }
             };
 
-            /** Operator for shared input variables */
+            /** Shared input variables */
             class SharedInput : public InputOperator {
             public:
                 SharedVar var;

@@ -70,14 +70,6 @@ namespace md{
             return apply<op::Log1p>(node);
         }
 
-        Node GraphInternal::softplus(Node node, double threshold){
-            return apply<op::Softplus>(node);
-        }
-
-        Node GraphInternal::sigmoid(Node node){
-            return apply<op::Sigmoid>(node);
-        }
-
         Node GraphInternal::sin(Node node){
             return apply<op::Sin>(node);
         }

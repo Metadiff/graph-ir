@@ -43,7 +43,7 @@ namespace md{
                     }
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->diag(my_grad);
                 }
             };
@@ -56,7 +56,7 @@ namespace md{
                 Reshape(GraphInPtr graph, Node parent, Shape shape) :
                         AbstractOperator("Reshape", graph), UnaryOperator(parent),
                         shape(shape) {
-                    if (elements_number(parent->shape) != elements_number(shape)) {
+                    if (number_of_elements(parent->shape) != number_of_elements(shape)) {
                         auto err = std::make_shared<InvalidArguments>
                                 (NodeVec{parent}, name, "Total number of elements must not change.");
                         err->log(logger());
@@ -72,7 +72,7 @@ namespace md{
                     return shape;
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->reshape(my_grad, parent->shape);
                 }
 
@@ -87,7 +87,7 @@ namespace md{
 
 
             /**
-             * Reorders the axis of tensor
+             * Reorders the axes of tensor
              */
             class Reorder : public MorphOperator {
             public:
@@ -173,7 +173,7 @@ namespace md{
                     return reversed;
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->reorder(my_grad, reverse_order(order));
                 }
 
@@ -186,43 +186,6 @@ namespace md{
 //                }
             };
         }
-
-//        namespace core {
-//            Node Node::diag() {
-//                // TODO a.diag().diag() = a
-//                return apply<op::Diagonal>(this);
-//            }
-//
-//            Node Node::reshape(Shape shape) {
-//                GraphInPtr graph = unwrap()->graph;
-//                return graph->derived_node(std::make_shared<op::Reshape>(graph, this, shape));
-//            }
-//
-//            Node Node::flatten(unsigned short dims) {
-//                std::shared_ptr <NodeInternal> ptr = unwrap();
-//                if (dims == 0 or dims > 4) {
-//                    auto err = InvalidArguments(ptr->op->get_parents(), "Flatten",
-//                                                "dims = " + std::to_string(dims) + " is outside [1,4]");
-//                    ptr->op->logger()->error() << "Flatten" << "] " << err.msg;
-//                    throw err;
-//                }
-//                Shape shape = ptr->shape;
-//                for (int i = 3; i >= dims; i--) {
-//                    shape[i - 1] = shape[i] * shape[i - 1];
-//                    shape[i] = SymInt::one;
-//                }
-//                return reshape(shape);
-//            }
-//
-//            Node Node::reorder(Axes order) {
-//                GraphInPtr graph = unwrap()->graph;
-//                return graph->derived_node(std::make_shared<op::Reorder>(graph, this, order));
-//            }
-//
-//            Node Node::reorder(short dim0, short dim1, short dim2, short dim3) {
-//                return reorder(Axes{dim0, dim1, dim2, dim3});
-//            }
-//        }
     }
 }
 #endif //METADIFF_CORE_OPERATORS_SHAPE_H

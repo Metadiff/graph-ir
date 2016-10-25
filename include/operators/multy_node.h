@@ -49,7 +49,7 @@ namespace metadiff{
                 return get_node_type(0);
             }
 
-            Node get_parent_grad(Node my_grad, unsigned short index) {
+            Node backward_diff(Node my_grad, unsigned short index) {
                 return my_grad;
             }
         };
@@ -113,7 +113,7 @@ namespace metadiff{
             }
 
             /** The MultiNode class is responsible for fetching correctly the child gradients */
-            Node get_parent_grad(Node my_grad, unsigned short index) {
+            Node backward_diff(Node my_grad, unsigned short index) {
                 std::shared_ptr<MultiNode> multi_op = std::static_pointer_cast<MultiNode>(parent->op);
                 return multi_op->child_to_my_grad(my_grad, this->index);
             }

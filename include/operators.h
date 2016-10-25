@@ -16,6 +16,7 @@
 #include "operators/elementwise.h"
 #include "operators/linalg.h"
 #include "operators/optimized.h"
+#include "operators/random.h"
 #include "operators/debug.h"
 
 #endif //METADIFF_CORE_OPERATORS_H

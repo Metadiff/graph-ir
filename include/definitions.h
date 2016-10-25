@@ -6,96 +6,67 @@
 #define METADIFF_CORE_DEFINITIONS_H
 namespace md{
     namespace core{
-        /**
-         * A NodeGroup is an abstraction of grouping together nodes into hiearchies
-         * How they are grouped is fully determinate by the user.
-         * The hierarchy of groups is necessarily a DAG as well starting with a single root group.
-         * The main goal of the groups is to provide a better way of visualizing the computation,
-         * as well as a block for naming parameters accordingly.
-         */
-        class NodeGroup {
+
+        /** A collection of all the policies we have on the graph */
+        class Policies{
         public:
-            /** The name of this group */
-            std::string const name;
-            /** This is the full name of the group, which depends on the parent */
-            std::string full_name;
-            /** The parent NodeGroup */
-            std::weak_ptr<NodeGroup> const parent;
-            /** The children groups */
-            std::vector<std::weak_ptr<NodeGroup>> children;
+            /** Error policy for implicit broadcasts */
+            policy implicit_broadcast;
+            /** Error policy for type promotions */
+            policy data_type_promotion;
+            /** Error policy for implicit cast */
+            policy cast;
+            /** Error policy for requesting gradient with respect to something it does not depend on */
+            policy non_dependable_gradient;
 
-            NodeGroup(const std::string name,
-                      const std::weak_ptr<NodeGroup> parent) :
-                    name(name),
-                    parent(parent) {
-                if(is_base() or parent.lock()->parent.expired()){
-                    // Base group or direct child of a base group
-                    full_name = name;
-                } else {
-                    full_name = parent.lock()->full_name;
-                    full_name += utils::props()->group_delimiter;
-                    full_name += name;
-                }
-                std::replace(full_name.begin(), full_name.end(), ' ', '_');
-            };
+            Policies(policy const implicit_broadcast,
+                     policy const data_type_promotion,
+                     policy const cast,
+                     policy const non_dependable_gradient):
+                    implicit_broadcast(implicit_broadcast),
+                    data_type_promotion(data_type_promotion),
+                    cast(cast),
+                    non_dependable_gradient(non_dependable_gradient){};
 
-            bool is_base() const{
-                return parent.expired();
-            };
+            Policies(Policies const & policies):
+                    implicit_broadcast(policies.implicit_broadcast),
+                    data_type_promotion(policies.data_type_promotion),
+                    cast(policies.cast),
+                    non_dependable_gradient(policies.non_dependable_gradient){};
 
-            std::string base_full_name(){
-                if(is_base()){
-                    return full_name;
-                }
-                auto p = parent.lock();
-                while(not p->parent.expired()){
-                    p = p->parent.lock();
-                }
-                std::string name = p->full_name;
-                name += utils::props()->group_delimiter;
-                name += full_name;
-                return name;
-            }
         };
 
-        /** A symbolic integer is a Polynomial */
-        typedef sym::Polynomial SymInt;
-        /** All shapes are represented as symbolic integers */
-        typedef std::array<SymInt, 4> Shape;
-        /** For Operators which require Axes arguments */
-        typedef std::vector<short> Axes;
-        namespace op {
-            /** Forward declaration */
-            class AbstractOperator;
-        }
-        /** Forward declaration */
-        class GraphInternal;
-        /** Forward declaration */
-        class NodeInternal;
-        /** Forward declaration */
-        class Node;
-        /** Forward declaration */
-        class NodeData;
-        /** Operator is just a shared_ptr to AbstractOperator */
-        typedef std::shared_ptr<op::AbstractOperator> Operator;
-        /** Group is a weak_ptr as it is owned by the graph */
-        typedef std::weak_ptr<core::NodeGroup> Group;
-        /** Vector of Nodes */
-        typedef std::vector<Node> NodeVec;
-        /** An update is a pair of shared variable and a node */
-        typedef std::pair<Node, Node> Update;
-        /** A collection of updates */
-        typedef std::vector<std::pair<Node, Node>> Updates;
-        /** Just a pointer to GraphInternal */
-        typedef GraphInternal* GraphInPtr;
-        /** A shared_ptr to GraphInternal, this is the outside API */
-        typedef std::shared_ptr<core::GraphInternal> Graph;
+        /**
+         * A single computational device to facilitate multy node computations
+         * TODO not yet well designed, high probability it will change in the future
+         */
+        class Device {
+        public:
+            /** Type of the device - host or gpu*/
+            deviceType type;
+            /** A unique identifier of the device */
+            size_t id;
 
+            Device(const deviceType type, const size_t id) :
+                    type(type),
+                    id(id) { };
+
+            Device(const Device &device) :
+                    type(device.type),
+                    id(device.id) { };
+
+        };
+
+        bool operator==(Device const & device1, Device const & device2);
+
+        bool operator!=(Device const & device1, Device const & device2);
+
+        Device host();
 
         /**
-         * The class provides data generated by the graph optimizer relevant to the backends
-         * TODO This is not yet complete, high probability it will expand in the future
-         */
+        * The class provides data generated by the graph optimizer relevant to the backends
+        * TODO This is not yet complete, high probability it will expand in the future
+        */
         class ExecutionData {
         public:
             /**
@@ -123,53 +94,66 @@ namespace md{
                     lifespan(data.lifespan) { };
         };
 
-//        /**
-//         * Evaluators would be constructed by the backend and will allow for on the fly non-optimized
-//         * computation (imperative)
-//         */
-//        template <typename T>
-//        class Evaluator{
-//        public:
-//            T eval(Node node, std::vector<std::pair<Node, T>> provided);
-//
-//            T eval(Node node){
-//                return eval(node, {});
-//            }
-//        };
+        /** Forward declaration */
+        class GraphInternal;
+        /** Just a pointer to GraphInternal */
+        typedef GraphInternal* GraphInPtr;
 
         /**
-         * A single computational device to facilitate multy node computations
-         * TODO not yet well designed, high probability it will change in the future
+         * A NodeGroup is an abstraction which allows the user to group different nodes together.
+         * This is intended for purely vizualization reasons.
          */
-        class Device {
+        class NodeGroup {
         public:
-            /** Type of the device - host or gpu*/
-            deviceType type;
-            /** A unique identifier of the device */
-            size_t id;
+            /** The name of this group */
+            std::string const name;
+            /** The owning graph */
+            GraphInPtr const graph;
+            /** This is the full name of the group, which depends on the parent */
+            std::string full_name;
+            /** The parent NodeGroup */
+            std::weak_ptr<NodeGroup> const parent;
+            /** The children groups */
+            std::vector<std::weak_ptr<NodeGroup>> children;
 
-            Device(const deviceType type, const size_t id) :
-                    type(type),
-                    id(id) { };
+            NodeGroup(const std::string name,
+                      const std::weak_ptr<NodeGroup> parent);
 
-            Device(const Device &device) :
-                    type(device.type),
-                    id(device.id) { };
+            NodeGroup(const std::string name,
+                      const GraphInPtr graph);
+
+            bool is_base() const;
 
         };
 
-        inline bool operator==(const Device& device1, const Device& device2){
-            return device1.type == device2.type and device1.id == device2.id;
+        /** A symbolic integer is a Polynomial */
+        typedef sym::Polynomial SymInt;
+        /** All shapes are represented as symbolic integers */
+        typedef std::array<SymInt, 4> Shape;
+        /** For Operators which require Axes arguments */
+        typedef std::vector<short> Axes;
+        namespace op {
+            /** Forward declaration */
+            class AbstractOperator;
         }
-
-        inline bool operator!=(const Device& device1, const Device& device2){
-            return device1.type != device2.type or device1.id != device2.id;
-        }
-
-        inline Device host(){
-            static Device host(deviceType::CPU, 0);
-            return host;
-        }
+        /** Forward declaration */
+        class NodeInternal;
+        /** Forward declaration */
+        class Node;
+        /** Forward declaration */
+        class NodeData;
+        /** Operator is just a shared_ptr to AbstractOperator */
+        typedef std::shared_ptr<op::AbstractOperator> Operator;
+        /** Group is a weak_ptr as it is owned by the graph */
+        typedef std::weak_ptr<core::NodeGroup> Group;
+        /** Vector of Nodes */
+        typedef std::vector<Node> NodeVec;
+        /** An update is a pair of shared variable and a node */
+        typedef std::pair<Node, Node> Update;
+        /** A collection of updates */
+        typedef std::vector<std::pair<Node, Node>> Updates;
+        /** A shared_ptr to GraphInternal, this is the outside API */
+        typedef std::shared_ptr<core::GraphInternal> Graph;
     }
 }
 #endif //METADIFF_CORE_DEFINITIONS_H

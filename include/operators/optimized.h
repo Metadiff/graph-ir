@@ -21,7 +21,7 @@ namespace md {
                     return std::make_shared<Softplus>(graph, ancestors[0], threshold);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, graph->sigmoid(parent));
                 }
             };
@@ -38,11 +38,7 @@ namespace md {
                     return std::make_shared<LogSumExp>(graph, ancestors[0], axes, threshold);
                 }
 
-                dataType get_data_type() const {
-                    return graph->max_float;
-                };
-
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, graph->softmax(parent));
                 }
             };
@@ -58,7 +54,7 @@ namespace md {
                     return std::make_shared<Sigmoid>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     return graph->mul(my_grad, owner, graph->neg(graph->constant(1), owner));
                 }
             };
@@ -79,14 +75,14 @@ namespace md {
                     return std::make_shared<Softmax>(graph, ancestors[0]);
                 }
 
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     auto vtg = graph->sum(graph->mul(my_grad, owner), axis);
                     return graph->neg(graph->mul(owner, my_grad), graph->mul(owner, vtg));
                 }
             };
 
             /**
-             * The binary cross entropy of p and q = sigmoid(x)
+             * The Binary cross entropy of p and q = sigmoid(x)
              */
             class BinaryCrossEntropyLogits: public BinaryFloatElementwiseOperator {
             public:
@@ -101,11 +97,7 @@ namespace md {
                     return std::make_shared<BinaryCrossEntropyLogits>(graph, ancestors[0], ancestors[1]);
                 }
 
-                dataType get_data_type() const {
-                    return graph->max_float;
-                }
-
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     // Parents - p, x
                     // Node computes f = - p * log(q) - (1-p) * log(1-q)
                     // q = sigmoid(x) => log(q) = - softplus(-x), log(1-q) = - softplus(x)
@@ -124,6 +116,7 @@ namespace md {
 
             /**
              * Categorical crossnetropy p and q = softmax(x)
+             * TODO Should check if the p is one less dimention then it is class encodings (indexes)
              */
             class CategoricalCrossEntropyLogits: public BinaryFloatElementwiseOperator {
             public:
@@ -137,11 +130,7 @@ namespace md {
                     return std::make_shared<CategoricalCrossEntropyLogits>(graph, ancestors[0], ancestors[1]);
                 }
 
-                dataType get_data_type() const {
-                    return graph->max_float;
-                }
-
-                Node get_parent_grad(Node my_grad, short index) {
+                Node backward_diff(Node my_grad, short index) {
                     // Parents - p, x
                     // Node computes f = - sum[p_i log e^x_i/Z] = - sum[p_i(x_i - log(Z))
                     // df/dp_i = log(Z) - x_i

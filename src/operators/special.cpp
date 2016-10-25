@@ -16,6 +16,11 @@ namespace md{
             return g->derived_node(std::make_shared<op::Cast>(g, node, data_type));
         }
 
+        Node GraphInternal::alias(Node node) {
+            // Standard
+            return apply<op::Alias>(get_base_node(node));
+        }
+
         Node GraphInternal::broadcast(Node node, Shape shape) {
             // If same shape do nothing
             if(node->shape == shape){
@@ -26,9 +31,18 @@ namespace md{
             return g->derived_node(std::make_shared<op::Broadcast>(g, node, shape));
         }
 
-        Node GraphInternal::alias(Node node) {
+        Node GraphInternal::make_constant(Node node){
+            // If already a constant do nothing
+            if(not node->is_differentiable){
+                return alias(node);
+            }
             // Standard
-            return apply<op::Alias>(get_base_node(node));
+            return apply<op::MakeConstant>(node);
+        }
+
+        Node GraphInternal::select(Node condition, Node if_true, Node if_false){
+            // TODO check if node1 == node2 than just return that
+            return apply<op::Select>(condition, if_true, if_false);
         }
     }
 }

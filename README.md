@@ -1,25 +1,21 @@
 # Graph Intermediate Representation 
 
-# A guide to the repository and the project
-
 # A guide to operators
 
 The operators are split into hierarchy starting from one abstract class.
-Below I will list all abstract operators and which virtual (abstract) 
-functions they override and how as to make it easy for anyone to understand
-each individual operators.
-
+Additionally operators can have several of predefined traits. The traits
+are implemented via virtual inheritance and define some specific behaviour of the operator.
+Below are listed all of the traits. 
 
 ## AbstractOperator 
 
 ### Virtual methods:
 
-* **is_input_dependent** - returns the true if any of the arguments is input dependent, otherwise false
-* **is_differentiable** - returns the true if any of the parents is differentiable, otherwise false
-* **get_data_type** - returns the **dataType** based on the parents.
-*Default*: Returns the highest parents' type capped by the graph's max limits.
-* **get_arguments** - returns the all nodes which affect the output of the operator in a non-differentiable manner.
-* **equals** - returns true only if the operator is symbolically equal to each other (Not implemented yet)
+* *is_input_dependent* - returns the true if any of the arguments is input dependent, otherwise false
+* *is_differentiable* - returns the true if any of the parents is differentiable, otherwise false
+* *get_data_type* - returns the **dataType** based on the parents.
+* *get_arguments* - returns the all nodes which affect the output of the operator in a non-differentiable manner.
+* *equals* - returns true only if the operator is symbolically equal to each other (Not implemented yet)
 
 ### Pure virtual methods:
 

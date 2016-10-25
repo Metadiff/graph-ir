@@ -28,7 +28,7 @@ namespace md{
                     return {reported};
                 }
 
-                Node get_parent_grad(Node my_grad, short index){
+                Node backward_diff(Node my_grad, short index){
                     return my_grad;
                 }
 

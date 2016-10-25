@@ -7,9 +7,16 @@
 
 namespace md{
     namespace core {
-        /**
-         * Abstract class for graph nodes
-         */
+        class NotImplementedException: public std::exception {
+        public:
+            std::string const msg;
+            NotImplementedException(std::string const msg): msg(msg) {};
+            const char *what() const throw() {
+                return (std::string("Not Implemented: ") + msg).c_str();
+            }
+        };
+
+        /** Abstract class for graph nodes */
         class GraphError : public std::exception {
         public:
             /** List of nodes involved in the error */
@@ -30,9 +37,7 @@ namespace md{
 
         typedef std::shared_ptr<GraphError> Error;
 
-        /**
-         * The error is raised when the user requests a gradient to a non-scalar value
-         */
+        /** The error is raised when the user requests a gradient to a non-scalar value */
         class UnsupportedGradient : public GraphError {
         public:
             UnsupportedGradient() : GraphError() {};
@@ -45,9 +50,7 @@ namespace md{
         };
 
 
-        /**
-         * For any other errors
-         */
+        /** For any other errors */
         class OtherError : public GraphError {
         public:
             std::string msg;
@@ -60,9 +63,7 @@ namespace md{
                      spdlog::level::level_enum const level = spdlog::level::err) const;
         };
 
-        /**
-         * An abstract class for any errors related to a specific Operator
-         */
+        /** An abstract class for any errors related to a specific Operator */
         class OperatorError : public GraphError {
         public:
             std::string op_name;
@@ -74,9 +75,7 @@ namespace md{
         };
 
 
-        /**
-         * The error is raised when a gradient messsage arrive at a constant node
-         */
+        /** The error is raised when a gradient messsage arrive at a constant node */
         class WrongGradient : public OperatorError {
         public:
             WrongGradient() : OperatorError() {};
@@ -211,7 +210,7 @@ namespace md{
         };
 
         /** Given an error executes the errorPolicy */
-        inline void operate_policy(errorPolicy policy,
+        inline void operate_policy(policy policy,
                                    std::shared_ptr<spdlog::logger> const logger,
                                    Error const & err){
             switch (policy){

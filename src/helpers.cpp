@@ -7,7 +7,7 @@
 namespace md{
     namespace core{
 
-        SymInt elements_number(Shape const shape){
+        SymInt number_of_elements(Shape const shape){
             return shape[0] * shape[1] * shape[2] * shape[3];
         }
 

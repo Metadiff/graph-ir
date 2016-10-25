@@ -72,20 +72,3 @@ namespace md {
 
     }
 }
-//                std::string msg = "";
-//                msg += "Missing required input when trying to compile a function."  "\n"
-//                               "Missing node:"  "\n"
-//                       + to_string(missing) + "\n"  "Target nodes:"  "\n";
-//                for (size_t i = 0; i < targets.size(); i++) {
-//                    msg += to_string(targets[i]) + "\n";
-//                }
-//                msg += "Provided inputs:" "\n";
-//                for (size_t i = 0; i < inputs.size(); i++) {
-//                    if (i < inputs.size() - 1) {
-//                        msg += to_string(inputs[i]) + "\n";
-//                    } else {
-//                        msg += to_string(inputs[i]);
-//                    }
-//                }
-//                return msg;
-//            }

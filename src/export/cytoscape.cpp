@@ -48,8 +48,10 @@ namespace md{
             for(auto i=0; i < g->nodes.size(); ++i) {
                 auto node = g->nodes[i];
                 auto group = node->group.lock();
-                if (groups.find(group->base_full_name()) == groups.end()) {
-                    groups.insert({group->base_full_name(), group});
+                std::string parent_name = "Grads_0";
+                if(not group->is_base()) {
+                    parent_name = clear_full_name(group->full_name + "_" + std::to_string(node->grad_level));
+                    groups.insert({parent_name, group});
                 }
                 auto parents = node->op->get_parents();
                 auto children = node->children;
@@ -59,7 +61,7 @@ namespace md{
                 s << "{data: {" << std::endl
                   << "    id: 'n_" << node->id << "'," << std::endl
                   << "    label: '" << node->op->name << "[" << node->id << "]'," << std::endl
-                  << "    parent: 'g_" << clear_full_name(node->group.lock()->base_full_name()) << "'," << std::endl
+                  << "    parent: 'g_" << parent_name  << "'," << std::endl
                   << "    shape: 'ellipse'," << std::endl
                   << "    expanded: 'false'," << std::endl
                   << "    Name: '" << node->name << "'," << std::endl
@@ -102,15 +104,30 @@ namespace md{
         }
 
         void write_groups(GroupMap& groups, std::ostream& s){
+            int max_grad_level = 0;
             s << "// Groups" << std::endl;
             for(auto i = groups.begin(); i != groups.end(); ++i) {
+                auto name = (*i).first;
                 auto g = (*i).second.lock();
+                int grad_level = name[name.length()-1] - '0';
+                max_grad_level = grad_level > max_grad_level ? grad_level : max_grad_level;
                 s << "{data: {" << std::endl
-                  << "    id: 'g_" << clear_full_name(g->base_full_name()) << "'," << std::endl
+                  << "    id: 'g_" << name << "'," << std::endl
                   << "    label: '" << g->name << "'," << std::endl;
-                if(not g->is_base()){
-                    s << "    parent: 'g_" << clear_full_name(g->parent.lock()->base_full_name()) << "'," << std::endl;
+                if(not g->parent.lock()->is_base()){
+                    s << "    parent: 'g_" << clear_full_name(g->parent.lock()->full_name + "_" + std::to_string(grad_level)) << "'," << std::endl;
+                } else {
+                    s << "    parent: 'g_Grads_" << grad_level << "'," << std::endl;
                 }
+                s << "    shape: 'roundrectangle'," << std::endl
+                  << "    group: 'true'" << std::endl
+                  << "}}," << std::endl;
+            }
+            // Top gradient groups
+            for(auto i = 0; i <= max_grad_level; ++i){
+                s << "{data: {" << std::endl
+                  << "    id: 'g_Grads_" << i << "'," << std::endl
+                  << "    label: 'Grads " << i << "'," << std::endl;
                 s << "    shape: 'roundrectangle'," << std::endl
                   << "    group: 'true'" << std::endl
                   << "}}," << std::endl;

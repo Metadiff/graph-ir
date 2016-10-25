@@ -40,12 +40,10 @@ namespace md{
             return op::apply_reduction<op::Product>(this, node, axis);
         }
 
-        /** Reduction with operator AND */
         Node GraphInternal::all_true(Node node, Axes axes){
             return op::apply_reduction<op::AllTrue>(this, node, axes);
         }
 
-        /** Reduction with operator AND */
         Node GraphInternal::all_true(Node node, short axis){
             if(axis == auto_infer){
                 return op::apply_reduction<op::AllTrue>(this, node, auto_infer_axes(node));
@@ -53,12 +51,10 @@ namespace md{
             return op::apply_reduction<op::AllTrue>(this, node, axis);
         }
 
-        /** Reduction with operator OR */
         Node GraphInternal::any_true(Node node, Axes axes){
             return op::apply_reduction<op::AnyTrue>(this, node, axes);
         }
 
-        /** Reduction with operator OR */
         Node GraphInternal::any_true(Node node, short axis){
             if(axis == auto_infer){
                 return op::apply_reduction<op::AnyTrue>(this, node, auto_infer_axes(node));
