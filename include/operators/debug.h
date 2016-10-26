@@ -32,6 +32,10 @@ namespace md{
                     return my_grad;
                 }
 
+                Node forward_diff(NodeVec augmented){
+                    return augmented[0];
+                }
+
                 bool equals(Operator const op) const {
                     return false;
                 }

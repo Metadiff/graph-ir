@@ -21,35 +21,39 @@ namespace md {
                     return std::make_shared<Add>(graph, ancestors);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return my_grad;
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return my_derivative;
                 }
 
-                bool equals(Operator const op) const {
-                    if (name == op->name) {
-                        bool check[parents.size()];
-                        for (int i = 0; i < parents.size(); i++) {
-                            check[i] = false;
-                        }
-                        if (parents.size() != op->get_parents().size()) {
-                            return false;
-                        }
-                        for (int i = 0; i < parents.size(); i++) {
-                            Node parent = op->get_parents()[i];
-                            int j = 0;
-                            for (; j < parents.size(); j++) {
-                                if (symbolic_equals(parent, parents[j]) and not check[j]) {
-                                    check[j] = true;
-                                    break;
-                                }
-                            }
-                            if (j == parents.size()) {
-                                return false;
-                            }
-                        }
-                    }
-                    return false;
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return parent_derivatives[index];
                 }
+
+//                bool equals(Operator const op) const {
+//                    if (name == op->name) {
+//                        bool check[parents.size()];
+//                        for (int i = 0; i < parents.size(); i++) {
+//                            check[i] = false;
+//                        }
+//                        if (parents.size() != op->get_parents().size()) {
+//                            return false;
+//                        }
+//                        for (int i = 0; i < parents.size(); i++) {
+//                            Node parent = op->get_parents()[i];
+//                            int j = 0;
+//                            for (; j < parents.size(); j++) {
+//                                if (symbolic_equals(parent, parents[j]) and not check[j]) {
+//                                    check[j] = true;
+//                                    break;
+//                                }
+//                            }
+//                            if (j == parents.size()) {
+//                                return false;
+//                            }
+//                        }
+//                    }
+//                    return false;
+//                }
             };
 
             /** Negation */
@@ -62,16 +66,20 @@ namespace md {
                     return std::make_shared<Neg>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->neg(my_grad);
-                };
-
                 dataType get_data_type() const {
                     // If unsigned make it signed
                     if(parent->data_type < i8){
                         return static_cast<dataType>(parent->data_type + 4);
                     }
                     return parent->data_type;
+                }
+
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->neg(my_derivative);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return graph->neg(parent_derivatives[index]);
                 }
             };
 
@@ -85,42 +93,47 @@ namespace md {
                     return std::make_shared<Mul>(graph, ancestors);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    // TODO change the ones and zeros to correct
+                Node backward_diff_parent(Node my_derivative, short index){
                     if (parents.size() == 2) {
-                        // Special case when only two parents
-                        return graph->mul(my_grad, parents[1 - index]);
+                        return graph->mul(my_derivative, parents[1 - index]);
                     } else {
-                        Node product = graph->mul(my_grad, owner);
-                        return graph->div(product, parents[index]);
+                        return graph->div(graph->mul(my_derivative, owner), parents[index]);
                     }
                 }
 
-                bool equals(Operator const op) const {
-                    if (name == op->name) {
-                        bool check[parents.size()];
-                        for (int i = 0; i < parents.size(); i++) {
-                            check[i] = false;
-                        }
-                        if (parents.size() != op->get_parents().size()) {
-                            return false;
-                        }
-                        for (int i = 0; i < parents.size(); i++) {
-                            Node parent = op->get_parents()[i];
-                            int j = 0;
-                            for (; j < parents.size(); j++) {
-                                if (symbolic_equals(parent, parents[j]) and not check[j]) {
-                                    check[j] = true;
-                                    break;
-                                }
-                            }
-                            if (j == parents.size()) {
-                                return false;
-                            }
-                        }
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    if(parents.size() == 2){
+                        return graph->mul(parent_derivatives[index], parents[1-index]);
+                    } else {
+                        return graph->div(graph->mul(parent_derivatives[index], owner), parents[index]);
                     }
-                    return false;
                 }
+
+//                bool equals(Operator const op) const {
+//                    if (name == op->name) {
+//                        bool check[parents.size()];
+//                        for (int i = 0; i < parents.size(); i++) {
+//                            check[i] = false;
+//                        }
+//                        if (parents.size() != op->get_parents().size()) {
+//                            return false;
+//                        }
+//                        for (int i = 0; i < parents.size(); i++) {
+//                            Node parent = op->get_parents()[i];
+//                            int j = 0;
+//                            for (; j < parents.size(); j++) {
+//                                if (symbolic_equals(parent, parents[j]) and not check[j]) {
+//                                    check[j] = true;
+//                                    break;
+//                                }
+//                            }
+//                            if (j == parents.size()) {
+//                                return false;
+//                            }
+//                        }
+//                    }
+//                    return false;
+//                }
             };
 
             /** Elementwise inverse (division) */
@@ -133,9 +146,8 @@ namespace md {
                     return std::make_shared<Division>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    auto result = graph->div(my_grad, graph->square(parent));
-                    return graph->neg(result);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->neg(graph->div(my_derivative, graph->square(parent)));
                 }
             };
 
@@ -150,16 +162,6 @@ namespace md {
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IntDiv>(graph, ancestors[0], ancestors[1]);
                 }
-
-                dataType get_data_type() const {
-                    return graph->props.max_int;
-                };
-
-                Node backward_diff(Node my_grad, short index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
-                    err->log(logger());
-                    throw err;
-                }
             };
 
             /** Integer modulus (reminder) */
@@ -172,12 +174,6 @@ namespace md {
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IntMod>(graph, ancestors[0], ancestors[1]);
-                }
-
-                Node backward_diff(Node my_grad, short index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
-                    err->log(logger());
-                    throw err;
                 }
             };
         }

@@ -15,6 +15,7 @@
 #include "helpers.h"
 #include "shared.h"
 #include "node.h"
+#include "api.h"
 #include "graph.h"
 #include "print.h"
 #include "exceptions.h"

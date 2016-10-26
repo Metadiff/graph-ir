@@ -31,6 +31,12 @@ namespace md{
             return apply<op::MatrixInverse>(node);
         }
 
+        Node GraphInternal::matrix_inverse_mul(Node node1, Node node2, bool transpose){
+            // inv(inv(x)) = x
+            Operator op = std::make_shared<op::MatrixInverseMul>(this, node1, node2, transpose);
+            return derived_node(op);
+        }
+
         Node GraphInternal::determinant(Node node){
             // If scalar do nothing
             if(node.dims() == 0){

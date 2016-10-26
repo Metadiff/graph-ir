@@ -18,10 +18,15 @@ namespace md{
                     return std::make_shared<Abs>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    Node zero = graph->constant(0);
-                    zero->grad_level = my_grad->grad_level;
-                    return graph->mul(my_grad, graph->greater_than(parent, zero));
+                Node backward_diff_parent(Node my_derivative, short index){
+                    auto zero = graph->constant(0);
+                    auto factor = graph->cast(graph->greater_than(parent, zero), owner->data_type);
+                    factor = graph->neg(graph->mul(graph->constant(2), factor), graph->constant(1));
+                    return graph->mul(my_derivative, factor);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return backward_diff_parent(parent_derivatives[index], index);
                 }
             };
 
@@ -35,10 +40,9 @@ namespace md{
                     return std::make_shared<Square>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index) {
                     Node two = graph->constant(2);
-                    two->grad_level = my_grad->grad_level;
-                    return graph->mul(my_grad, two, parent);
+                    return graph->mul(my_derivative, two, parent);
                 }
             };
 
@@ -52,10 +56,9 @@ namespace md{
                     return std::make_shared<Sqrt>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index) {
                     Node two = graph->constant(2);
-                    two->grad_level = my_grad->grad_level;
-                    return graph->div(my_grad, graph->mul(two, owner));
+                    return graph->div(my_derivative, graph->mul(two, owner));
                 }
             };
 
@@ -69,8 +72,8 @@ namespace md{
                     return std::make_shared<Exp>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, owner);
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->mul(my_derivative, owner);
                 }
             };
 
@@ -84,8 +87,8 @@ namespace md{
                     return std::make_shared<Log>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->div(my_grad, parent);
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->div(my_derivative, parent);
                 }
             };
 
@@ -99,8 +102,8 @@ namespace md{
                     return std::make_shared<Log>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->div(my_grad, graph->mul(parent, graph->LN_10()));
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->div(my_derivative, graph->mul(parent, graph->LN_10()));
                 }
             };
 
@@ -115,8 +118,8 @@ namespace md{
                     return std::make_shared<Log1p>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, graph->sigmoid(parent));
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->mul(my_derivative, graph->sigmoid(parent));
                 }
             };
 
@@ -130,8 +133,8 @@ namespace md{
                     return std::make_shared<Sin>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, graph->cos(parent));
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->mul(my_derivative, graph->cos(parent));
                 }
             };
 
@@ -145,8 +148,8 @@ namespace md{
                     return std::make_shared<Cos>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, graph->neg(graph->sin(parent)));
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->mul(my_derivative, graph->neg(graph->sin(parent)));
                 }
             };
 
@@ -160,8 +163,8 @@ namespace md{
                     return std::make_shared<Tan>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->div(my_grad, graph->square(graph->cos(parent)));
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->div(my_derivative, graph->square(graph->cos(parent)));
                 }
             };
 
@@ -175,8 +178,8 @@ namespace md{
                     return std::make_shared<Cot>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->neg(graph->div(my_grad, graph->square(graph->sin(parent))));
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->neg(graph->div(my_derivative, graph->square(graph->sin(parent))));
                 }
             };
 
@@ -190,8 +193,8 @@ namespace md{
                     return std::make_shared<Sinh>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, graph->cosh(parent));
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->mul(my_derivative, graph->cosh(parent));
                 }
             };
 
@@ -205,8 +208,8 @@ namespace md{
                     return std::make_shared<Cosh>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, graph->sinh(parent));
+                Node backward_diff_parent(Node my_derivative, short index) {
+                    return graph->mul(my_derivative, graph->sinh(parent));
                 }
             };
 
@@ -220,9 +223,9 @@ namespace md{
                     return std::make_shared<Tanh>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index) {
                     Node derivative = graph->neg(graph->constant(1), graph->square(owner));
-                    return graph->mul(my_grad, derivative);
+                    return graph->mul(my_derivative, derivative);
                 }
             };
 
@@ -236,10 +239,10 @@ namespace md{
                     return std::make_shared<Coth>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index) {
                     auto one = graph->constant(1);
                     Node derivative = graph->neg(one, graph->square(owner));
-                    return graph->mul(my_grad, derivative);
+                    return graph->mul(my_derivative, derivative);
                 }
             };
 
@@ -253,8 +256,8 @@ namespace md{
                     return std::make_shared<Pow>(graph, ancestors[0], ancestors[1]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    Node product = graph->mul(my_grad, owner);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    Node product = graph->mul(my_derivative, owner);
                     if (index == 0) {
                         Node factor = graph->div(parent2, parent1);
                         return graph->mul(product, factor);

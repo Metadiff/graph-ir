@@ -51,14 +51,14 @@ namespace md{
 
 
             void AbstractOperator::backward_diff(std::vector<NodeVec> &messages, std::vector<bool>& flow_tree) {
-                // Retrieve the gradient with respect to the output of the operator
                 if (messages[owner->id].size() == 0) {
                     return;
                 }
+                // Retrieve the gradient with respect to the output of the operator
                 Node my_grad = backward_diff_combine(messages[owner->id]);
                 logger()->debug("Generating gradients for {}", owner->id);
 
-                // Sets the current group to _root/gradient0/parent_group
+                // Sets the current group to the group of the operator
                 Group current_group = graph->current_group;
                 graph->current_group = owner->group;
 
@@ -77,10 +77,10 @@ namespace md{
                 }
 
                 NodeVec parents = get_parents();
-                // Compute and send gradients only to differentiable nodes
+                // Compute and send gradients only to differentiable parents in the flow_tree
                 for (short i = 0; i < parents.size(); ++i) {
                     if (parents[i]->is_differentiable and flow_tree[parents[i]->id]) {
-                        Node parent_grad = backward_diff(my_grad, i);
+                        Node parent_grad = backward_diff_parent(my_grad, i);
                         if (parent_grad->name == "Derived Node" or parent_grad->name == "") {
                             parent_grad->name = "Grad msg " + std::to_string(owner->id) + "->"
                                                 + std::to_string(parents[i]->id) + "|";
@@ -93,22 +93,69 @@ namespace md{
                         messages[parents[i]->id].push_back(parent_grad);
                     }
                 }
+                // Restore group
                 graph->current_group = current_group;
             }
 
-            Node AbstractOperator::backward_diff_combine(NodeVec grads) const {
-                if(grads.size() == 0){
-                    // TODO make an actual error
-                    throw NotImplementedException("error when 0 grads in backward_diff_combine");
-                } else if(grads.size() == 1){
+            Node AbstractOperator::backward_diff_combine(NodeVec & grads) const {
+                if(grads.size() == 1){
                     return grads[0];
                 } else {
                     return graph->add(grads);
                 }
             }
 
-            Node AbstractOperator::forward_diff(Node my_grad, short index){
-                throw NotImplementedException("forward_diff");
+            void AbstractOperator::forward_diff(NodeVec &derivatives) {
+                if(derivatives[owner->id].ptr.expired()){
+                    return;
+                }
+
+                // Retrieve the derivatives of all of the parents
+                NodeVec parent_derivatives;
+                NodeVec parents = get_parents();
+                for(auto i=0; i<parents.size(); ++i){
+                    parent_derivatives.push_back(derivatives[parents[i]->id]);
+                }
+                logger()->debug("Generating derivative for {}", owner->id);
+
+                // Sets the current group to the group of the operator
+                Group current_group = graph->current_group;
+                graph->current_group = owner->group;
+
+                NodeVec messages;
+                for (short i = 0; i < parents.size(); ++i) {
+                    if (not parent_derivatives[i].ptr.expired()) {
+                        auto msg = forward_diff_parent(parent_derivatives, i);
+                        if (not msg.ptr.expired()) {
+                            // Change name of the message
+                            if (msg->name == "Derived Node" or msg->name == "") {
+                                msg->name = "Grad msg " + std::to_string(parents[i]->id) + "->"
+                                            + std::to_string(owner->id) + "|";
+                            } else {
+                                msg->name += "Grad msg " + std::to_string(owner->id) + "->"
+                                             + std::to_string(parents[i]->id) + "|";
+                            }
+                            messages.push_back(msg);
+                        }
+                    }
+                }
+                // Set the derivative of the node
+                if(messages.size() == 0) {
+                    // Skip
+                } else {
+                    derivatives[owner->id] = forward_diff_combine(messages);
+                }
+
+                // Restore group
+                graph->current_group = current_group;
+            }
+
+            Node AbstractOperator::forward_diff_combine(NodeVec & grads) const {
+                if(grads.size() == 1){
+                    return grads[0];
+                } else {
+                    return graph->add(grads);
+                }
             }
         }
     }

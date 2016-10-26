@@ -25,8 +25,12 @@ namespace md{
                     return std::make_shared<Cast>(graph, ancestors[0], data_type);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->cast(my_grad, parent->data_type);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->cast(my_derivative, parent->data_type);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return graph->cast(parent_derivatives[index], data_type);
                 }
 
 //                bool equals(Operator const op) const {
@@ -48,8 +52,12 @@ namespace md{
                     return std::make_shared<Alias>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return my_grad;
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return my_derivative;
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return parent_derivatives[index];
                 }
 
 //                bool equals(Operator const op) const {
@@ -103,8 +111,12 @@ namespace md{
                     return axes;
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->sum(my_grad, get_broadcast_axes());
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->sum(my_derivative, get_broadcast_axes());
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return graph->broadcast(parent_derivatives[index], to_shape);
                 }
 
 //                bool equals(Operator const op) const {
@@ -131,10 +143,14 @@ namespace md{
                     return false;
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
                     err->log(logger());
                     throw err;
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return Node();
                 }
             };
 
@@ -186,15 +202,34 @@ namespace md{
                     return parent1->shape;
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index){
                     Node zero = graph->constant(0);
-                    zero->grad_level = my_grad->grad_level;
                     if (index == 0) {
-                        return graph->select(condition, my_grad, zero);
+                        return graph->select(condition, my_derivative, zero);
                     } else {
-                        return graph->select(condition, zero, my_grad);
+                        return graph->select(condition, zero, my_derivative);
                     }
-                };
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    // We have to simulate this correctly
+                    int c = (not parent_derivatives[0].ptr.expired()) +
+                            (not parent_derivatives[0].ptr.expired());
+                    if(c == 2){
+                        if(index == 0){
+                            return graph->select(condition, parent_derivatives[0], parent_derivatives[1]);
+                        }
+                    } else {
+                        if(index == 0){
+                            Node zero = graph->constant(0);
+                            return graph->select(condition, parent_derivatives[0], zero);
+                        } else {
+                            Node zero = graph->constant(0);
+                            return graph->select(condition, zero, parent_derivatives[1]);
+                        }
+                    }
+                    return Node();
+                }
             };
         }
     }

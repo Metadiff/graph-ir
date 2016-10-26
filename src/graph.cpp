@@ -196,18 +196,23 @@ namespace md{
 
             // The first messages are u_i -> f_i
             size_t max_id = 0;
+            size_t min_id = nodes.size();
             for(auto i=0; i<f.size(); ++i){
                 logger()->trace("Initial message u[{}] -> f[{}] is {} -> {}", i, i, u[i]->id, f[i]->id);
                 messages[f[i]->id].push_back(u[i]);
                 max_id = max_id < f[i]->id ? f[i]->id : max_id;
+                min_id = min_id > f[i]->id ? f[i]->id : min_id;
                 grad_level = grad_level < (f[i]->grad_level + (unsigned short)(1)) ? (f[i]->grad_level + (unsigned short)(1)) : grad_level;
+            }
+            for(auto i=0; i<w.size(); ++i){
+                min_id = min_id > w[i]->id ? w[i]->id : min_id;
             }
 
             // Stores the current group in order to recreate it
             Group old_current = current_group;
 
             // Generate all the messages around
-            for (auto i = flow_tree.size(); i > 0; --i) {
+            for (auto i = max_id; i >= min_id; --i) {
                 if (flow_tree[i]) {
                     nodes[i]->op->backward_diff(messages, flow_tree);
                 }
@@ -229,7 +234,57 @@ namespace md{
         }
 
         NodeVec GraphInternal::forward_diff(NodeVec const & f, NodeVec const & v, NodeVec const & w){
-            throw NotImplementedException("Forward diff");
+            if(w.size() == 0){
+                return NodeVec{};
+            }
+            if(w.size() != v.size()){
+                // TODO make proper exception for this
+                throw UnsupportedGradient();
+            }
+            logger()->trace("Running forward diff");
+
+            std::vector<bool> flow_tree = get_flow_tree_mask(w, f);
+            // Contains all of the backward messages
+            NodeVec derivatives(nodes.size(), Node());
+
+            size_t max_id = 0;
+            size_t min_id = nodes.size();
+            for(auto i=0; i<f.size(); ++i){
+                max_id = max_id < f[i]->id ? f[i]->id : max_id;
+            }
+            // The directional derivatives at w[i] are just v[i]
+            for(auto i=0; i<w.size(); ++i){
+                logger()->trace("Initial derivatives for w[{}] = {}", w[i]->id, v[i]->id);
+                derivatives[w[i]->id] = v[i];
+                min_id = min_id > f[i]->id ? f[i]->id : min_id;
+                grad_level = grad_level < (w[i]->grad_level + (unsigned short)(1)) ? (w[i]->grad_level + (unsigned short)(1)) : grad_level;
+                // Remove w[i] from the flow_tree
+                flow_tree[w[i]->id] = false;
+            }
+
+            // Stores the current group in order to recreate it
+            Group old_current = current_group;
+
+            // Generate all the directional derivatives
+            for (auto i = min_id; i <= max_id; ++i) {
+                if (flow_tree[i]) {
+                    nodes[i]->op->forward_diff(derivatives);
+                }
+            }
+
+            // Reset the grad level
+            grad_level = 0;
+
+            // Restore the current group
+            current_group = old_current;
+
+            NodeVec outputs;
+            for (auto i = 0; i < f.size(); ++i) {
+                // TODO Have a policy if you request gradient and something don't get one
+                outputs.push_back(derivatives[f[i]->id]);
+            }
+
+            return outputs;
         }
 
 

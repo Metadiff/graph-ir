@@ -13,14 +13,18 @@ namespace md{
                 Sum(GraphInPtr graph,
                     Node parent,
                     Axes axes) :
-                AbstractOperator("Sum", graph), UnaryOperator(parent), ReductionOperator(axes) {};
+                        AbstractOperator("Sum", graph), UnaryOperator(parent), ReductionOperator(axes) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sum>(graph, ancestors[0], axes);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->broadcast(my_grad, parent->shape);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->broadcast(my_derivative, parent->shape);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return graph->sum(parent_derivatives[index], axes);
                 }
             };
 
@@ -36,8 +40,13 @@ namespace md{
                     return std::make_shared<Product>(graph, ancestors[0], axes);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->div(my_grad, parent);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->div(my_derivative, parent);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    auto factor = graph->div(parent_derivatives[index], parent);
+                    return graph->sum(graph->mul(owner, factor), axes);
                 }
             };
 
@@ -53,12 +62,16 @@ namespace md{
                     return std::make_shared<Mean>(graph, ancestors[0], axes);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index){
                     SymInt N = 0;
                     for(auto i=0; i < axes.size(); ++i){
                         N = N * axes[i];
                     }
-                    return graph->broadcast(graph->div(my_grad, graph->wrap(N)), parent->shape);
+                    return graph->broadcast(graph->div(my_derivative, graph->wrap(N)), parent->shape);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return graph->mean(parent_derivatives[index], axes);
                 }
             };
 
@@ -66,20 +79,33 @@ namespace md{
             class Variance : public FloatReductionOperator {
             public:
                 Variance(GraphInPtr graph,
-                     Node parent,
-                     Axes axes) :
+                         Node parent,
+                         Axes axes) :
                         AbstractOperator("Variance", graph), UnaryOperator(parent), ReductionOperator(axes) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Mean>(graph, ancestors[0], axes);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index){
                     SymInt N = 0;
                     for(auto i=0; i < axes.size(); ++i){
                         N = N * axes[i];
                     }
-                    return graph->broadcast(graph->div(my_grad, graph->wrap(N)), parent->shape);
+                    auto two = graph->constant(2);
+                    auto centered = graph->neg(parent, graph->mean(parent, axes));
+                    return graph->div(graph->mul(my_derivative, two, centered), graph->wrap(N));
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    SymInt N = 0;
+                    for(auto i=0; i < axes.size(); ++i){
+                        N = N * axes[i];
+                    }
+                    auto two = graph->constant(2);
+                    auto centered = graph->neg(parent, graph->mean(parent, axes));
+                    auto centered_d = graph->neg(parent_derivatives[index], graph->mean(parent_derivatives[index], axes));
+                    return graph->mean(graph->mul(two, centered, centered_d), axes);
                 }
             };
 
@@ -94,16 +120,6 @@ namespace md{
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<AllTrue>(graph, ancestors[0], axes);
                 }
-
-                dataType get_data_type() const {
-                    return b8;
-                };
-
-                Node backward_diff(Node my_grad, short index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
-                    err->log(logger());
-                    throw err;
-                }
             };
 
             /** Reducation with operator OR (||) along an axes */
@@ -116,16 +132,6 @@ namespace md{
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<AnyTrue>(graph, ancestors[0], axes);
-                }
-
-                dataType get_data_type() const {
-                    return b8;
-                };
-
-                Node backward_diff(Node my_grad, short index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
-                    err->log(logger());
-                    throw err;
                 }
             };
 

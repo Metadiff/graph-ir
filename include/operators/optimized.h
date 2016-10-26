@@ -21,9 +21,10 @@ namespace md {
                     return std::make_shared<Softplus>(graph, ancestors[0], threshold);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, graph->sigmoid(parent));
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->mul(my_derivative, graph->sigmoid(parent));
                 }
+
             };
 
             /** Logarithm of sum exp(x_i) */
@@ -38,8 +39,13 @@ namespace md {
                     return std::make_shared<LogSumExp>(graph, ancestors[0], axes, threshold);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, graph->softmax(parent));
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->mul(my_derivative, graph->softmax(parent));
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    auto softmax = graph->softmax(parent_derivatives[index]);
+                    return graph->sum(graph->mul(parent_derivatives[index], softmax), axes);
                 }
             };
 
@@ -54,8 +60,8 @@ namespace md {
                     return std::make_shared<Sigmoid>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->mul(my_grad, owner, graph->neg(graph->constant(1), owner));
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->mul(my_derivative, owner, graph->neg(graph->constant(1), owner));
                 }
             };
 
@@ -75,9 +81,9 @@ namespace md {
                     return std::make_shared<Softmax>(graph, ancestors[0]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    auto vtg = graph->sum(graph->mul(my_grad, owner), axis);
-                    return graph->neg(graph->mul(owner, my_grad), graph->mul(owner, vtg));
+                Node backward_diff_parent(Node my_derivative, short index){
+                    auto vtg = graph->sum(graph->mul(my_derivative, owner), axis);
+                    return graph->neg(graph->mul(owner, my_derivative), graph->mul(owner, vtg));
                 }
             };
 
@@ -97,7 +103,7 @@ namespace md {
                     return std::make_shared<BinaryCrossEntropyLogits>(graph, ancestors[0], ancestors[1]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index){
                     // Parents - p, x
                     // Node computes f = - p * log(q) - (1-p) * log(1-q)
                     // q = sigmoid(x) => log(q) = - softplus(-x), log(1-q) = - softplus(x)
@@ -107,9 +113,9 @@ namespace md {
                     // = - p (sigmoid(-x) + sigmoid(x)) + sigmoid(x) =
                     // = sigmoid(x) - p
                     if (index == 0) {
-                        return graph->mul(my_grad, graph->neg(softplus_minus_x, softplus_x));
+                        return graph->mul(my_derivative, graph->neg(softplus_minus_x, softplus_x));
                     } else {
-                        return graph->mul(my_grad, graph->neg(graph->sigmoid(parent2), parent1));
+                        return graph->mul(my_derivative, graph->neg(graph->sigmoid(parent2), parent1));
                     }
                 }
             };
@@ -130,15 +136,15 @@ namespace md {
                     return std::make_shared<CategoricalCrossEntropyLogits>(graph, ancestors[0], ancestors[1]);
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_derivative, short index) {
                     // Parents - p, x
                     // Node computes f = - sum[p_i log e^x_i/Z] = - sum[p_i(x_i - log(Z))
                     // df/dp_i = log(Z) - x_i
                     // df/dx_i = p_i - softmax(x_i)
                     if (index == 0) {
-                        return graph->mul(my_grad, graph->neg(log_z, parent2));
+                        return graph->mul(my_derivative, graph->neg(log_z, parent2));
                     } else {
-                        return graph->mul(my_grad, graph->neg(parent1, graph->softmax(parent2)));
+                        return graph->mul(my_derivative, graph->neg(parent1, graph->softmax(parent2)));
                     }
                 }
             };

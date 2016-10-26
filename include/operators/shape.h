@@ -43,8 +43,12 @@ namespace md{
                     }
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->diag(my_grad);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->diag(my_derivative);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return graph->diag(parent_derivatives[index]);
                 }
             };
 
@@ -72,8 +76,12 @@ namespace md{
                     return shape;
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->reshape(my_grad, parent->shape);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->reshape(my_derivative, parent->shape);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return graph->reshape(parent_derivatives[index], shape);
                 }
 
 //                bool equals(Operator const op) const {
@@ -173,8 +181,12 @@ namespace md{
                     return reversed;
                 }
 
-                Node backward_diff(Node my_grad, short index) {
-                    return graph->reorder(my_grad, reverse_order(order));
+                Node backward_diff_parent(Node my_derivative, short index){
+                    return graph->reorder(my_derivative, reverse_order(order));
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return graph->reorder(parent_derivatives[index], order);
                 }
 
 //                bool equals(Operator const op) const {

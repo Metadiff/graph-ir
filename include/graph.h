@@ -465,6 +465,8 @@ namespace md{
 
             Node matrix_inverse(Node node);
 
+            Node matrix_inverse_mul(Node node1, Node node2, bool transpose = false);
+
             Node determinant(Node node);
 
             Node log_det(Node node);

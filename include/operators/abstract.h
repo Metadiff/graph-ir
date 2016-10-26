@@ -58,18 +58,25 @@ namespace md {
                 /** Returns the union of the parents and arguments */
                 virtual NodeVec get_ancestors() const;
 
+                /** The method generates and sends the gradients for all parents, provided the incoming gradient messages */
+                void backward_diff(std::vector<NodeVec> &messages, std::vector<bool>& flow_tree);
+
                 /** Returns the gradient with respect to the paret at index during Backward Differentiation */
-                virtual Node backward_diff(Node my_grad, short index) = 0;
+                virtual Node backward_diff_parent(Node my_derivative, short index) = 0;
 
                 /** Combines the gradients of all of the children of the operator. This is relevant only for
                  * multy-output operators, for all others this is just add */
-                virtual Node backward_diff_combine(NodeVec grads) const;
+                virtual Node backward_diff_combine(NodeVec & derivatives) const;
 
-                /** TODO */
-                virtual Node forward_diff(Node my_grad, short index);
+                /** The method pulls messages from all of the parents, and generates the gradient of the current node. */
+                void forward_diff(NodeVec & parent_derivatives);
 
-                /** The method generates and sends the gradients for all parents, provided the incoming gradient messages */
-                void backward_diff(std::vector<NodeVec> &messages, std::vector<bool>& flow_tree);
+                /** Returns the gradient with respect to the paret at index during Backward Differentiation */
+                virtual Node forward_diff_parent(NodeVec & parent_derivatives, short index) = 0;
+
+                /** Combines the gradients of all of the children of the operator. This is relevant only for
+                 * multy-output operators, for all others this is just add */
+                virtual Node forward_diff_combine(NodeVec & parent_derivatives) const;
 
                 /**
                  * TODO this and the symbolic_equals are things which aren't yet well done
@@ -97,10 +104,14 @@ namespace md {
                     return NodeVec {};
                 }
 
-                Node backward_diff(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_grad, short index) {
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
                     err->log(logger());
                     throw err;
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivative, short index){
+                    return Node();
                 }
             };
 
@@ -129,15 +140,19 @@ namespace md {
             };
 
             class LogicalOperator: public virtual NonDifferentiableOperator{
-
+            public:
                 dataType get_data_type() const {
                     return b8;
                 };
 
-                Node backward_diff(Node my_grad, short index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
+                Node backward_diff_parent(Node my_derivative, short index){
+                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
                     err->log(logger());
                     throw err;
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return Node();
                 }
             };
 
@@ -145,6 +160,16 @@ namespace md {
             public:
                 dataType get_data_type() const{
                     return graph->props.max_int;
+                }
+
+                Node backward_diff_parent(Node my_derivative, short index){
+                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
+                    err->log(logger());
+                    throw err;
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return Node();
                 }
             };
 
@@ -269,7 +294,12 @@ namespace md {
 
 
             class FloatUnaryElementwiseOperator: public virtual FloatOperator,
-                                                 public virtual UnaryElementwiseOperator {};
+                                                 public virtual UnaryElementwiseOperator {
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return backward_diff_parent(parent_derivatives[index], index);
+                }
+            };
 
             class FloatUnaryOperator: public virtual UnaryOperator,
                                       public virtual FloatOperator {};
@@ -284,7 +314,11 @@ namespace md {
                                                  public virtual BinaryElementwiseOperator{};
 
             class BinaryFloatElementwiseOperator: public virtual FloatOperator,
-                                               public virtual BinaryElementwiseOperator{};
+                                               public virtual BinaryElementwiseOperator{
+                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                    return backward_diff_parent(parent_derivatives[index], index);
+                }
+            };
 
             class AssociativeElementwiseOperator: public virtual AssociativeOperator,
                                                   public virtual ElementwiseOperator {};
