@@ -16,14 +16,14 @@ namespace md{
                 graph(graph),
                 id(id),
                 name(name),
-                device(device),
-                op(op),
                 data_type(op->get_data_type()),
                 shape(op->get_shape()),
                 is_input_dependent(op->is_input_dependent()),
                 is_differentiable(op->is_differentiable()),
-                group(group),
-                grad_level(grad_level) { }
+                op(op),
+                grad_level(grad_level),
+                device(device),
+                group(group) { }
 
         std::shared_ptr<spdlog::logger> Node::logger() const {
             return utils::logger(unwrap()->graph->name + "::node::" + std::to_string(unwrap()->id));

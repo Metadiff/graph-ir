@@ -14,17 +14,18 @@ namespace md{
             GraphInPtr const graph;
             size_t id;
             std::string name;
-            Device device;
-            Operator op;
             dataType data_type;
             Shape shape;
             bool is_input_dependent;
             bool is_differentiable;
+            Operator op;
             NodeVec children;
-            Group group;
+
             unsigned short grad_level;
-            // Data populated by the optimizer
+            Device device;
             ExecutionData execution;
+
+            Group group;
 
             NodeData(GraphInPtr const graph, Device const device) :
                     graph(graph),

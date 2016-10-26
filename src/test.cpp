@@ -56,5 +56,6 @@ int main(){
     f.open("test.html");
     md::cytoscape::write_graph(g, f);
     f.close();
+    md::json::write_graph(g, std::cout);
     return 0;
 }

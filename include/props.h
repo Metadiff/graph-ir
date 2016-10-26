@@ -36,9 +36,6 @@ namespace md{
                         promotion_table[i][j] = default_promotion_table[i][j];
                     }
                 }
-                if(random_seed == 0){
-                    random_seed = rand();
-                }
             };
 
             Properties(std::shared_ptr<Properties> ptr):

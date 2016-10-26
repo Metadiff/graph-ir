@@ -7,6 +7,7 @@
 
 #include "export/graphviz.h"
 #include "export/cytoscape.h"
-
+#include "export/json.h"
+#include "export/protobuf.h"
 
 #endif //METADIFF_CORE_EXPORT_H

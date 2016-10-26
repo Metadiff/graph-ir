@@ -75,7 +75,7 @@ namespace md{
             return mapping;
         }
 
-        std::vector<bool> GraphInternal::get_descendants_mask(NodeVec& roots) const {
+        std::vector<bool> GraphInternal::get_descendants_mask(NodeVec const & roots) const {
             logger()->trace("Generating descendants mask");
             auto n = nodes.size();
             std::vector<bool> descendants_mask(n, false);
@@ -97,7 +97,7 @@ namespace md{
             return descendants_mask;
         };
 
-        std::vector<bool> GraphInternal::get_ancestors_mask(NodeVec& leafs) const {
+        std::vector<bool> GraphInternal::get_ancestors_mask(NodeVec const & leafs) const {
             logger()->trace("Generating ancestors mask");
             auto n = nodes.size();
             std::vector<bool> ancestors_mask(n, false);
@@ -120,7 +120,7 @@ namespace md{
         };
 
 
-        std::vector<bool> GraphInternal::get_flow_tree_mask(NodeVec& roots, NodeVec& leafs) const {
+        std::vector<bool> GraphInternal::get_flow_tree_mask(NodeVec const & roots, NodeVec const & leafs) const {
             auto descendants_mask = get_descendants_mask(roots);
             auto ancestors_mask = get_ancestors_mask(leafs);
             for(auto i=0; i < descendants_mask.size(); ++i){
@@ -159,57 +159,78 @@ namespace md{
             temporary_updates.clear();
         }
 
-        std::vector<Node> GraphInternal::gradient(Node objective, NodeVec with_respect_to, bool backward_diff) {
-            logger()->trace("Getting gradients of {}", objective->id);
-            if (objective.dims() != 0) {
-                auto err = std::make_shared<UnsupportedGradient>(objective);
+        std::vector<Node> GraphInternal::gradient(Node const f, NodeVec const & w, bool backward_diff) {
+            if (f.dims() != 0) {
+                auto err = std::make_shared<UnsupportedGradient>(f);
                 err->log(logger());
                 throw err;
             }
+            if(backward_diff) {
+                NodeVec fs = {f};
+                NodeVec u = {constant(1)};
+                u[0]->grad_level = fs[0]->grad_level + ((unsigned short)(1));
+                return this->backward_diff(fs, u, w);
+            } else {
+                // TODO
+                NodeVec fs = {f};
+                NodeVec u = {constant(1)};
+                u[0]->grad_level = fs[0]->grad_level + ((unsigned short)(1));
+                return forward_diff(fs, u, w);
+            }
+        };
 
-            // Extract the flow tree between the objective and with_respect_to
-            NodeVec mock = {objective};
-            std::vector<bool> flow_tree = get_flow_tree_mask(with_respect_to, mock);
+        NodeVec GraphInternal::backward_diff(NodeVec const & f, NodeVec const & u, NodeVec const & w){
+            if(w.size() == 0){
+                return NodeVec{};
+            }
+            if(f.size() != u.size()){
+                // TODO make proper exception for this
+                throw UnsupportedGradient();
+            }
+            logger()->trace("Running backward diff");
 
-            // The gradient mode is one higher than that of the objective
-            grad_level = objective->grad_level + ((unsigned short)(1));
+            std::vector<bool> flow_tree = get_flow_tree_mask(w, f);
+
+            // Contains all of the backward messages
+            std::vector<NodeVec> messages(nodes.size(), NodeVec{});
+
+            // The first messages are u_i -> f_i
+            size_t max_id = 0;
+            for(auto i=0; i<f.size(); ++i){
+                logger()->trace("Initial message u[{}] -> f[{}] is {} -> {}", i, i, u[i]->id, f[i]->id);
+                messages[f[i]->id].push_back(u[i]);
+                max_id = max_id < f[i]->id ? f[i]->id : max_id;
+                grad_level = grad_level < (f[i]->grad_level + (unsigned short)(1)) ? (f[i]->grad_level + (unsigned short)(1)) : grad_level;
+            }
 
             // Stores the current group in order to recreate it
             Group old_current = current_group;
-            current_group = objective->group;
-            // Set the current group to the corresponding gradients group
 
-            // Contains all gradient messages sent around
-            std::vector<NodeVec> grad_messages(nodes.size(), NodeVec{});
-
-            // Send the first message as 1 to the objective
-            grad_messages[objective->id].push_back(constant(1));
-
-            // This will contain the final gradients
-            NodeVec grads;
-            if(backward_diff) {
-                // Send all gradient messages
-                for (auto i = flow_tree.size(); i > 0; --i) {
-                    if (flow_tree[i]) {
-                        nodes[i]->op->backward_diff(grad_messages, flow_tree);
-                    }
+            // Generate all the messages around
+            for (auto i = flow_tree.size(); i > 0; --i) {
+                if (flow_tree[i]) {
+                    nodes[i]->op->backward_diff(messages, flow_tree);
                 }
-                for (auto i = 0; i < with_respect_to.size(); ++i) {
-                    // TODO Have a policy if you request gradient and something don't get one
-                    grads.push_back(grad_messages[with_respect_to[i]->id][0]);
-                }
-            } else {
-                throw 1;
             }
 
-            // Reset the gradient mode
+            // Reset the grad level
             grad_level = 0;
 
             // Restore the current group
             current_group = old_current;
 
-            return grads;
-        };
+            NodeVec outputs;
+            for (auto i = 0; i < w.size(); ++i) {
+                // TODO Have a policy if you request gradient and something don't get one
+                outputs.push_back(messages[w[i]->id][0]);
+            }
+
+            return outputs;
+        }
+
+        NodeVec GraphInternal::forward_diff(NodeVec const & f, NodeVec const & v, NodeVec const & w){
+            throw NotImplementedException("Forward diff");
+        }
 
 
         Node GraphInternal::derived_node(Operator op, std::string name) {

@@ -26,6 +26,8 @@ add_subdirectory(external/symbolic_integers)
 include_directories(external/symbolic_integers/include)
 # Add spdlog
 include_directories(external/spdlog/include)
+# Add rapidjson
+include_directories(external/rapidjson/include)
 # Add my include directories
 include_directories(include)
 # Link with symints, we use static libs
@@ -57,6 +59,7 @@ set(METADIFF_SOURCES
         ${PROJECT_SOURCE_DIR}/src/operators/optimized.cpp
         ${PROJECT_SOURCE_DIR}/src/operators/random.cpp
         ${PROJECT_SOURCE_DIR}/src/export/cytoscape.cpp
+        ${PROJECT_SOURCE_DIR}/src/export/json.cpp
         )
 
 # Build libs (static by default)

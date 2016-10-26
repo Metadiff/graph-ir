@@ -28,7 +28,7 @@ namespace md{
             Updates temporary_updates;
 
             /** List of groups */
-            std::vector<std::shared_ptr<NodeGroup>> base_groups;
+//            std::vector<std::shared_ptr<NodeGroup>> base_groups;
             std::vector<std::shared_ptr<NodeGroup>> groups;
             /** Current group */
             Group current_group;
@@ -55,13 +55,13 @@ namespace md{
             NodeVec copy(GraphInPtr new_graph, std::vector<bool> const & mask) const;
 
             /** Returns an array masking all descendants of the marked nodes */
-            std::vector<bool> get_descendants_mask(NodeVec& roots) const;
+            std::vector<bool> get_descendants_mask(NodeVec const & roots) const;
 
             /** Returns an array masking all ancestors of the marked nodes */
-            std::vector<bool> get_ancestors_mask(NodeVec&  leafs) const;
+            std::vector<bool> get_ancestors_mask(NodeVec const &  leafs) const;
 
             /** Returns the intersection of the descendants mask of the roots and the ancestor mask of the leafs */
-            std::vector<bool> get_flow_tree_mask(NodeVec& roots, NodeVec& leafs) const;
+            std::vector<bool> get_flow_tree_mask(NodeVec const & roots, NodeVec const & leafs) const;
 
             /** Adds the updates to the temporary updates of the graph */
             void add_temporary_updates(Updates const &updates);
@@ -69,8 +69,14 @@ namespace md{
             /** Removes all temporary updates of the graph */
             void clear_temporary_updates();
 
-            /** Returns the gradients of f with respect to the parameters provided */
-            NodeVec gradient(Node f, NodeVec with_respect_to, bool backward_diff = true);
+            /** Returns the gradient of f with respect to w. f should be a scalar */
+            NodeVec gradient(Node const f, NodeVec const & w, bool backward_diff = true);
+
+            /** Computes u^T J_f, where J_f is the Jacobian of f with respect to w (Theano's Lop) */
+            NodeVec backward_diff(NodeVec const & f, NodeVec const & u, NodeVec const & w);
+
+            /** Computes J_f v, where J_f is the Jacobian of f with respect to w (Theano's Rop) */
+            NodeVec forward_diff(NodeVec const & f, NodeVec const & v, NodeVec const & w);
 
 //            /** Returns the base group with the speicifed name. If it does not exists creates it. */
 //            Group get_or_create_base_group(std::string name);
