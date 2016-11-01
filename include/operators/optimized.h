@@ -14,15 +14,15 @@ namespace md {
             public:
                 double threshold;
                 Softplus(GraphInPtr graph, Node parent, double threshold = 50) :
-                        AbstractOperator("Softplus", graph), UnaryOperator(parent),
+                        AbstractOperator(graph, "Softplus"), UnaryOperator(parent),
                         threshold(threshold){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Softplus>(graph, ancestors[0], threshold);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
-                    return graph->mul(my_derivative, graph->sigmoid(parent));
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return mul(my_derivative, sigmoid(parent));
                 }
 
             };
@@ -32,20 +32,20 @@ namespace md {
             public:
                 double threshold;
                 LogSumExp(GraphInPtr graph, Node parent, Axes axes, double threshold = 10) :
-                        AbstractOperator(name, graph), UnaryOperator(parent), ReductionOperator(axes),
+                        AbstractOperator(graph, "LogSumExp"), UnaryOperator(parent), ReductionOperator(axes),
                         threshold(threshold){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LogSumExp>(graph, ancestors[0], axes, threshold);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
-                    return graph->mul(my_derivative, graph->softmax(parent));
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return mul(my_derivative, softmax(parent));
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
-                    auto softmax = graph->softmax(parent_derivatives[index]);
-                    return graph->sum(graph->mul(parent_derivatives[index], softmax), axes);
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    auto s = softmax(parent_derivatives[index]);
+                    return sum(mul(parent_derivatives[index], s), axes);
                 }
             };
 
@@ -54,36 +54,37 @@ namespace md {
             class Sigmoid : public FloatUnaryElementwiseOperator {
             public:
                 Sigmoid(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Sigmoid", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Sigmoid"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sigmoid>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
-                    return graph->mul(my_derivative, owner, graph->neg(graph->constant(1), owner));
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return mul(my_derivative, owner, neg(graph->constant(1), owner));
                 }
             };
 
             /** Softmax function */
             class Softmax : public FloatUnaryElementwiseOperator {
             public:
-                short axis;
-                Softmax(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Softmax", graph), UnaryOperator(parent) {
-                    if(parent.dims() < 1){
-                        // TODO raise an error
-                    }
-                    axis = parent.dims() - 1;
+                Axes axes;
+                Softmax(GraphInPtr graph, Node parent, Axes axes) :
+                        AbstractOperator(graph, "Softmax"), UnaryOperator(parent),
+                        axes(axes) {
+//                    if(parent.dims() < 1){
+//                        // TODO raise an error
+//                    }
+//                    axis = parent.dims() - 1;
                 };
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Softmax>(graph, ancestors[0]);
+                    return std::make_shared<Softmax>(graph, ancestors[0], axes);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
-                    auto vtg = graph->sum(graph->mul(my_derivative, owner), axis);
-                    return graph->neg(graph->mul(owner, my_derivative), graph->mul(owner, vtg));
+                Node backward_diff_parent(Node my_derivative, int index){
+                    auto vtg = sum(mul(my_derivative, owner), axes);
+                    return neg(mul(owner, my_derivative), mul(owner, vtg));
                 }
             };
 
@@ -94,16 +95,16 @@ namespace md {
             public:
                 Node softplus_x, softplus_minus_x;
                 BinaryCrossEntropyLogits(GraphInPtr graph, Node p, Node x):
-                        AbstractOperator("BinaryCrossEntropyLogits", graph), BinaryOperator(p, x){
-                    softplus_x = graph->softplus(x);
-                    softplus_minus_x = graph->softplus(graph->neg(x));
+                        AbstractOperator(graph, "BinaryCrossEntropyLogits"), BinaryOperator(p, x){
+                    softplus_x = softplus(x);
+                    softplus_minus_x = softplus(neg(x));
                 }
 
                 Operator copy_to(GraphInPtr graph, std::vector <Node> ancestors) const {
                     return std::make_shared<BinaryCrossEntropyLogits>(graph, ancestors[0], ancestors[1]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
+                Node backward_diff_parent(Node my_derivative, int index){
                     // Parents - p, x
                     // Node computes f = - p * log(q) - (1-p) * log(1-q)
                     // q = sigmoid(x) => log(q) = - softplus(-x), log(1-q) = - softplus(x)
@@ -113,9 +114,9 @@ namespace md {
                     // = - p (sigmoid(-x) + sigmoid(x)) + sigmoid(x) =
                     // = sigmoid(x) - p
                     if (index == 0) {
-                        return graph->mul(my_derivative, graph->neg(softplus_minus_x, softplus_x));
+                        return mul(my_derivative, neg(softplus_minus_x, softplus_x));
                     } else {
-                        return graph->mul(my_derivative, graph->neg(graph->sigmoid(parent2), parent1));
+                        return mul(my_derivative, neg(sigmoid(parent2), parent1));
                     }
                 }
             };
@@ -128,23 +129,23 @@ namespace md {
             public:
                 Node log_z;
                 CategoricalCrossEntropyLogits(GraphInPtr graph, Node p, Node x):
-                        AbstractOperator("CategoricalCrossEntropyLogits", graph), BinaryOperator(p, x){
-                    log_z = graph->log_sum_exp(x);
+                        AbstractOperator(graph, "CategoricalCrossEntropyLogits"), BinaryOperator(p, x){
+                    log_z = log_sum_exp(x);
                 }
 
                 Operator copy_to(GraphInPtr graph, std::vector <Node> ancestors) const {
                     return std::make_shared<CategoricalCrossEntropyLogits>(graph, ancestors[0], ancestors[1]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
+                Node backward_diff_parent(Node my_derivative, int index) {
                     // Parents - p, x
                     // Node computes f = - sum[p_i log e^x_i/Z] = - sum[p_i(x_i - log(Z))
                     // df/dp_i = log(Z) - x_i
                     // df/dx_i = p_i - softmax(x_i)
                     if (index == 0) {
-                        return graph->mul(my_derivative, graph->neg(log_z, parent2));
+                        return mul(my_derivative, neg(log_z, parent2));
                     } else {
-                        return graph->mul(my_derivative, graph->neg(parent1, graph->softmax(parent2)));
+                        return mul(my_derivative, neg(parent1, softmax(parent2)));
                     }
                 }
             };

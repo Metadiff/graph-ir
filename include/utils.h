@@ -18,10 +18,17 @@ namespace md{
                 return md_sink;
         }
 
-
         /** Creates a new logger linked to md_sink */
         std::shared_ptr<spdlog::logger> logger(std::string name,
                                                spdlog::level::level_enum level = spdlog::level::trace);
+
+        /** Returns a logger for graphs */
+        std::shared_ptr<spdlog::logger> graph_logger(std::string name,
+                                               spdlog::level::level_enum level = spdlog::level::trace);
+
+        /** Returns a logger for operators */
+        std::shared_ptr<spdlog::logger> op_logger(std::string name,
+                                                 spdlog::level::level_enum level = spdlog::level::trace);
 
         /** Helper for writing to files */
         struct FtpFile {

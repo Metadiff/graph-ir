@@ -7,11 +7,22 @@
 
 namespace md{
     namespace core{
-        SymInt GraphInternal::new_sym() {
-            return SymInt::registry->new_variable();
-        }
 
-        dataType GraphInternal::limit_type(dataType data_type) const {
+//        Node GraphInternal::wrap(SharedVar var) {
+//            Operator op = std::make_shared<op::SharedInput>(this, var);
+//            Node node = derived_node(op);
+//            node->name = var->name;
+//            return node;
+//        }
+//
+//        Node GraphInternal::wrap(SymInt value) {
+//            Operator op = std::make_shared<op::SymIntWrapper>(this, value);
+//            return derived_node(op);
+//        }
+//
+//        Node
+
+        DataType GraphInternal::limit_type(DataType data_type) const {
             if(data_type > i64) {
                 return data_type <= props.max_float ? data_type : props.max_float;
             } else if(data_type > u64){
@@ -34,7 +45,7 @@ namespace md{
             }
         }
 
-        NodeVec GraphInternal::copy(GraphInPtr new_graph, std::vector<bool> const & mask) const {
+        NodeVec GraphInternal::copy(Graph new_graph, std::vector<bool> const & mask) const {
             logger()->trace("Copying graph {}", name);
             new_graph->name = name + "_copy";
             new_graph->props = props;
@@ -159,7 +170,7 @@ namespace md{
             temporary_updates.clear();
         }
 
-        std::vector<Node> GraphInternal::gradient(Node const f, NodeVec const & w, bool backward_diff) {
+        NodeVec GraphInternal::gradient(Node const f, NodeVec const & w, bool backward_diff) {
             if (f.dims() != 0) {
                 auto err = std::make_shared<UnsupportedGradient>(f);
                 err->log(logger());
@@ -168,13 +179,13 @@ namespace md{
             if(backward_diff) {
                 NodeVec fs = {f};
                 NodeVec u = {constant(1)};
-                u[0]->grad_level = fs[0]->grad_level + ((unsigned short)(1));
+                u[0]->grad_level = fs[0]->grad_level + ((unsigned int)(1));
                 return this->backward_diff(fs, u, w);
             } else {
                 // TODO
                 NodeVec fs = {f};
                 NodeVec u = {constant(1)};
-                u[0]->grad_level = fs[0]->grad_level + ((unsigned short)(1));
+                u[0]->grad_level = fs[0]->grad_level + ((unsigned int)(1));
                 return forward_diff(fs, u, w);
             }
         };
@@ -202,7 +213,7 @@ namespace md{
                 messages[f[i]->id].push_back(u[i]);
                 max_id = max_id < f[i]->id ? f[i]->id : max_id;
                 min_id = min_id > f[i]->id ? f[i]->id : min_id;
-                grad_level = grad_level < (f[i]->grad_level + (unsigned short)(1)) ? (f[i]->grad_level + (unsigned short)(1)) : grad_level;
+                grad_level = grad_level < (f[i]->grad_level + (unsigned int)(1)) ? (f[i]->grad_level + (unsigned int)(1)) : grad_level;
             }
             for(auto i=0; i<w.size(); ++i){
                 min_id = min_id > w[i]->id ? w[i]->id : min_id;
@@ -257,7 +268,7 @@ namespace md{
                 logger()->trace("Initial derivatives for w[{}] = {}", w[i]->id, v[i]->id);
                 derivatives[w[i]->id] = v[i];
                 min_id = min_id > f[i]->id ? f[i]->id : min_id;
-                grad_level = grad_level < (w[i]->grad_level + (unsigned short)(1)) ? (w[i]->grad_level + (unsigned short)(1)) : grad_level;
+                grad_level = grad_level < (w[i]->grad_level + (unsigned int)(1)) ? (w[i]->grad_level + (unsigned int)(1)) : grad_level;
                 // Remove w[i] from the flow_tree
                 flow_tree[w[i]->id] = false;
             }
@@ -292,7 +303,7 @@ namespace md{
             Node same_node = find_same_node(op);
             if (same_node.ptr.expired()) {
                 auto result = std::make_shared<NodeData>(
-                        shared_from_this().get(),
+                        shared_from_this(),
                         nodes.size(),
                         name,
                         props.default_device,
@@ -308,7 +319,7 @@ namespace md{
                 }
                 return result;
             } else {
-                return alias(same_node);
+                return api::alias(same_node);
             }
         }
 

@@ -38,9 +38,9 @@ namespace md{
                 return false;
             }
 
-            unsigned short AbstractOperator::get_grad_level() const {
+            unsigned int AbstractOperator::get_grad_level() const {
                 auto ancestors = get_ancestors();
-                unsigned short max_grad_level = 0;
+                unsigned int max_grad_level = 0;
                 for (auto i = 0; i < ancestors.size(); ++i) {
                     if (ancestors[i]->grad_level > max_grad_level) {
                         max_grad_level = ancestors[i]->grad_level;
@@ -78,7 +78,7 @@ namespace md{
 
                 NodeVec parents = get_parents();
                 // Compute and send gradients only to differentiable parents in the flow_tree
-                for (short i = 0; i < parents.size(); ++i) {
+                for (int i = 0; i < parents.size(); ++i) {
                     if (parents[i]->is_differentiable and flow_tree[parents[i]->id]) {
                         Node parent_grad = backward_diff_parent(my_grad, i);
                         if (parent_grad->name == "Derived Node" or parent_grad->name == "") {
@@ -98,10 +98,13 @@ namespace md{
             }
 
             Node AbstractOperator::backward_diff_combine(NodeVec & grads) const {
-                if(grads.size() == 1){
+                if(grads.size() == 0){
+                    // TODO throw an error
+                    throw 1;
+                } else if(grads.size() == 1){
                     return grads[0];
                 } else {
-                    return graph->add(grads);
+                    return add(grads);
                 }
             }
 
@@ -123,7 +126,7 @@ namespace md{
                 graph->current_group = owner->group;
 
                 NodeVec messages;
-                for (short i = 0; i < parents.size(); ++i) {
+                for (int i = 0; i < parents.size(); ++i) {
                     if (not parent_derivatives[i].ptr.expired()) {
                         auto msg = forward_diff_parent(parent_derivatives, i);
                         if (not msg.ptr.expired()) {
@@ -154,7 +157,7 @@ namespace md{
                 if(grads.size() == 1){
                     return grads[0];
                 } else {
-                    return graph->add(grads);
+                    return add(grads);
                 }
             }
         }

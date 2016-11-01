@@ -19,7 +19,7 @@ namespace md{
         class GraphInternal : public std::enable_shared_from_this<GraphInternal> {
         public:
             /** Current gradient level */
-            unsigned short grad_level = 0;
+            unsigned int grad_level = 0;
             /** The list of all of the nodes */
             std::vector<std::shared_ptr<NodeData>> nodes;
             /** List of all of the updates */
@@ -36,6 +36,10 @@ namespace md{
             std::shared_ptr<spdlog::logger> logger() const {
                 return md::utils::logger("graph::" + name);
             }
+
+            std::shared_ptr<spdlog::logger> op_logger(std::string name) const {
+                return md::utils::logger("op::" + name);
+            }
         public:
             /** The name of the graph */
             std::string name;
@@ -45,14 +49,12 @@ namespace md{
             GraphInternal(std::string name = "Function"):
                     name(name),
                     props(default_properties()){
-//                base_groups.push_back(std::make_shared<NodeGroup>(props.base_group_prefix + "0", this));
-//                current_base_group = base_groups[0];
                 groups.push_back(std::make_shared<NodeGroup>("", this));
                 current_group = groups[0];
             }
 
             /** Copies the computations with value `true` in the mask to the new_graph */
-            NodeVec copy(GraphInPtr new_graph, std::vector<bool> const & mask) const;
+            NodeVec copy(Graph new_graph, std::vector<bool> const & mask) const;
 
             /** Returns an array masking all descendants of the marked nodes */
             std::vector<bool> get_descendants_mask(NodeVec const & roots) const;
@@ -78,15 +80,6 @@ namespace md{
             /** Computes J_f v, where J_f is the Jacobian of f with respect to w (Theano's Rop) */
             NodeVec forward_diff(NodeVec const & f, NodeVec const & v, NodeVec const & w);
 
-//            /** Returns the base group with the speicifed name. If it does not exists creates it. */
-//            Group get_or_create_base_group(std::string name);
-//
-//            /** Sets the current base group to name, creates it if it does not exist */
-//            void set_base_group(std::string name);
-//
-//            /** Sets the current base group */
-//            void reset_base_group();
-
             Group get_or_create_group(std::string full_name);
 
             void set_group(std::string full_name);
@@ -96,26 +89,6 @@ namespace md{
             void pop_group();
 
             void reset_group();
-
-//            /** Returns the group specified by full_name. If it does not exist creates it. */
-//            Group get_or_create_group(std::string name, Group parent_group);
-//
-//            /** Returns the group specified by full_name. If it does not exist creates it. */
-//            Group get_or_create_group(std::string name, std::string parent_group);
-//
-//            /** Returnst
-//            Group get_or_create_group_full(std::string full_name);
-//
-//            Group get_or_create_group(std::string name);
-//
-//            /** Sets the current group to the group specified by base_name and its parent */
-//            void set_group(std::string name, Group parent_group);
-//
-//            /** Sets the current group to the specified by the name. If it does not exists creates it */
-//            void set_group(std::string name, std::string parent_group);
-//
-//            /** Sets the current group to the group specified by base_name and its parent */
-//            void set_group(std::string name);
 
             /** Creates a new derived node (INTERNAL) */
             Node derived_node(Operator op, std::string name = "Derived");
@@ -130,368 +103,618 @@ namespace md{
             Node find_same_node(Operator op);
 
             /** Looks up the max_float and max_int and limits the data_type accordingly */
-            dataType limit_type(dataType data_type) const;
+            DataType limit_type(DataType data_type) const;
 
-            /** Returns a new symbolic integer */
-            SymInt new_sym();
-
-            /** Creates a four dimensional #INPUT variable */
-            Node tensor4(dataType data_type,
+            /** @brief Creates a four dimensional variable in the default_graph
+             *
+             * @param data_type
+             * @param shape
+             * @param name
+             * @return
+             */
+            Node tensor4(DataType data_type,
                          std::array<SymInt, 4> shape,
-                         std::string name = "InputTensor");
+                         std::string name = "Tensor4");
 
-            /** Creates a four dimensional #INPUT variable */
-            Node tensor4(dataType data_type,
+            /** @brief Creates a four dimensional variable in the default_graph
+             *
+             * @param data_type
+             * @param shape0
+             * @param shape1
+             * @param shape2
+             * @param shape3
+             * @param name
+             * @return
+             */
+            Node tensor4(DataType data_type,
                          SymInt shape0,
                          SymInt shape1,
                          SymInt shape2,
                          SymInt shape3,
-                         std::string name = "InputTensor");
+                         std::string name = "Tensor4");
 
-            /** Creates a four dimensional #INPUT variable */
-            Node tensor4(dataType data_type,
-                         std::string name = "InputTensor");
+            /** @brief Creates a four dimensional variable in default_graph
+             *
+             * @param data_type
+             * @param name
+             * @return
+             */
+            Node tensor4(DataType data_type,
+                         std::string name = "Tensor4");
 
-            /** Creates a four dimensional #INPUT variable, with the same specs as the one provided */
-            Node tensor4_as(Node node,
-                            std::string name = "InputTensor");
-
-            /** Creates a three dimensional #INPUT variable */
-            Node tensor3(dataType data_type,
+            /** @brief Creates a three dimensional variable in the default_graph
+             *
+             * @param data_type
+             * @param shape
+             * @param name
+             * @return
+             */
+            Node tensor3(DataType data_type,
                          std::array<SymInt, 3> shape,
-                         std::string name = "InputTensor3");
+                         std::string name = "Tensor3");
 
-            /** Creates a three dimensional #INPUT variable */
-            Node tensor3(dataType data_type,
+            /** @brief Creates a three dimensional variable in the default_graph
+             *
+             * @param data_type
+             * @param shape0
+             * @param shape1
+             * @param shape2
+             * @param name
+             * @return
+             */
+            Node tensor3(DataType data_type,
                          SymInt shape0,
                          SymInt shape1,
                          SymInt shape2,
-                         std::string name = "InputTensor3");
+                         std::string name = "Tensor3");
 
-            /** Creates a three dimensional #INPUT variable */
-            Node tensor3(dataType data_type,
-                         std::string name = "InputTensor3");
+            /** @brief Creates a three dimensional variable in the default_graph
+             *
+             * @param data_type
+             * @param name
+             * @return
+             */
+            Node tensor3(DataType data_type,
+                         std::string name = "Tensor3");
 
-            /** Creates a three dimensional #INPUT variable, with the same specs as the one provided */
-            Node tensor3_as(Node node,
-                            std::string name = "InputTensor3");
-
-            /** Creates an #INPUT matrix  */
-            Node matrix(dataType data_type,
+            /** @brief Creates a matrix variable in the default_graph
+             *
+             * @param data_type
+             * @param shape
+             * @param name
+             * @return
+             */
+            Node matrix(DataType data_type,
                         std::array<SymInt, 2> shape,
-                        std::string name = "InputMatrix");
+                        std::string name = "Matrix");
 
-            /** Creates an #INPUT matrix  */
-            Node matrix(dataType data_type,
+            /** @brief Creates a matrix variable in the default_graph
+             *
+             * @param data_type
+             * @param shape0
+             * @param shape1
+             * @param name
+             * @return
+             */
+            Node matrix(DataType data_type,
                         SymInt shape0,
                         SymInt shape1,
-                        std::string name = "InputMatrix");
+                        std::string name = "Matrix");
 
-            /** Creates an #INPUT matrix  */
-            Node matrix(dataType data_type,
-                        std::string name = "InputMatrix");
+            /** @brief Creates a matrix variable in the default_graph
+             *
+             * @param data_type
+             * @param name
+             * @return
+             */
+            Node matrix(DataType data_type,
+                        std::string name = "Matrix");
 
-            /** Creates an #INPUT matrix, with the same specs as the one provided */
-            Node matrix_as(Node node,
-                           std::string name = "InputMatrix");
-
-            /** Creates a square #INPUT matrix  */
-            Node square_matrix(dataType data_type,
+            /** @brief Creates a square matrix variable in the default_graph
+             *
+             * @param data_type
+             * @param shape
+             * @param name
+             * @return
+             */
+            Node square_matrix(DataType data_type,
                                SymInt shape,
-                               std::string name = "InputMatrix");
+                               std::string name = "Matrix");
 
-            /** Creates an #INPUT vector  */
-            Node vector(dataType data_type,
+            /** @brief Creates a row vector variable in the default_graph
+             *
+             * @param data_type
+             * @param shape
+             * @param name
+             * @return
+             */
+            Node vector(DataType data_type,
                         SymInt shape,
-                        std::string name = "InputVector");
+                        std::string name = "Vector");
 
-            /** Creates an #INPUT vector  */
-            Node vector(dataType data_type,
-                        std::string name = "InputVector");
+            /** @brief Creates a row vector variable in the default_graph
+             *
+             * @param data_type
+             * @param name
+             * @return
+             */
+            Node vector(DataType data_type,
+                        std::string name = "Vector");
 
-            /** Creates an #INPUT vector, with the same specs as the one provided */
-            Node vector_as(Node node,
-                           std::string name = "InputVector");
+            /** @brief Creates a scalar variable in the default_graph
+             *
+             * @param data_type
+             * @param name
+             * @return
+             */
+            Node scalar(DataType data_type,
+                        std::string name = "Scalar");
 
-            /** Creates an #INPUT scalar */
-            Node scalar(dataType data_type,
-                        std::string name = "InputScalar");
 
-            /** Returns a Node wrapper around a shared variable */
-            Node wrap(SharedVar var);
+            /** @brief Creates a variable wrapping a SharedVar
+             *
+             * @param var
+             * @param g
+             * @return
+             */
+            Node shared_var(SharedVar var);
 
-            /** Returns a Node wrapper around a SymInt */
-            Node wrap(SymInt var);
+            /** Creates a variable wrapping a SymInt
+             *
+             * @param value
+             * @param g
+             * @return
+             */
+            Node sym_int_node(SymInt value);
 
-            /** Returns a Node wrapper around the value. */
-            Node constant(double value, dataType data_type, Shape shape = {1, 1, 1, 1});
-
-            template <typename T>
-            /** Returns a Node wrapper around the double value. */
-            Node constant(T value, Shape shape = {1, 1, 1, 1}){
-                if (std::is_same<T, double>::value){
-                    return constant(value, f64, shape);
-                } else if (std::is_same<T, float>::value){
-                    return constant(value, f32, shape);
-                } else if (std::is_same<T, long>::value or std::is_same<T, int64_t >::value){
-                    return constant(value, i64, shape);
-                } else if (std::is_same<T, int>::value or std::is_same<T, int32_t >::value){
-                    return constant(value, i32, shape);
-                } else if (std::is_same<T, short>::value or std::is_same<T, int16_t >::value){
-                    return constant(value, i16, shape);
-                } else if (std::is_same<T, int8_t >::value){
-                    return constant(value, i8, shape);
-                } else if (std::is_same<T, unsigned long>::value or std::is_same<T, uint64_t >::value){
-                    return constant(value, u64, shape);
-                } else if (std::is_same<T, unsigned int>::value or std::is_same<T, uint32_t >::value){
-                    return constant(value, u32, shape);
-                } else if (std::is_same<T, unsigned short>::value or std::is_same<T, uint16_t >::value){
-                    return constant(value, u16, shape);
-                } else if (std::is_same<T, uint8_t >::value){
-                    return constant(value, u8, shape);
-                } else if (std::is_same<T, bool>::value){
-                    return constant(value, b8, shape);
-                } else {
-                    throw 1;
-                }
-            }
-
-            /** Returns a Node representing 'pi', with the maximum allowed floating point precision */
+            /** @brief  Creates a constant variable which is filled with the provied value,
+             * and has the DataType and Shape provided.
+             *
+             * @param value
+             * @param data_type
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(double value, DataType data_type, Shape shape = {1, 1, 1, 1});
+            
+            /** @brief Returns a variable representing 'pi', with the maximum allowed floating point precision
+             *
+             * @param g
+             * @return
+             */
             Node PI();
 
-            /** Returns a Node representing 'e', with the maximum allowed floating point precision */
+            /** @brief Returns a variable representing 'e', with the maximum allowed floating point precision
+             *
+             * @param g
+             * @return
+             */
             Node E();
 
-            /** Returns a Node representing ln(2), with the maximum allowed floating point precision */
+            /** @brief Returns a variable representing 'ln(2)', with the maximum allowed floating point precision
+             *
+             * @param g
+             * @return
+             */
             Node LN_2();
 
-            /** Returns a Node representing ln(10), with the maximum allowed floating point precision */
+            /** @brief Returns a variable representing 'ln(10)', with the maximum allowed floating point precision
+             *
+             * @param g
+             * @return
+             */
             Node LN_10();
 
-            /** Returns a matrix filled with zeros with the given shape */
-            Node zeros(Shape shape, dataType data_type);
+            /** @brief Returns a variable filled with zeros with the provied Shape and DataType
+             *
+             * @param g
+             * @return
+             */
+            Node zeros(Shape shape, DataType data_type);
 
-            /** Returns a matrix filled with zeros with the given shape */
+            /** @brief Returns a variable filled with zeros with the provied Shape
+             *
+             * @param g
+             * @return
+             */
             Node zeros(Shape shape);
 
-            /** Returns a matrix filled with ones with the given shape */
-            Node ones(Shape shape, dataType data_type);
+            /** @brief Returns a variable filled with ones with the provied Shape and DataType
+             *
+             * @param shape
+             * @param data_type
+             * @param g
+             * @return
+             */
+            Node ones(Shape shape, DataType data_type);
 
-            /** Returns a matrix filled with ones with the given shape */
+            /** @brief Returns a variable filled with ones with the provied Shape
+             *
+             * @param shape
+             * @param g
+             * @return
+             */
             Node ones(Shape shape);
 
-            /** Returns a new node, which has the same value, but is considered as constant */
-            Node make_constant(Node node);
+            /** @brief Returns a vector with the sequence of [start, end-1] with the provided DataType
+             *
+             * @param start
+             * @param end
+             * @param data_type
+             * @param g
+             * @return
+             */
+            Node range(SymInt start, SymInt end, DataType data_type);
 
-            /** Returns a vector representing the sequence from start to end. */
-            Node range(SymInt start, SymInt end, dataType data_type);
-
-            /** Returns a vector representing the sequence from start to end. */
+            /** @brief Returns a vector with the sequence of [start, end-1] with the maximum integer precision allowed
+             *
+             * @param start
+             * @param end
+             * @param g
+             * @return
+             */
             Node range(SymInt start, SymInt end);
 
-            /** Returns an identity matrix of the given dimension size */
-            Node eye(SymInt size, dataType data_type);
+            /** @brief Returns an identity matrix with the provied DataType and size
+             *
+             * @param size
+             * @param data_type
+             * @param g
+             * @return
+             */
+            Node eye(SymInt size, DataType data_type);
 
-            /** Returns an identity matrix of the given dimension size */
+            /** @brief Returns an identity matrix with the provied size
+             *
+             * @param size
+             * @param g
+             * @return
+             */
             Node eye(SymInt size);
 
-            /** Casts the node to the type specified */
-            Node cast(Node node, dataType data_type);
-
-            /** Broadcasts the node to a specific shape */
-            Node broadcast(Node node, Shape shape);
-
-            /** Makes an alias of the original node */
-            Node alias(Node node);
-
-            /** Extracts the diagonal of a matrix or for a vector makes a matrix whose diagonal is that */
-            Node diag(Node node);
-
-            /** Reshapes a tensor */
-            Node reshape(Node node, Shape shape);
-
-            /** Reorders the dimensions of a tensor */
-            Node reorder(Node node, Axes axes);
-
-            /** Transposes a matrix or a vector, for higher order tensors, switches the last 2 dimensions */
-            Node transpose(Node node);
-
-            /** Applies not elementwise */
-            Node logical_not(Node node);
-
-            /** Applies and elementwise */
-            Node logical_and(Node node1, Node node2);
-
-            /** Applies or elementwise */
-            Node logical_or(Node node1, Node node2);
-
-            /** node1 > node2 */
-            Node greater_than(Node node1, Node node2);
-
-            /** node1 < node2 */
-            Node less_than(Node node1, Node node2);
-
-            /** node1 >= node2 */
-            Node greater_than_or_equal(Node node1, Node node2);
-
-            /** node1 <= node2 */
-            Node less_than_or_equal(Node node1, Node node2);
-
-            /** node1 == node2 */
-            Node equals(Node node1, Node node2);
-
-            /** node1 != node2 */
-            Node not_equals(Node node1, Node node2);
-
-            /** node1 == node2 up to a tolerance */
-            Node approx_equals(Node node1, Node node2, double tol = 1e-9);
-
-            /** isNan */
-            Node isNan(Node node);
-
-            /** isInf */
-            Node isInf(Node node);
-
-            /** Selects elementwise each chinels */
-            Node select(Node condition, Node if_true, Node if_false);
-
-            /** Performs addition on all of the nodes */
-            Node add(NodeVec nodes);
-
-            /** Performs addition on the two nodes */
-            Node add(Node node1, Node node2);
-
-            /** Performs addition on the two nodes */
-            Node add(Node node1, Node node2, Node node3);
-
-            /** Performs addition on the two nodes */
-            Node add(Node node1, Node node2, Node node3, Node node4);
-
-            /** Returns the negation of the node */
-            Node neg(Node node);
-
-            /** node1 - node2 **/
-            Node neg(Node node1, Node node2);
-
-            /** Multiplies nodes */
-            Node mul(NodeVec nodes);
-
-            /** Multiplies nodes */
-            Node mul(Node node1, Node node2);
-
-            /** Multiplies nodes */
-            Node mul(Node node1, Node node2, Node node3);
-
-            /** Multiplies nodes */
-            Node mul(Node node1, Node node2, Node node3, Node node4);
-
-            /** Returns the inverse  */
-            Node div(Node node);
-
-            /** node1 / node2 **/
-            Node div(Node node1, Node node2);
-
-            /** node1 // node2 **/
-            Node int_div(Node node1, Node node2);
-
-            /** node1 % node2 **/
-            Node int_mod(Node node1, Node node2);
-
-            /** Sums the node along the axis */
-            Node sum(Node node, Axes axes);
-
-            /** Sums the node along the axis */
-            Node sum(Node node, short axis = auto_infer);
-
-            /** Takes the mean along the axis */
-            Node mean(Node node, Axes axes);
-
-            /** Takes the mean along the axis */
-            Node mean(Node node, short axis = auto_infer);
-
-            /** Takes the product along the axis */
-            Node prod(Node node, Axes axes);
-
-            /** Takes the product along the axis */
-            Node prod(Node node, short axis = auto_infer);
-
-            /** Reduction with operator AND */
-            Node all_true(Node node, Axes axes);
-
-            /** Reduction with operator AND */
-            Node all_true(Node node, short axis = auto_infer);
-
-            /** Reduction with operator OR */
-            Node any_true(Node node, Axes axes);
-
-            /** Reduction with operator OR */
-            Node any_true(Node node, short axis = auto_infer);
-
-            Node square(Node node);
-
-            Node sqrt(Node node);
-
-            Node exp(Node node);
-
-            Node log(Node node);
-
-            Node log10(Node node);
-
-            Node abs(Node node);
-
-            Node log1p(Node node);
-
-            Node sin(Node node);
-
-            Node cos(Node node);
-
-            Node tan(Node node);
-
-            Node cot(Node node);
-
-            Node sinh(Node node);
-
-            Node cosh(Node node);
-
-            Node tanh(Node node);
-
-            Node coth(Node node);
-
-            Node pow(Node node, Node power);
-
-            Node gemm(NodeVec nodes, std::vector<bool> transpositions);
-
-            Node dot(Node left, Node right, bool transpose_left = false, bool transpose_right = false);
-
-            Node matrix_inverse(Node node);
-
-            Node matrix_inverse_mul(Node node1, Node node2, bool transpose = false);
-
-            Node determinant(Node node);
-
-            Node log_det(Node node);
-
-            Node trace(Node );
-
-            Node softplus(Node node, double threshold = 40);
-
-            Node log_sum_exp(Node node, Axes axes, double threshold = 10);
-
-            Node log_sum_exp(Node node, short axis = auto_infer, double threshold = 10);
-
-            Node sigmoid(Node node);
-
-            Node softmax(Node node);
-
+            /** @brief Creates a b8 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(bool value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a u8 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(uint8_t value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a u16 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(uint16_t value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a u32 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(uint32_t value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a u64 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(uint64_t value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a i8 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(int8_t value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a i16 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(int16_t value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief @brief Creates a i32 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(int32_t value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief @brief Creates a i64 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(int64_t value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a f32 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(float value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a f64 constant variable with the specified shape and value
+             *
+             * @param value
+             * @param shape
+             * @param g
+             * @return
+             */
+            Node constant(double value, Shape shape = {1, 1, 1, 1});
+
+            /** @brief Creates a variable with the specified shape, where each element is drawn
+             * from the uniform distribution [0, 1]
+             *
+             * @param shape
+             * @return
+             */
+            Node random_uniform(Shape shape);
+
+            /** @brief Creates a variable with the specified shape, where each element is drawn
+             * from the standard normal distribution
+             *
+             * @param shape
+             * @return
+             */
+            Node random_normal(Shape shape);
+
+//            /** See md::api::tensor4(DataType, std::array<SymInt, 4>, std::string, Graph) */
+//            Node tensor4(DataType data_type,
+//                         std::array<SymInt, 4> shape,
+//                         std::string name = "Tensor4"){
+//                return api::tensor4(data_type, shape, name, shared_from_this());
+//            }
+//            
+//            /** See md::api::tensor4(DataType, SymInt, SymInt, SymInt, SymInt, std::string, Graph) */
+//            Node tensor4(DataType data_type,
+//                         SymInt shape0,
+//                         SymInt shape1,
+//                         SymInt shape2,
+//                         SymInt shape3,
+//                         std::string name = "Tensor4"){
+//                return api::tensor4(data_type, shape0, shape1, shape2, shape3, name, shared_from_this());
+//            }
+//
+//            /** See md::api::tensor4(DataType, std::string, Graph) */
+//            Node tensor4(DataType data_type,
+//                         std::string name = "Tensor4"){
+//                return api::tensor4(data_type, name, shared_from_this());
+//            }
+//
+//            /** See md::api::tensor3(DataType, std::array<SymInt, 3>, std::string, Graph) */
+//            Node tensor3(DataType data_type,
+//                         std::array<SymInt, 3> shape,
+//                         std::string name = "Tensor3"){
+//                return api::tensor3(data_type, shape, name);
+//            }
+//
+//            /** See md::api::tensor3(DataType, SymInt, SymInt, SymInt, std::string, Graph) */
+//            Node tensor3(DataType data_type,
+//                         SymInt shape0,
+//                         SymInt shape1,
+//                         SymInt shape2,
+//                         std::string name = "Tensor3"){
+//                return api::tensor3(data_type, shape0, shape1, shape2, name);
+//            }
+//
+//            /** See md::api::tensor3(DataType, std::string, Graph) */
+//            Node tensor3(DataType data_type,
+//                         std::string name = "Tensor3"){
+//                return api::tensor3(data_type, name);
+//            }
+//
+//            /** See md::api::matrix(DataType, std::array<SymInt, 2>, std::string, Graph) */
+//            Node matrix(DataType data_type,
+//                        std::array<SymInt, 2> shape,
+//                        std::string name = "Matrix"){
+//                return api::matrix(data_type, shape, name);
+//            }
+//
+//            /** See md::api::matrix(DataType, SymInt, SymInt, std::string, Graph) */
+//            Node matrix(DataType data_type,
+//                        SymInt shape0,
+//                        SymInt shape1,
+//                        std::string name = "Matrix"){
+//                return api::matrix(data_type, shape0, shape1, name);
+//            }
+//
+//            /** See md::api::matrix(DataType, std::string, Graph) */
+//            Node matrix(DataType data_type,
+//                        std::string name = "Matrix"){
+//                return api::matrix(data_type, name);
+//            }
+//
+//            /** See md::api::square_matrix(DataType, SymInt, std::string, Graph) */
+//            Node square_matrix(DataType data_type,
+//                               SymInt shape,
+//                               std::string name = "Matrix"){
+//                return api::square_matrix(data_type, shape, name);
+//            }
+//
+//            /** See md::api::vector(DataType, SymInt, std::string, Graph) */
+//            Node vector(DataType data_type,
+//                        SymInt shape,
+//                        std::string name = "Vector"){
+//                return api::vector(data_type, shape, name);
+//            }
+//
+//            /** See md::api::vector(DataType, std::string, Graph) */
+//            Node vector(DataType data_type,
+//                        std::string name = "Vector"){
+//                return api::vector(data_type, name);
+//            }
+//
+//            /** See md::api::scalar(DataType, std::string, Graph) */
+//            Node scalar(DataType data_type,
+//                        std::string name = "Scalar"){
+//                return api::scalar(data_type, name);
+//            }
+//
+//            /** See md::api::tensor_as(Node, std::string, Graph) */
+//            Node tensor_as(Node node, std::string name = "Tensor"){
+//                return api::tensor_as(node, name);
+//            }
+//
+//            /** See md::api::constant(value, DataType, Shape, Graph)  */
+//            Node constant(double value, DataType data_type, Shape shape = {1, 1, 1, 1}){
+//                return api::constant(value, data_type, shape, shared_from_this());
+//            }
+//
+//            /** See md::api::shared_var(SharedVar, Graph)  */
+//            Node shared_var(SharedVar var){
+//                return api::shared_var(var, shared_from_this());
+//            }
+//
+//            /** See md::api::sym_int_node(SymInt, Graph)  */
+//            Node sym_int_node(SymInt value){
+//                return api::sym_int_node(value, shared_from_this());
+//            }
+//
+//            template <typename T>
+//            /** See md::api::constant(T, Shape)  */
+//            Node constant(T value, Shape shape = {1, 1, 1, 1}){
+//                return api::constant(value, shape);
+//            }
+//
+//            /** See md::api::PI(Graph)  */
+//            Node PI(){
+//                return api::PI(shared_from_this());
+//            }
+//
+//            /** See md::api::E(Graph)  */
+//            Node E(){
+//                return api::E(shared_from_this());
+//            }
+//
+//            /** See md::api::LN_2(Graph)  */
+//            Node LN_2(){
+//                return api::LN_2(shared_from_this());
+//            }
+//
+//            /** See md::api::LN_10(Graph)  */
+//            Node LN_10(){
+//                return api::LN_10(shared_from_this());
+//            }
+//
+//            /** See md::api::zeros(Shape, DataType, Graph)  */
+//            Node zeros(Shape shape, DataType data_type){
+//                return api::zeros(shape, data_type, shared_from_this());
+//            }
+//
+//            /** See md::api::zeros(Shape, Graph)  */
+//            Node zeros(Shape shape){
+//                return api::zeros(shape, shared_from_this());
+//            }
+//
+//            /** See md::api::ones(Shape, DataType, Graph)  */
+//            Node ones(Shape shape, DataType data_type){
+//                return api::ones(shape, data_type, shared_from_this());
+//            }
+//
+//            /** See md::api::ones(Shape, Graph)  */
+//            Node ones(Shape shape){
+//                return api::ones(shape, shared_from_this());
+//            }
+//
+//            /** See md::api::range(SymInt, SymInt, DataType, Graph)  */
+//            Node range(SymInt start, SymInt end, DataType data_type){
+//                return api::range(start, end, data_type, shared_from_this());
+//            }
+//
+//            /** See md::api::range(SymInt, SymInt, Graph)  */
+//            Node range(SymInt start, SymInt end){
+//                return api::range(start, end, shared_from_this());
+//            }
+//
+//            /** See md::api::eye(SymInt,DataType, Graph)  */
+//            Node eye(SymInt size, DataType data_type){
+//                return api::eye(size, data_type, shared_from_this());
+//            }
+//
+//            /** See md::api::eye(SymInt, Graph)  */
+//            Node eye(SymInt size){
+//                return api::eye(size, shared_from_this());
+//            }
+
+
+
+
+//            Node gemm(NodeVec nodes, std::vector<bool> transpositions);
+//
+//            Node dot(Node left, Node right, bool transpose_left = false, bool transpose_right = false);
+//
+//            Node matrix_inverse(Node node);
+//
+//            Node matrix_inverse_mul(Node node1, Node node2, bool transpose = false);
+//
+//            Node determinant(Node node);
+//
+//            Node log_det(Node node);
+//
+//            Node trace(Node );
+
+//            Node softplus(Node node, double threshold = 40);
+//
+//            Node log_sum_exp(Node node, Axes axes, double threshold = 10);
+//
+//            Node log_sum_exp(Node node, int axis = 100, double threshold = 10);
+//
+//            Node softmax(Node node);
+//
             Node binary_cross_entropy_logits(Node p, Node q_logits);
 
             Node categorical_cross_entropy_logits(Node p, Node q_logits);
 
-            Node random_uniform(Shape shape);
 
-            Node random_normal(Shape shape);
 
         };
+
+
+        // Used for wrapping any outside variables in a unified way
+        inline Node wrap(SharedVar value, Graph g){
+            return g->shared_var(value);
+        }
+
+        // Used for wrapping any outside variables in a unified way
+        inline Node wrap(SymInt value, Graph g){
+            return g->sym_int_node(value);
+        }
+
+        // Used for wrapping any outside variables in a unified way
+        template <typename T, typename = std::enable_if<std::is_arithmetic<T>::value>>
+        Node wrap(T value, Graph g) {
+            return g->constant(value, {1, 1, 1, 1});
+        }
 
         inline Graph create_graph() {
             return std::make_shared<GraphInternal>();
@@ -500,32 +723,32 @@ namespace md{
         /** Convenience for applying an unary operator for a derived node */
         template<typename T>
         Node apply(Node node) {
-            auto g = node->graph;
-            return g->derived_node(std::make_shared<T>(g, node));
+            auto g = node->g();
+            return g->derived_node(std::make_shared<T>(g.get(), node));
         }
 
         /** Convenience for applying a binary operator trough template */
         template<typename T>
         Node apply(Node node1, Node node2) {
             // TODO verify the nodes are part of the same graph
-            auto g = node1->graph;
-            return g->derived_node(std::make_shared<T>(g, node1, node2));
+            auto g = node1->g();
+            return g->derived_node(std::make_shared<T>(g.get(), node1, node2));
         }
 
         /** Convenience for applying a binary operator trough template */
         template<typename T>
         Node apply(Node node1, Node node2, Node node3) {
             // TODO verify the nodes are part of the same graph
-            auto g = node1->graph;
-            return g->derived_node(std::make_shared<T>(g, node1, node2, node3));
+            auto g = node1->g();
+            return g->derived_node(std::make_shared<T>(g.get(), node1, node2, node3));
         }
 
         /** Convenience for applying a nary operator trough template */
         template<typename T>
         Node apply(NodeVec nodes) {
             // TODO verify the nodes are part of the same graph
-            auto g = nodes[0]->graph;
-            return g->derived_node(std::make_shared<T>(g, nodes));
+            auto g = nodes[0]->g();
+            return g->derived_node(std::make_shared<T>(g.get(), nodes));
         }
     }
 }

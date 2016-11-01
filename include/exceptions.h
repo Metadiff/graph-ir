@@ -112,15 +112,15 @@ namespace md{
 
         class TypePromotion: public OperatorError{
         public:
-            dataType from;
-            dataType to;
+            DataType from;
+            DataType to;
 
             TypePromotion() : OperatorError() {};
 
             TypePromotion(NodeVec const inputs,
                           std::string const op_name,
-                          dataType from,
-                          dataType to) :
+                          DataType from,
+                          DataType to) :
                     OperatorError(inputs, op_name), from(from), to(to) {};
 
             void log(std::shared_ptr<spdlog::logger> const logger,
@@ -210,7 +210,7 @@ namespace md{
         };
 
         /** Given an error executes the errorPolicy */
-        inline void operate_policy(policy policy,
+        inline void operate_policy(Policy policy,
                                    std::shared_ptr<spdlog::logger> const logger,
                                    Error const & err){
             switch (policy){

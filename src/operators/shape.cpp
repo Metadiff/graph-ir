@@ -9,12 +9,12 @@ namespace md{
         Node GraphInternal::diag(Node node){
             // If it is a scalar nothing to do
             if(node.dims() == 0){
-                return alias(node);
+                return api::alias(node);
             }
             // diag(diag(x)) = x
             auto base = get_base_node(node);
             if(base->op->name == "Diag"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             // Standard
             return derived_node(std::make_shared<op::Diagonal>(this, node));
@@ -23,7 +23,7 @@ namespace md{
         Node GraphInternal::reshape(Node node, Shape shape){
             // If shapes are equal do nothing
             if(node->shape == shape){
-                return alias(node);
+                return api::alias(node);
             }
             // The reshape(reshape(x)) = reshape(x)
             auto base = get_base_node(node);
@@ -37,7 +37,7 @@ namespace md{
         Node GraphInternal::reorder(Node node, Axes order){
             // For a scalar do nothing
             if(node.dims() == 0){
-                return alias(node);
+                return api::alias(node);
             }
             bool ordered = true;
             for(auto i=0; i<order.size(); ++i){
@@ -48,7 +48,7 @@ namespace md{
             }
             // ordered means that you are not reordering
             if(ordered){
-                return alias(node);
+                return api::alias(node);
             }
             // The reorder(reorder(x)) = reorder(x) with some specifics
             auto base = get_base_node(node);
@@ -69,7 +69,7 @@ namespace md{
                     }
                 }
                 if(ordered){
-                    return alias(base->op->get_parents()[0]);
+                    return api::alias(base->op->get_parents()[0]);
                 }
                 return reorder(base->op->get_parents()[0], new_order);
             }
@@ -80,7 +80,7 @@ namespace md{
         Node GraphInternal::transpose(Node node){
             // For a scalar do nothing
             if(node.dims() == 0){
-                return alias(node);
+                return api::alias(node);
             }
             // Switch the last two dimensions
             int dims = node.dims();

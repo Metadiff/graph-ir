@@ -18,6 +18,14 @@ namespace md{
             return ptr;
         }
 
+        std::shared_ptr<spdlog::logger> graph_logger(std::string name, spdlog::level::level_enum level){
+            return logger("graph::" + name, level);
+        }
+
+        std::shared_ptr<spdlog::logger> op_logger(std::string name, spdlog::level::level_enum level){
+            return logger("op::" + name, level);
+        }
+
         /* TODO - make this cross-platform */
         bool exists(std::string path){
             struct stat buffer;

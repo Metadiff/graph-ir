@@ -22,6 +22,10 @@ namespace md{
         /** Helper function to verify shapes of elementwise operators */
         Shape verify_elementwise_shapes(NodeVec nodes, std::shared_ptr<spdlog::logger> logger);
 
+        NodeVec verify_shapes_and_broadcast(NodeVec nodes, std::string op_name);
+
+        Node cast_or_throw(Node node, DataType data_type, std::string op_name);
+
         /** TODO Tries to evaluate that two nodes are symbolically equals */
         bool symbolic_equals(Node const & node1, Node const & node2);
 

@@ -6,30 +6,30 @@
 namespace md{
     namespace core{
 
-        NodeData::NodeData(GraphInPtr graph,
+        NodeData::NodeData(std::weak_ptr<GraphInternal> const graph,
                            size_t id,
                            std::string name,
                            Device device,
                            Operator op,
-                           unsigned short grad_level,
+                           unsigned int grad_level,
                            Group group):
                 graph(graph),
                 id(id),
                 name(name),
                 data_type(op->get_data_type()),
                 shape(op->get_shape()),
+                op(op),
                 is_input_dependent(op->is_input_dependent()),
                 is_differentiable(op->is_differentiable()),
-                op(op),
                 grad_level(grad_level),
                 device(device),
                 group(group) { }
 
         std::shared_ptr<spdlog::logger> Node::logger() const {
-            return utils::logger(unwrap()->graph->name + "::node::" + std::to_string(unwrap()->id));
+            return utils::logger(unwrap()->g()->name + "::node::" + std::to_string(unwrap()->id));
         }
 
-        void Node::copy_to(const GraphInPtr graph, NodeVec ancestors) const {
+        void Node::copy_to(const Graph graph, NodeVec ancestors) const {
             logger()->trace("Copying to node {}#{}", graph->name, graph->nodes.size());
             std::shared_ptr<NodeData> ptr = unwrap();
             std::shared_ptr<NodeData> node = std::make_shared<NodeData>(graph, ptr->device);
@@ -41,7 +41,7 @@ namespace md{
             node->is_differentiable = ptr->is_differentiable;
             node->data_type = ptr->data_type;
             node->shape = ptr->shape;
-            node->op = ptr->op->copy_to(graph, ancestors);
+            node->op = ptr->op->copy_to(graph.get(), ancestors);
             node->grad_level = ptr->grad_level;
             node->execution = ptr->execution;
             node->group = ptr->group;

@@ -8,21 +8,21 @@
 namespace md{
     namespace core{
 
-        std::string to_string(dataType data_type);
+        std::string to_string(DataType data_type);
 
-        inline std::ostream &operator<<(std::ostream &f, const dataType data_type) {
+        inline std::ostream &operator<<(std::ostream &f, const DataType data_type) {
             return f << to_string(data_type);
         }
 
-        std::string to_string(deviceType device_type);
+        std::string to_string(DeviceType device_type);
 
-        inline std::ostream &operator<<(std::ostream &f, const deviceType device_type) {
+        inline std::ostream &operator<<(std::ostream &f, const DeviceType device_type) {
             return f << to_string(device_type);
         }
 
-        std::string to_string(policy policy);
+        std::string to_string(Policy policy);
 
-        inline std::ostream &operator<<(std::ostream &f, const policy policy) {
+        inline std::ostream &operator<<(std::ostream &f, const Policy policy) {
             return f << to_string(policy);
         }
 

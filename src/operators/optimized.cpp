@@ -18,8 +18,8 @@ namespace md{
             return derived_node(op);
         }
 
-        Node GraphInternal::log_sum_exp(Node node, short axis, double threshold){
-            if(axis == auto_infer){
+        Node GraphInternal::log_sum_exp(Node node, int axis, double threshold){
+            if(axis == 100){
                 return log_sum_exp(node, auto_infer_axes(node), threshold);
             } else {
                 return log_sum_exp(node, {axis}, threshold);

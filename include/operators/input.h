@@ -11,18 +11,18 @@ namespace md {
             /** Input variables */
             class Input : public InputOperator {
             public:
-                dataType  data_type;
+                DataType  data_type;
                 Shape shape;
 
-                Input(GraphInPtr graph, dataType data_type, Shape shape) :
-                        AbstractOperator("Input", graph),
+                Input(GraphInPtr graph, DataType data_type, Shape shape) :
+                        AbstractOperator(graph, "Input"),
                         data_type(data_type), shape(shape) {}
 
                 Operator copy_to(GraphInPtr graph, std::vector<Node> ancestors) const {
                     return std::make_shared<Input>(graph, data_type, shape);
                 }
 
-                dataType get_data_type() const {
+                DataType get_data_type() const {
                     return data_type;
                 }
 
@@ -37,14 +37,14 @@ namespace md {
                 SharedVar var;
 
                 SharedInput(GraphInPtr graph, SharedVar var) :
-                        AbstractOperator("Shared", graph),
+                        AbstractOperator(graph, "Shared"),
                         var(var) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<SharedInput>(graph, var);
                 }
 
-                dataType get_data_type() const {
+                DataType get_data_type() const {
                     return var->data_type;
                 }
 

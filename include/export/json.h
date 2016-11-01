@@ -25,7 +25,7 @@ namespace md{
         void write_props(Properties const properties, PrettyWriter<StringBuffer>& writer);
 
         /** Writes a Policies object to a wrtier from RapidJson */
-        void write_policies(Policies const policies, PrettyWriter<StringBuffer>& writer);
+        void write_policies(GraphPolicies const policies, PrettyWriter<StringBuffer>& writer);
 
         /** Writes a vector of NodeGroup objects to a wrtier from RapidJson */
         void write_groups(std::vector<std::shared_ptr<NodeGroup>> const & groups,

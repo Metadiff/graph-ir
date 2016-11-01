@@ -25,12 +25,12 @@ namespace md{
             bool initialized = false;
         public:
             size_t const id;
-            dataType const data_type;
+            DataType const data_type;
             Shape const shape;
             std::string const name;
 //            Init init;
         public:
-            SharedVariable(size_t const id, dataType const data_type,
+            SharedVariable(size_t const id, DataType const data_type,
                            Shape const shape, std::string const name):
                     id(id),
                     data_type(data_type),
@@ -54,7 +54,7 @@ namespace md{
             return get_all_shared()->at(id);
         }
 
-        inline SharedVar make_shared(dataType data_type, Shape shape, std::string name){
+        inline SharedVar make_shared(DataType data_type, Shape shape, std::string name){
             SharedVar var = std::make_shared<SharedVariable>(get_all_shared()->size(), data_type, shape, name);
             get_all_shared()->push_back(var);
             return get_all_shared()->back();

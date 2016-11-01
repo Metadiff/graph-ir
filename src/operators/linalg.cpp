@@ -25,7 +25,7 @@ namespace md{
             // inv(inv(x)) = x
             auto base = get_base_node(node);
             if(base->op->name == "MatrixInv"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             // Standard
             return apply<op::MatrixInverse>(node);
@@ -40,7 +40,7 @@ namespace md{
         Node GraphInternal::determinant(Node node){
             // If scalar do nothing
             if(node.dims() == 0){
-                return alias(node);
+                return api::alias(node);
             }
             // Standard
             return apply<op::Determinant>(node);
@@ -58,7 +58,7 @@ namespace md{
         Node GraphInternal::trace(Node node){
             // If scalar do nothing
             if(node.dims() == 0){
-                return alias(node);
+                return api::alias(node);
             }
             // Standard
             return apply<op::Trace>(node);

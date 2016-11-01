@@ -5,6 +5,7 @@
 #ifndef METADIFF_CORE_METADIFF_H
 #define METADIFF_CORE_METADIFF_H
 #include "iostream"
+#include "string"
 
 #include "symbolic_integers.h"
 #include "spdlog/spdlog.h"

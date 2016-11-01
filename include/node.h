@@ -8,36 +8,54 @@
 namespace md{
     namespace core{
 
-        /** This class stores all of the data for each single node of the Graph */
+        /** This class stores all of the data for each single node of the Graph
+         * TODO: Add extra meta data like:
+         * positive, negative or unkown
+         * symmetric, skew-symmteric, unkown
+         * positive definite, positive semi-definite, negative definate, negative semi-definite or indefinite
+         */
         class NodeData {
         public:
-            GraphInPtr const graph;
+            std::weak_ptr<GraphInternal> const graph;
             size_t id;
             std::string name;
-            dataType data_type;
+            DataType data_type;
             Shape shape;
-            bool is_input_dependent;
-            bool is_differentiable;
             Operator op;
             NodeVec children;
 
-            unsigned short grad_level;
+            bool is_input_dependent;
+            bool is_differentiable;
+            Positivity positivity;
+            MatrixPositivity matrix_positivity;
+            MatrixSymmetry  matrix_symmetry;
+            MatrixFill matrix_fill;
+
+            unsigned int grad_level;
             Device device;
             ExecutionData execution;
 
             Group group;
 
-            NodeData(GraphInPtr const graph, Device const device) :
+            NodeData(std::weak_ptr<GraphInternal> const graph, Device const device) :
                     graph(graph),
                     device(device) { }
 
-            NodeData(GraphInPtr graph,
+            NodeData(std::weak_ptr<GraphInternal> const graph,
                      size_t id,
                      std::string name,
                      Device device,
                      Operator op,
-                     unsigned short grad_level,
+                     unsigned int grad_level,
                      Group group);
+
+            Graph g() const {
+                if (graph.expired()) {
+                    utils::logger("XXX::node::XXX")->error("Trying to access a Node whose pointer has expired");
+                    throw 1;
+                }
+                return graph.lock();
+            }
         };
 
 
@@ -56,15 +74,14 @@ namespace md{
             Node(Node const &node) :
                     ptr(node.ptr) { };
 
-            Node(Node const *node) :
-                    ptr(node->ptr) { };
+//            Node(Node const *node) :
+//                    ptr(node->ptr) { };
 
             /** Unwraps the pointer to the underlying NodeData.
              * Exits the program if the pointer has expired */
             std::shared_ptr<NodeData> unwrap() const{
                 if (ptr.expired()) {
                     utils::logger("XXX::node::XXX")->error("Trying to access a Node whose pointer has expired");
-                    throw 1;
                 }
                 return ptr.lock();
             }
@@ -75,7 +92,7 @@ namespace md{
             }
 
             /** Copies the node to a new graph */
-            void copy_to(const GraphInPtr graph, NodeVec ancestors) const;
+            void copy_to(const Graph graph, NodeVec ancestors) const;
 
             /** Returns the actual dimensionality of the tensor */
             int dims() const;

@@ -28,7 +28,7 @@ namespace md{
             auto base = get_base_node(node);
             // The -(-x) = x
             if(base->op->name == "Neg"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             // Standard
             return apply<op::Neg>(node);
@@ -60,7 +60,7 @@ namespace md{
             auto base = get_base_node(node);
             // The -(-x) = x
             if(base->op->name == "Div"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             // Standard
             return apply<op::Division>(node);

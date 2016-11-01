@@ -15,44 +15,44 @@ namespace md{
                 MatrixMul(GraphInPtr graph,
                           NodeVec parents,
                           std::vector<bool> transpositions) :
-                        AbstractOperator("MatrixMul", graph), AssociativeOperator(parents),
+                        AbstractOperator(graph, "MatrixMul"), AssociativeOperator(parents),
                         transpositions(transpositions){
-                    Error err;
-                    if (parents[0].dims() > 2) {
-                        err = std::make_shared<InvalidArguments>
-                                (parents, name, "Parent 0 is not a matrix.");
-                        err->log(logger());
-                        throw err;
-                    }
-                    if(transpositions.size() == 0){
-                        for(auto i=0; i < parents.size(); ++i){
-                            transpositions.push_back(false);
-                        }
-                    }
-                    Shape shape = parents[0]->shape;
-                    SymInt temp;
-                    if(transpositions[0]){
-                        temp = shape[0];
-                        shape[0] = shape[1];
-                        shape[1] = temp;
-                    }
-                    for (int i = 1; i < parents.size(); i++) {
-                        if (parents[i].dims() > 2) {
-                            err = std::make_shared<InvalidArguments>
-                                    (parents, name,
-                                     "Parent " + std::to_string(i) + " is not a matrix.");
-                            break;
-                        }
-                        if(parents[i]->shape[transpositions[i]] != shape[1]){
-                            err = std::make_shared<IncompatibleShapes>(parents, name);
-                            break;
-                        }
-                        shape[1] = parents[i]->shape[1 - transpositions[i]];
-                    }
-                    if(err){
-                        err->log(logger());
-                        throw err;
-                    }
+//                    Error err;
+//                    if (parents[0].dims() > 2) {
+//                        err = std::make_shared<InvalidArguments>
+//                                (parents, name, "Parent 0 is not a matrix.");
+//                        err->log(logger());
+//                        throw err;
+//                    }
+//                    if(transpositions.size() == 0){
+//                        for(auto i=0; i < parents.size(); ++i){
+//                            transpositions.push_back(false);
+//                        }
+//                    }
+//                    Shape shape = parents[0]->shape;
+//                    SymInt temp;
+//                    if(transpositions[0]){
+//                        temp = shape[0];
+//                        shape[0] = shape[1];
+//                        shape[1] = temp;
+//                    }
+//                    for (int i = 1; i < parents.size(); i++) {
+//                        if (parents[i].dims() > 2) {
+//                            err = std::make_shared<InvalidArguments>
+//                                    (parents, name,
+//                                     "Parent " + std::to_string(i) + " is not a matrix.");
+//                            break;
+//                        }
+//                        if(parents[i]->shape[transpositions[i]] != shape[1]){
+//                            err = std::make_shared<IncompatibleShapes>(parents, name);
+//                            break;
+//                        }
+//                        shape[1] = parents[i]->shape[1 - transpositions[i]];
+//                    }
+//                    if(err){
+//                        err->log(logger());
+//                        throw err;
+//                    }
                 }
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -63,7 +63,7 @@ namespace md{
                     return {parents[0]->shape[transpositions[0]], parents.back()->shape[not transpositions.back()], 1, 1};
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
+                Node backward_diff_parent(Node my_derivative, int index) {
                     NodeVec left_mats, right_mats;
                     std::vector<bool> left_trans, right_trans;
                     for (auto i = 0; i < index; ++i) {
@@ -95,11 +95,11 @@ namespace md{
                     left_mats.insert(left_mats.end(), right_mats.begin(), right_mats.end());
                     left_trans.push_back(transpositions[index]);
                     left_trans.insert(left_trans.end(), right_trans.begin(), right_trans.end());
-                    return graph->gemm(left_mats, left_trans);
+                    return matrix_mul(left_mats, left_trans);
                 }
 
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     NodeVec product;
                     for(auto i=0; i<parents.size(); ++i){
                         if(i == index){
@@ -108,7 +108,7 @@ namespace md{
                             product.push_back(parents[i]);
                         }
                     }
-                    return graph->gemm(product, transpositions);
+                    return matrix_mul(product, transpositions);
                 }
 
 //                bool equals(Operator const op) const {
@@ -131,25 +131,25 @@ namespace md{
             class MatrixInverse : public FloatUnaryElementwiseOperator {
             public:
                 MatrixInverse(GraphInPtr graph, Node parent) :
-                        AbstractOperator("MatrixInverse", graph), UnaryOperator(parent) {
-                    if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
-                        auto err = std::make_shared<InvalidArguments>
-                                (NodeVec{parent}, name, "Parent must be a square matrix.");
-                        err->log(logger());
-                        throw err;
-                    }
+                        AbstractOperator(graph, "MatrixInverse"), UnaryOperator(parent) {
+//                    if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
+//                        auto err = std::make_shared<InvalidArguments>
+//                                (NodeVec{parent}, name, "Parent must be a square matrix.");
+//                        err->log(logger());
+//                        throw err;
+//                    }
                 }
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<MatrixInverse>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->neg(graph->gemm({owner, my_derivative, owner}, {true, false, true}));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return neg(matrix_mul({owner, my_derivative, owner}, {true, false, true}));
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
-                    return graph->neg(graph->gemm({owner, parent_derivatives[index], owner}, {false, false, false}));
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return neg(matrix_mul({owner, parent_derivatives[index], owner}, {false, false, false}));
                 }
             };
 
@@ -158,48 +158,55 @@ namespace md{
             public:
                 bool transpose;
                 MatrixInverseMul(GraphInPtr graph, Node parent1, Node parent2, bool tranpose = false) :
-                        AbstractOperator("MatrixInverseMul", graph), BinaryOperator(parent1, parent2),
+                        AbstractOperator(graph, "MatrixInverseMul"), BinaryOperator(parent1, parent2),
                         transpose(tranpose){
-                    if (parent1->shape[0] != parent1->shape[1] or parent1->shape[2] != 1 or parent1->shape[2] != 1) {
-                        auto err = std::make_shared<InvalidArguments>
-                                (NodeVec{parent1, parent2}, name, "Parent 1 must be a square matrix.");
-                        err->log(logger());
-                        throw err;
-                    }
-
-                    if (parent1->shape[1-tranpose] != parent2->shape[0]){
-                        auto err = std::make_shared<IncompatibleShapes>(NodeVec{parent1, parent2}, name);
-                        err->log(logger());
-                        throw err;
-                    }
+//                    if (parent1->shape[0] != parent1->shape[1] or parent1->shape[2] != 1 or parent1->shape[2] != 1) {
+//                        auto err = std::make_shared<InvalidArguments>
+//                                (NodeVec{parent1, parent2}, name, "Parent 1 must be a square matrix.");
+//                        err->log(logger());
+//                        throw err;
+//                    }
+//
+//                    if (parent1->shape[1-tranpose] != parent2->shape[0]){
+//                        auto err = std::make_shared<IncompatibleShapes>(NodeVec{parent1, parent2}, name);
+//                        err->log(logger());
+//                        throw err;
+//                    }
                 }
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<MatrixInverseMul>(graph, ancestors[0], ancestors[1], transpose);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
+                Node backward_diff_parent(Node my_derivative, int index) {
                     if(index == 0){
-                        auto solve1 = graph->matrix_inverse_mul(parent1, my_derivative, true);
-                        Node dot;
+                        auto solve1 = matrix_inverse_mul(parent1, my_derivative, true);
                         if(transpose){
-                            dot =  graph->gemm({owner, solve1}, {false, true});
+                            return - dot(owner, solve1, false, true);
                         } else {
-                            dot = graph->gemm({solve1, owner}, {false, true});
+                            return - dot(solve1, owner, false, true);
                         }
-                        return graph->neg(dot);
                     } else {
-                        return graph->matrix_inverse_mul(parent1, my_derivative, not transpose);
+                        return matrix_inverse_mul(parent1, my_derivative, not transpose);
                     }
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
-                    if(index == 0){
-                        auto dot1 = graph->dot(parent_derivatives[index], owner, transpose);
-                        auto solve1 = graph->matrix_inverse_mul(parent1, dot1, transpose);
-                        return graph->neg(solve1);
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    if(not parent_derivatives[0].ptr.expired() and
+                            not parent_derivatives[1].ptr.expired()){
+                        if(index == 0){
+                            auto d = dot(parent_derivatives[0], owner, transpose);
+                            auto diff = neg(parent_derivatives[1], d);
+                            return matrix_inverse_mul(parent1, diff, transpose);
+                        } else {
+                            return Node();
+                        }
+                    } else if(index == 0){
+                        auto d = dot(parent_derivatives[index], owner, transpose);
+                        auto solve = matrix_inverse_mul(parent1, d, transpose);
+                        return neg(solve);
                     } else {
-                        return graph->matrix_inverse_mul(parent1, parent_derivatives[index], transpose);
+                        return matrix_inverse_mul(parent1, parent_derivatives[index], transpose);
                     }
                 }
             };
@@ -208,7 +215,7 @@ namespace md{
             class Determinant : public FloatUnaryOperator {
             public:
                 Determinant(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Determinant", graph), UnaryOperator(parent) {
+                        AbstractOperator(graph, "Determinant"), UnaryOperator(parent) {
                     if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
                         auto err = std::make_shared<InvalidArguments>
                                 (NodeVec{parent}, name, "Parent must be a square matrix.");
@@ -225,13 +232,13 @@ namespace md{
                     return {1, 1, 1, 1};
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, owner, graph->transpose(graph->matrix_inverse(parent)));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return mul(my_derivative, owner, transpose(matrix_inverse(parent)));
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
-                    auto trace = graph->trace(graph->matrix_inverse_mul(parent, parent_derivatives[index]));
-                    return graph->mul(owner, trace);
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    auto tr = trace(matrix_inverse_mul(parent, parent_derivatives[index]));
+                    return mul(owner, tr);
                 }
 
             };
@@ -240,7 +247,7 @@ namespace md{
             class LogDeterminant : public FloatUnaryOperator {
             public:
                 LogDeterminant(GraphInPtr graph, Node parent) :
-                        AbstractOperator("LogDeterminant", graph), UnaryOperator(parent) {
+                        AbstractOperator(graph, "LogDeterminant"), UnaryOperator(parent) {
                     if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
                         auto err = std::make_shared<InvalidArguments>
                                 (NodeVec{parent}, name, "Parent must be a square matrix.");
@@ -257,12 +264,12 @@ namespace md{
                     return {1, 1, 1, 1};
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, graph->transpose(graph->matrix_inverse(parent)));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return mul(my_derivative, transpose(matrix_inverse(parent)));
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
-                    return graph->trace(graph->matrix_inverse_mul(parent, parent_derivatives[index]));
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return trace(matrix_inverse_mul(parent, parent_derivatives[index]));
                 }
 
             };
@@ -271,7 +278,7 @@ namespace md{
             class Trace : public MorphOperator {
             public:
                 Trace(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Trace", graph), UnaryOperator(parent) {
+                        AbstractOperator(graph, "Trace"), UnaryOperator(parent) {
                     // TODO if parent is b8 cast it to max_int
                     if (parent->shape[0] != parent->shape[1] or parent->shape[2] != 1 or parent->shape[2] != 1) {
                         auto err = std::make_shared<InvalidArguments>
@@ -289,12 +296,12 @@ namespace md{
                     return {1, 1, 1, 1};
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, graph->eye(parent->shape[0]));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return mul(my_derivative, graph->eye(parent->shape[0]));
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
-                    return graph->trace(parent_derivatives[index]);
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return trace(parent_derivatives[index]);
                 }
             };
         }

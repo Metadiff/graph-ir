@@ -15,9 +15,9 @@ namespace md {
                 double value;
                 ConstantValue(GraphInPtr graph,
                               double value,
-                              dataType data_type,
+                              DataType data_type,
                               Shape shape) :
-                        AbstractOperator("ConstValue", graph), ConstantOperator(data_type),
+                        AbstractOperator(graph, "ConstantValue"), ConstantOperator(data_type),
                         shape(shape), value(value) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -44,7 +44,7 @@ namespace md {
                 SymInt value;
 
                 SymIntWrapper(GraphInPtr graph, SymInt value) :
-                        AbstractOperator("SymInt", graph), ConstantOperator(graph->props.max_int),
+                        AbstractOperator(graph, "SymInt"), ConstantOperator(graph->props.max_int),
                         value(value) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -70,8 +70,8 @@ namespace md {
                 SymInt start;
                 SymInt end;
 
-                Range(GraphInPtr graph, SymInt start, SymInt end, dataType data_type) :
-                        AbstractOperator("Range", graph), ConstantOperator(data_type),
+                Range(GraphInPtr graph, SymInt start, SymInt end, DataType data_type) :
+                        AbstractOperator(graph, "Range"), ConstantOperator(data_type),
                         start(start), end(end) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -96,8 +96,8 @@ namespace md {
             class Eye : public ConstantOperator {
             public:
                 SymInt size;
-                Eye(GraphInPtr graph, SymInt size, dataType data_type) :
-                        AbstractOperator("Eye", graph),  ConstantOperator(data_type),
+                Eye(GraphInPtr graph, SymInt size, DataType data_type) :
+                        AbstractOperator(graph, "Eye"),  ConstantOperator(data_type),
                         size(size){}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {

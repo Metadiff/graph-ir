@@ -10,7 +10,7 @@ namespace md{
             // If parent is square root return the upper node
             auto base = get_base_node(node);
             if(base->op->name == "Sqrt"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             // If the parent is abs, return the square of its parent
             if(base->op->name == "Abs"){
@@ -32,7 +32,7 @@ namespace md{
             // If parent is log return the upper node
             auto base = get_base_node(node);
             if(base->op->name == "Log"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             return apply<op::Exp>(node);
         }
@@ -41,7 +41,7 @@ namespace md{
             // If parent is exp return the upper node
             auto base = get_base_node(node);
             if(base->op->name == "Exp"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             return apply<op::Log>(node);
         }
@@ -61,7 +61,7 @@ namespace md{
             if(base->op->name == "Square" or base->op->name == "Exp"
                or base->op->name == "Sigmoid" or base->op->name == "Log1p"
                or base->op->name == "Softplus"){
-                return alias(node);
+                return api::alias(node);
             }
             return apply<op::Abs>(node);
         }

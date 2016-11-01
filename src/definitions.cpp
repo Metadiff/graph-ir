@@ -15,12 +15,6 @@ namespace md{
             return device1.type != device2.type or device1.id != device2.id;
         }
 
-        Device host(){
-            static Device host(deviceType::CPU, 0);
-            return host;
-        }
-
-
         NodeGroup::NodeGroup(const std::string name,
                              const std::weak_ptr<NodeGroup> parent) :
                 name(name),
@@ -44,4 +38,5 @@ namespace md{
             return parent.expired();
         };
     }
+//    core::Graph const default_graph = std::make_shared<core::GraphInternal>();
 }

@@ -6,9 +6,9 @@
 
 namespace md{
     namespace core {
-        Node GraphInternal::constant(double value, dataType data_type, Shape shape) {
+        Node GraphInternal::constant(double value, DataType data_type, Shape shape) {
             // Limit the data type based on the max allowed
-            dataType limit = limit_type(data_type);
+            DataType limit = limit_type(data_type);
             if(limit != data_type){
                 auto err = std::make_shared<TypePromotion>(NodeVec{}, "ConstantValue", data_type, limit);
                 operate_policy(props.policies.data_type_promotion, logger(), err);
@@ -32,7 +32,7 @@ namespace md{
             return constant(M_LN10, props.max_float);
         }
 
-        Node GraphInternal::zeros(Shape shape, dataType data_type){
+        Node GraphInternal::zeros(Shape shape, DataType data_type){
             return constant(0.0, data_type, shape);
         }
 
@@ -40,7 +40,7 @@ namespace md{
             return constant(0.0, props.max_float, shape);
         }
 
-        Node GraphInternal::ones(Shape shape, dataType data_type){
+        Node GraphInternal::ones(Shape shape, DataType data_type){
             return constant(1.0, data_type, shape);
         }
 
@@ -48,7 +48,7 @@ namespace md{
             return constant(1.0, props.max_float, shape);
         }
 
-        Node GraphInternal::range(SymInt start, SymInt end, dataType data_type){
+        Node GraphInternal::range(SymInt start, SymInt end, DataType data_type){
             auto op = std::make_shared<op::Range>(this, start, end, data_type);
             return derived_node(op);
         }
@@ -57,7 +57,7 @@ namespace md{
             return range(start, end, props.max_int);
         }
 
-        Node GraphInternal::eye(SymInt size, dataType data_type){
+        Node GraphInternal::eye(SymInt size, DataType data_type){
             auto op = std::make_shared<op::Eye>(this, size, data_type);
             return derived_node(op);
         }

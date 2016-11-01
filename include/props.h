@@ -16,10 +16,10 @@ namespace md{
             std::string base_group_prefix;
             char group_delimiter;
             Device default_device;
-            dataType max_float;
-            dataType max_int;
-            Policies policies;
-            dataType promotion_table[13][13];
+            DataType max_float;
+            DataType max_int;
+            GraphPolicies policies;
+            DataType promotion_table[13][13];
             unsigned long long random_seed;
 
             Properties():
@@ -53,20 +53,20 @@ namespace md{
                 }
             }
 
-            Properties(Properties* const ptr):
-                    http_proxy(ptr->http_proxy),
-                    base_group_prefix(ptr->base_group_prefix),
-                    group_delimiter(ptr->group_delimiter),
-                    default_device(ptr->default_device),
-                    max_float(ptr->max_float),
-                    max_int(ptr->max_int),
-                    policies(ptr->policies) {
-                for(auto i=0; i<13; ++i){
-                    for(auto j=0; j<13; ++j){
-                        promotion_table[i][j] = ptr->promotion_table[i][j];
-                    }
-                }
-            }
+//            Properties(Properties* const ptr):
+//                    http_proxy(ptr->http_proxy),
+//                    base_group_prefix(ptr->base_group_prefix),
+//                    group_delimiter(ptr->group_delimiter),
+//                    default_device(ptr->default_device),
+//                    max_float(ptr->max_float),
+//                    max_int(ptr->max_int),
+//                    policies(ptr->policies) {
+//                for(auto i=0; i<13; ++i){
+//                    for(auto j=0; j<13; ++j){
+//                        promotion_table[i][j] = ptr->promotion_table[i][j];
+//                    }
+//                }
+//            }
         };
 
         /** These should be loaded from a system file at start */

@@ -11,7 +11,7 @@ namespace md{
             auto base = get_base_node(node);
             // The not(not(x)) = x
             if(base->op->name == "LogicalNot"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             // Standard
             return apply<op::LogicalNot>(node);
@@ -67,7 +67,7 @@ namespace md{
             auto base = get_base_node(node);
             // The not(not(x)) = x
             if(base->op->name == "IsNaN"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             // Standard
             return apply<op::IsNaN>(node);
@@ -77,7 +77,7 @@ namespace md{
             auto base = get_base_node(node);
             // The not(not(x)) = x
             if(base->op->name == "IsInf"){
-                return alias(base->op->get_parents()[0]);
+                return api::alias(base->op->get_parents()[0]);
             }
             // Standard
             return apply<op::IsInf>(node);

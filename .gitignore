@@ -27,5 +27,9 @@
 *.exe
 *.out
 *.app
+
 .idea/
+build/
+doxygen/
+old_bin/
 

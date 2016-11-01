@@ -6,18 +6,19 @@
 #define METADIFF_CORE_OPERATORS_SPECIAL_H
 
 namespace md{
+    using namespace api;
     namespace core{
         namespace op{
-            /** Casting to a specified dataType */
+            /** Casting to a specified DataType */
             class Cast : public UnaryElementwiseOperator {
             public:
-                dataType data_type;
+                DataType data_type;
 
-                Cast(GraphInPtr graph, Node parent, dataType data_type) :
-                        AbstractOperator("Cast", graph), UnaryOperator(parent),
+                Cast(GraphInPtr graph, Node parent, DataType data_type) :
+                        AbstractOperator(graph, "Cast"), UnaryOperator(parent),
                         data_type(data_type) {};
 
-                dataType get_data_type() const {
+                DataType get_data_type() const {
                     return data_type;
                 };
 
@@ -25,12 +26,12 @@ namespace md{
                     return std::make_shared<Cast>(graph, ancestors[0], data_type);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
-                    return graph->cast(my_derivative, parent->data_type);
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return cast(my_derivative, parent->data_type);
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
-                    return graph->cast(parent_derivatives[index], data_type);
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return cast(parent_derivatives[index], data_type);
                 }
 
 //                bool equals(Operator const op) const {
@@ -46,17 +47,17 @@ namespace md{
             class Alias : public MorphElementwiseOperator {
             public:
                 Alias(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Alias", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Alias"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Alias>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
+                Node backward_diff_parent(Node my_derivative, int index){
                     return my_derivative;
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return parent_derivatives[index];
                 }
 
@@ -75,7 +76,7 @@ namespace md{
                 Broadcast(GraphInPtr graph,
                           Node parent,
                           Shape to_shape) :
-                        AbstractOperator("Broadcast", graph), UnaryOperator(parent),
+                        AbstractOperator(graph, "Broadcast"), UnaryOperator(parent),
                         to_shape(to_shape) {
                     for (int i = 0; i < 4; i++) {
                         if (parent->shape[i] != 1 and parent->shape[i] != to_shape[i]) {
@@ -96,7 +97,7 @@ namespace md{
                     return to_shape;
                 }
 
-                dataType get_data_type() const {
+                DataType get_data_type() const {
                     return parent->data_type;
                 }
 
@@ -111,12 +112,12 @@ namespace md{
                     return axes;
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
-                    return graph->sum(my_derivative, get_broadcast_axes());
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return sum(my_derivative, get_broadcast_axes());
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
-                    return graph->broadcast(parent_derivatives[index], to_shape);
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return broadcast(parent_derivatives[index], to_shape);
                 }
 
 //                bool equals(Operator const op) const {
@@ -133,7 +134,7 @@ namespace md{
             public:
                 MakeConstant(GraphInPtr graph,
                              Node parent) :
-                        AbstractOperator("MakeConstant", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "MakeConstant"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<MakeConstant>(graph, ancestors[0]);
@@ -143,13 +144,13 @@ namespace md{
                     return false;
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
+                Node backward_diff_parent(Node my_derivative, int index){
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
                     err->log(logger());
                     throw err;
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return Node();
                 }
             };
@@ -163,30 +164,30 @@ namespace md{
                        Node condition,
                        Node trueParent,
                        Node falseParent) :
-                        AbstractOperator("Select", graph), BinaryOperator(trueParent, falseParent),
+                        AbstractOperator(graph, "Select"), BinaryOperator(trueParent, falseParent),
                         condition(condition) {
-                    if (condition->data_type != b8) {
-                        auto err = std::make_shared<InvalidArguments>(NodeVec{condition, trueParent, falseParent},
-                                                                      name,
-                                                                      "Calling Select with condition of type "
-                                                                      + to_string(condition->data_type));
-                        operate_policy(graph->props.policies.cast, logger(), err);
-                        this->condition = graph->cast(condition, b8);
-                    }
-
-                    Shape shape = verify_elementwise_shapes({condition, trueParent, falseParent}, logger());
-                    if (condition.dims() == 0) {
-                        this->condition = graph->broadcast(condition, shape);
-                    }
-                    if (trueParent.dims() == 0) {
-                        this->parent1 = graph->broadcast(parent1, shape);
-                    }
-                    if (falseParent.dims() == 0) {
-                        this->parent1 = graph->broadcast(parent2, shape);
-                    }
+//                    if (condition->data_type != b8) {
+//                        auto err = std::make_shared<InvalidArguments>(NodeVec{condition, trueParent, falseParent},
+//                                                                      name,
+//                                                                      "Calling Select with condition of type "
+//                                                                      + to_string(condition->data_type));
+//                        operate_policy(graph->props.policies.cast, logger(), err);
+//                        this->condition = graph->cast(condition, b8);
+//                    }
+//
+//                    Shape shape = verify_elementwise_shapes({condition, trueParent, falseParent}, logger());
+//                    if (condition.dims() == 0) {
+//                        this->condition = graph->broadcast(condition, shape);
+//                    }
+//                    if (trueParent.dims() == 0) {
+//                        this->parent1 = graph->broadcast(parent1, shape);
+//                    }
+//                    if (falseParent.dims() == 0) {
+//                        this->parent1 = graph->broadcast(parent2, shape);
+//                    }
                 };
 
-                dataType get_data_type() const {
+                DataType get_data_type() const {
                     return parent1->data_type;
                 }
 
@@ -202,30 +203,30 @@ namespace md{
                     return parent1->shape;
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
+                Node backward_diff_parent(Node my_derivative, int index){
                     Node zero = graph->constant(0);
                     if (index == 0) {
-                        return graph->select(condition, my_derivative, zero);
+                        return select(condition, my_derivative, zero);
                     } else {
-                        return graph->select(condition, zero, my_derivative);
+                        return select(condition, zero, my_derivative);
                     }
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     // We have to simulate this correctly
                     int c = (not parent_derivatives[0].ptr.expired()) +
                             (not parent_derivatives[0].ptr.expired());
                     if(c == 2){
                         if(index == 0){
-                            return graph->select(condition, parent_derivatives[0], parent_derivatives[1]);
+                            return select(condition, parent_derivatives[0], parent_derivatives[1]);
                         }
                     } else {
                         if(index == 0){
                             Node zero = graph->constant(0);
-                            return graph->select(condition, parent_derivatives[0], zero);
+                            return select(condition, parent_derivatives[0], zero);
                         } else {
                             Node zero = graph->constant(0);
-                            return graph->select(condition, zero, parent_derivatives[1]);
+                            return select(condition, zero, parent_derivatives[1]);
                         }
                     }
                     return Node();

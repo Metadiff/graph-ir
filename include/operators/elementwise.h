@@ -5,6 +5,7 @@
 #ifndef METADIFF_CORE_OPERATORS_ELEMENTWISE_H
 #define METADIFF_CORE_OPERATORS_ELEMENTWISE_H
 namespace md{
+    using namespace api;
     namespace core {
         namespace op {
 
@@ -12,20 +13,20 @@ namespace md{
             class Abs : public MorphElementwiseOperator {
             public:
                 Abs(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Abs", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Abs"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Abs>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
+                Node backward_diff_parent(Node my_derivative, int index){
                     auto zero = graph->constant(0);
-                    auto factor = graph->cast(graph->greater_than(parent, zero), owner->data_type);
-                    factor = graph->neg(graph->mul(graph->constant(2), factor), graph->constant(1));
-                    return graph->mul(my_derivative, factor);
+                    auto factor = cast(greater_than(parent, zero), owner->data_type);
+                        factor = neg(mul(graph->constant(2), factor), graph->constant(1));
+                    return mul(my_derivative, factor);
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return backward_diff_parent(parent_derivatives[index], index);
                 }
             };
@@ -34,15 +35,15 @@ namespace md{
             class Square : public FloatUnaryElementwiseOperator {
             public:
                 Square(GraphInPtr graph, Node parent) :
-                AbstractOperator("Square", graph), UnaryOperator(parent) {};
+                AbstractOperator(graph, "Square"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Square>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
+                Node backward_diff_parent(Node my_derivative, int index) {
                     Node two = graph->constant(2);
-                    return graph->mul(my_derivative, two, parent);
+                    return mul(my_derivative, two, parent);
                 }
             };
 
@@ -50,15 +51,15 @@ namespace md{
             class Sqrt : public FloatUnaryElementwiseOperator {
             public:
                 Sqrt(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Sqrt", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Sqrt"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sqrt>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
+                Node backward_diff_parent(Node my_derivative, int index) {
                     Node two = graph->constant(2);
-                    return graph->div(my_derivative, graph->mul(two, owner));
+                    return div(my_derivative, mul(two, owner));
                 }
             };
 
@@ -66,14 +67,14 @@ namespace md{
             class Exp : public FloatUnaryElementwiseOperator {
             public:
                 Exp(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Exp", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Exp"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Exp>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, owner);
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return mul(my_derivative, owner);
                 }
             };
 
@@ -81,14 +82,14 @@ namespace md{
             class Log : public FloatUnaryElementwiseOperator {
             public:
                 Log(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Log", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Log"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Log>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->div(my_derivative, parent);
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return div(my_derivative, parent);
                 }
             };
 
@@ -96,14 +97,14 @@ namespace md{
             class Log10 : public FloatUnaryElementwiseOperator {
             public:
                 Log10(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Log10", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Log10"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Log>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->div(my_derivative, graph->mul(parent, graph->LN_10()));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return div(my_derivative, mul(parent, graph->LN_10()));
                 }
             };
 
@@ -112,14 +113,14 @@ namespace md{
             public:
                 Log1p(GraphInPtr graph,
                       Node parent) :
-                        AbstractOperator("Log1p", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Log1p"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Log1p>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, graph->sigmoid(parent));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return mul(my_derivative, sigmoid(parent));
                 }
             };
 
@@ -127,14 +128,14 @@ namespace md{
             class Sin : public FloatUnaryElementwiseOperator {
             public:
                 Sin(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Sin", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Sin"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sin>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, graph->cos(parent));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return my_derivative * cos(parent);
                 }
             };
 
@@ -142,14 +143,14 @@ namespace md{
             class Cos : public FloatUnaryElementwiseOperator {
             public:
                 Cos(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Cos", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Cos"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Cos>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, graph->neg(graph->sin(parent)));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return mul(my_derivative, neg(sin(parent)));
                 }
             };
 
@@ -157,14 +158,14 @@ namespace md{
             class Tan : public FloatUnaryElementwiseOperator {
             public:
                 Tan(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Tan", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Tan"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Tan>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->div(my_derivative, graph->square(graph->cos(parent)));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return div(my_derivative, square(cos(parent)));
                 }
             };
 
@@ -172,14 +173,14 @@ namespace md{
             class Cot : public FloatUnaryElementwiseOperator {
             public:
                 Cot(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Cot", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Cot"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Cot>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->neg(graph->div(my_derivative, graph->square(graph->sin(parent))));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return neg(div(my_derivative, square(sin(parent))));
                 }
             };
 
@@ -187,14 +188,14 @@ namespace md{
             class Sinh : public FloatUnaryElementwiseOperator {
             public:
                 Sinh(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Sinh", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Sinh"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Sinh>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, graph->cosh(parent));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return mul(my_derivative, cosh(parent));
                 }
             };
 
@@ -202,14 +203,14 @@ namespace md{
             class Cosh : public FloatUnaryElementwiseOperator {
             public:
                 Cosh(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Cosh", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Cosh"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Cosh>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    return graph->mul(my_derivative, graph->sinh(parent));
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    return mul(my_derivative, sinh(parent));
                 }
             };
 
@@ -217,15 +218,15 @@ namespace md{
             class Tanh : public FloatUnaryElementwiseOperator {
             public:
                 Tanh(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Tanh", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Tanh"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Tanh>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
-                    Node derivative = graph->neg(graph->constant(1), graph->square(owner));
-                    return graph->mul(my_derivative, derivative);
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    Node derivative = neg(graph->constant(1), square(owner));
+                    return mul(my_derivative, derivative);
                 }
             };
 
@@ -233,16 +234,16 @@ namespace md{
             class Coth : public FloatUnaryElementwiseOperator {
             public:
                 Coth(GraphInPtr graph, Node parent) :
-                        AbstractOperator("Coth", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "Coth"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Coth>(graph, ancestors[0]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index) {
+                Node backward_diff_parent(Node my_derivative, int index) {
                     auto one = graph->constant(1);
-                    Node derivative = graph->neg(one, graph->square(owner));
-                    return graph->mul(my_derivative, derivative);
+                    Node derivative = neg(one, square(owner));
+                    return mul(my_derivative, derivative);
                 }
             };
 
@@ -250,19 +251,19 @@ namespace md{
             class Pow : public BinaryFloatElementwiseOperator {
             public:
                 Pow(GraphInPtr graph, Node parent1, Node parent2) :
-                        AbstractOperator("Pow", graph), BinaryOperator(parent1, parent2) {};
+                        AbstractOperator(graph, "Pow"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Pow>(graph, ancestors[0], ancestors[1]);
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
-                    Node product = graph->mul(my_derivative, owner);
+                Node backward_diff_parent(Node my_derivative, int index){
+                    Node product = mul(my_derivative, owner);
                     if (index == 0) {
-                        Node factor = graph->div(parent2, parent1);
-                        return graph->mul(product, factor);
+                        Node factor = div(parent2, parent1);
+                        return mul(product, factor);
                     } else {
-                        return graph->mul(product, graph->log(parent1));
+                        return mul(product, log(parent1));
                     }
                 }
             };

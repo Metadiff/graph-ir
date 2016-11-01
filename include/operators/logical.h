@@ -13,14 +13,14 @@ namespace md {
             class LogicalNot : public LogicalUnaryElementwise {
             public:
                 LogicalNot(GraphInPtr graph, Node parent) :
-                        AbstractOperator("LogicalNot", graph), UnaryOperator(parent) {
-                    if (parent->data_type != b8) {
-                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent}, name,
-                                                                      "Calling logical not on node of type "
-                                                                      + to_string(parent->data_type));
-                        operate_policy(graph->props.policies.cast, logger(), err);
-                        this->parent = graph->cast(parent, b8);
-                    }
+                        AbstractOperator(graph, "LogicalNot"), UnaryOperator(parent) {
+//                    if (parent->data_type != b8) {
+//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent}, name,
+//                                                                      "Calling logical not on node of type "
+//                                                                      + to_string(parent->data_type));
+//                        operate_policy(graph->props.policies.cast, logger(), err);
+//                        this->parent = api::cast(parent, b8);
+//                    }
                 }
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -34,23 +34,23 @@ namespace md {
                 LogicalAnd(GraphInPtr graph,
                            Node parent1,
                            Node parent2) :
-                        AbstractOperator("LogicalAnd", graph), BinaryOperator(parent1, parent2) {
-                    if (parent1->data_type != b8) {
-                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
-                                                                      "Calling logical operator"
-                                                                              " on node of type "
-                                                                      + to_string(parent1->data_type));
-                        operate_policy(graph->props.policies.cast, logger(), err);
-                        this->parent1 = graph->cast(parent1, b8);
-                    }
-                    if (parent2->data_type != b8) {
-                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
-                                                                      "Calling logical operator"
-                                                                              " on node of type "
-                                                                      + to_string(parent2->data_type));
-                        operate_policy(graph->props.policies.cast, logger(), err);
-                        this->parent2 = graph->cast(parent2, b8);
-                    }
+                        AbstractOperator(graph, "LogicalAnd"), BinaryOperator(parent1, parent2) {
+//                    if (parent1->data_type != b8) {
+//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
+//                                                                      "Calling logical operator"
+//                                                                              " on node of type "
+//                                                                      + to_string(parent1->data_type));
+//                        operate_policy(graph->props.policies.cast, logger(), err);
+//                        this->parent1 = api::cast(parent1, b8);
+//                    }
+//                    if (parent2->data_type != b8) {
+//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
+//                                                                      "Calling logical operator"
+//                                                                              " on node of type "
+//                                                                      + to_string(parent2->data_type));
+//                        operate_policy(graph->props.policies.cast, logger(), err);
+//                        this->parent2 = api::cast(parent2, b8);
+//                    }
                 };
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -64,23 +64,23 @@ namespace md {
                 LogicalOr(GraphInPtr graph,
                           Node parent1,
                           Node parent2) :
-                        AbstractOperator("LogicalOr", graph), BinaryOperator(parent1, parent2) {
-                    if (parent1->data_type != b8) {
-                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
-                                                                      "Calling logical operator"
-                                                                              " on node of type "
-                                                                      + to_string(parent1->data_type));
-                        operate_policy(graph->props.policies.cast, logger(), err);
-                        this->parent1 = graph->cast(parent1, b8);
-                    }
-                    if (parent2->data_type != b8) {
-                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
-                                                                      "Calling logical operator"
-                                                                              " on node of type "
-                                                                      + to_string(parent2->data_type));
-                        operate_policy(graph->props.policies.cast, logger(), err);
-                        this->parent2 = graph->cast(parent2, b8);
-                    }
+                        AbstractOperator(graph, "LogicalOr"), BinaryOperator(parent1, parent2) {
+//                    if (parent1->data_type != b8) {
+//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
+//                                                                      "Calling logical operator"
+//                                                                              " on node of type "
+//                                                                      + to_string(parent1->data_type));
+//                        operate_policy(graph->props.policies.cast, logger(), err);
+//                        this->parent1 = api::cast(parent1, b8);
+//                    }
+//                    if (parent2->data_type != b8) {
+//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
+//                                                                      "Calling logical operator"
+//                                                                              " on node of type "
+//                                                                      + to_string(parent2->data_type));
+//                        operate_policy(graph->props.policies.cast, logger(), err);
+//                        this->parent2 = api::cast(parent2, b8);
+//                    }
                 };
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -94,7 +94,7 @@ namespace md {
                 GreaterThan(GraphInPtr graph,
                             Node parent1,
                             Node parent2) :
-                        AbstractOperator("GreaterThan", graph), BinaryOperator(parent1, parent2) {};
+                        AbstractOperator(graph, "GreaterThan"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<GreaterThan>(graph, ancestors[0], ancestors[1]);
@@ -107,7 +107,7 @@ namespace md {
                 LessThan(GraphInPtr graph,
                          Node parent1,
                          Node parent2) :
-                        AbstractOperator("LessThan", graph), BinaryOperator(parent1, parent2) {};
+                        AbstractOperator(graph, "LessThan"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LessThan>(graph, ancestors[0], ancestors[1]);
@@ -120,7 +120,7 @@ namespace md {
                 GreaterThanOrEqual(GraphInPtr graph,
                                    Node parent1,
                                    Node parent2) :
-                        AbstractOperator("GreaterThanOrEqual", graph), BinaryOperator(parent1, parent2) {};
+                        AbstractOperator(graph, "GreaterThanOrEqual"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<GreaterThanOrEqual>(graph, ancestors[0], ancestors[1]);
@@ -133,7 +133,7 @@ namespace md {
                 LessThanOrEqual(GraphInPtr graph,
                                 Node parent1,
                                 Node parent2) :
-                        AbstractOperator("LessThanOrEqual", graph), BinaryOperator(parent1, parent2) {};
+                        AbstractOperator(graph, "LessThanOrEqual"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LessThanOrEqual>(graph, ancestors[0], ancestors[1]);
@@ -146,7 +146,7 @@ namespace md {
                 Equals(GraphInPtr graph,
                        Node parent1,
                        Node parent2) :
-                        AbstractOperator("Equals", graph), BinaryOperator(parent1, parent2) {};
+                        AbstractOperator(graph, "Equals"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Equals>(graph, ancestors[0], ancestors[1]);
@@ -159,7 +159,7 @@ namespace md {
                 NotEquals(GraphInPtr graph,
                           Node parent1,
                           Node parent2) :
-                        AbstractOperator("NotEquals", graph), BinaryOperator(parent1, parent2) {};
+                        AbstractOperator(graph, "NotEquals"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<NotEquals>(graph, ancestors[0], ancestors[1]);
@@ -169,17 +169,17 @@ namespace md {
             /**  Checks if the two nodes are equal, up to a tolerance measure */
             class ApproximatelyEquals : public LogicalBinaryElementwise {
             public:
-                double tol;
+                double tolerance;
 
                 ApproximatelyEquals(GraphInPtr graph,
                                     Node parent1,
                                     Node parent2,
-                                    double tol) :
-                        AbstractOperator("ApproximatelyEquals", graph), BinaryOperator(parent1, parent2),
-                        tol(tol) {};
+                                    double tolerance) :
+                        AbstractOperator(graph, "ApproximatelyEquals"), BinaryOperator(parent1, parent2),
+                        tolerance(tolerance) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<ApproximatelyEquals>(graph, ancestors[0], ancestors[1], tol);
+                    return std::make_shared<ApproximatelyEquals>(graph, ancestors[0], ancestors[1], tolerance);
                 }
             };
 
@@ -187,7 +187,7 @@ namespace md {
             class IsNaN : public LogicalUnaryElementwise {
             public:
                 IsNaN(GraphInPtr const graph, Node parent) :
-                        AbstractOperator("IsNaN", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "IsNaN"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IsNaN>(graph, ancestors[0]);
@@ -198,7 +198,7 @@ namespace md {
             class IsInf : public LogicalUnaryElementwise {
             public:
                 IsInf(GraphInPtr const graph, Node parent) :
-                        AbstractOperator("IsInf", graph), UnaryOperator(parent) {};
+                        AbstractOperator(graph, "IsInf"), UnaryOperator(parent) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IsInf>(graph, ancestors[0]);

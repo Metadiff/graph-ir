@@ -40,33 +40,44 @@ namespace md{
             return true;
         }
 
-        Shape verify_elementwise_shapes(NodeVec nodes, std::shared_ptr<spdlog::logger> logger) {
+        NodeVec verify_shapes_and_broadcast(NodeVec nodes, std::string op_name) {
             Shape max_shape = nodes[0]->shape;
-            for (int i = 1; i < nodes.size(); i++) {
+            for (auto i = 1; i < nodes.size(); i++) {
                 Shape node_shape = nodes[i]->shape;
                 bool max = false;
                 for (int j = 0; j < 4; j++) {
-                    if (node_shape[j] != 1 and max_shape[j] == 1) {
-                        max = true;
-                        break;
+                    if (node_shape[j] != 1 and max_shape[j] != 1 and node_shape[j] != max_shape[j]) {
+                        auto err = std::make_shared<IncompatibleShapes>(nodes, op_name);
+                        err->log(utils::op_logger(op_name));
+                        throw err;
+                    } else if(node_shape[j] != 1 and max_shape[j] == 1){
+                        max_shape[j] = node_shape[j];
                     }
-                }
-                if (max) {
-                    for (int j = 0; j < 4; j++) {
-                        if (node_shape[j] == 1 and max_shape[j] != 1) {
-                            auto err = std::make_shared<IncompatibleShapes>(nodes, nodes[0]->op->name);
-                            err->log(logger);
-                            throw err;
-                        } else if (node_shape[j] != 1 and max_shape[j] != 1 and node_shape[j] != max_shape[j]) {
-                            auto err = std::make_shared<IncompatibleShapes>(nodes, nodes[0]->op->name);
-                            err->log(logger);
-                            throw err;
-                        }
-                    }
-                    max_shape = node_shape;
                 }
             }
-            return max_shape;
+            NodeVec outputs;
+            Policy implicit_broadcast = nodes[0]->g()->props.policies.implicit_broadcast;
+            for (auto i = 0; i < nodes.size(); i++) {
+                if(nodes[i]->shape != max_shape){
+                    auto err = std::make_shared<ImplicitBroadcast>(nodes, op_name);
+                    operate_policy(implicit_broadcast, utils::op_logger(op_name), err);
+                    outputs.push_back(api::broadcast(nodes[i], max_shape));
+                } else {
+                    outputs.push_back(nodes[i]);
+                }
+            }
+            return outputs;
+        }
+
+        Node cast_or_throw(Node node, DataType data_type, std::string op_name){
+            Graph g = node->g();
+            if(node->data_type != data_type){
+                // TODO make more sensible error
+                auto err = std::make_shared<TypePromotion>(NodeVec{node}, op_name, node->data_type, data_type);
+                operate_policy(g->props.policies.data_type_promotion, utils::op_logger(op_name), err);
+                node = cast(node, data_type);
+            }
+            return node;
         }
 
         bool symbolic_equals(Node const & node1, Node const & node2) {
@@ -86,7 +97,7 @@ namespace md{
 
         Axes auto_infer_axes(Node node){
             Axes axes;
-            for(short i=0; i<4; ++i){
+            for(int i=0; i<4; ++i){
                 if(node->shape[i] != 1){
                     axes.push_back(i);
                 }

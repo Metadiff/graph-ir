@@ -313,10 +313,10 @@ namespace md{
             }
             std::pair <I, std::pair<sym::Polynomial, sym::Polynomial>> floor_var, ceil_var;
             for (auto i = 0; i < monomial.powers.size(); ++i) {
-                if ((floor_var = sym::Monomial::registry->get_floor(monomial.powers[i].first)).first != 0) {
+                if ((floor_var = sym::registry()->get_floor(monomial.powers[i].first)).first != 0) {
                     result += "floor(" + polynomial_js(floor_var.second.first) + " / " +
                               polynomial_js(floor_var.second.second) + ")";
-                } else if ((ceil_var = sym::Monomial::registry->get_ceil(monomial.powers[i].first)).first != 0) {
+                } else if ((ceil_var = sym::registry()->get_ceil(monomial.powers[i].first)).first != 0) {
                     result += "ceil(" + polynomial_js(ceil_var.second.first) + " / " +
                               polynomial_js(ceil_var.second.second) + ")";
                 } else {

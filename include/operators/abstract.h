@@ -11,8 +11,11 @@ namespace md {
             /** The abstract class for all operatros */
             class AbstractOperator {
             protected:
+                /** Pointer to the owning GraphInternal */
+                GraphInPtr const graph;
+
                 /** This should never be called directly, it exists ONLY because of virtual inheritance */
-                AbstractOperator(): name(""), graph(nullptr) {};
+                AbstractOperator():  graph(nullptr), name("") {};
 
                 /** Easy way to get logging for the corresponding operator */
                 std::shared_ptr<spdlog::logger> logger() const {
@@ -21,21 +24,18 @@ namespace md {
             public:
                 /** Unique name of the concrete Operator class */
                 std::string const name;
-                /** Pointer to the owning GraphInternal */
-                GraphInPtr const graph;
                 /** Pointer to the owning Node */
                 Node owner;
 
                 /** The Node owner should be set by the graph after creating the output Node */
-                AbstractOperator(std::string const name,
-                                 GraphInPtr const graph) :
-                        name(name),  graph(graph) {};
+                AbstractOperator(GraphInPtr const graph, std::string const name) :
+                        graph(graph), name(name){};
 
                 /** Copies the operator to a separate graph with the corresponding ancestors there */
                 virtual Operator copy_to(GraphInPtr graph, NodeVec ancestors) const = 0;
 
-                /** Calculates the dataType for the output Node based on its ancestors*/
-                virtual dataType get_data_type() const = 0;
+                /** Calculates the DataType for the output Node based on its ancestors*/
+                virtual DataType get_data_type() const = 0;
 
                 /** Calculates the Shape for the output Node based on its ancestors*/
                 virtual Shape get_shape() const = 0;
@@ -47,7 +47,7 @@ namespace md {
                 virtual bool is_differentiable() const;
 
                 /** Calculates the maximum grad level of its ancestors */
-                unsigned short get_grad_level() const;
+                unsigned int get_grad_level() const;
 
                 /** Returns the parents of this operator (all ancestors influencing in differentiable way) */
                 virtual NodeVec get_parents() const  = 0;
@@ -62,7 +62,7 @@ namespace md {
                 void backward_diff(std::vector<NodeVec> &messages, std::vector<bool>& flow_tree);
 
                 /** Returns the gradient with respect to the paret at index during Backward Differentiation */
-                virtual Node backward_diff_parent(Node my_derivative, short index) = 0;
+                virtual Node backward_diff_parent(Node my_derivative, int index) = 0;
 
                 /** Combines the gradients of all of the children of the operator. This is relevant only for
                  * multy-output operators, for all others this is just add */
@@ -72,7 +72,7 @@ namespace md {
                 void forward_diff(NodeVec & parent_derivatives);
 
                 /** Returns the gradient with respect to the paret at index during Backward Differentiation */
-                virtual Node forward_diff_parent(NodeVec & parent_derivatives, short index) = 0;
+                virtual Node forward_diff_parent(NodeVec & parent_derivatives, int index) = 0;
 
                 /** Combines the gradients of all of the children of the operator. This is relevant only for
                  * multy-output operators, for all others this is just add */
@@ -104,13 +104,13 @@ namespace md {
                     return NodeVec {};
                 }
 
-                Node backward_diff_parent(Node my_grad, short index) {
+                Node backward_diff_parent(Node my_grad, int index) {
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
                     err->log(logger());
                     throw err;
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivative, short index){
+                Node forward_diff_parent(NodeVec & parent_derivative, int index){
                     return Node();
                 }
             };
@@ -129,53 +129,53 @@ namespace md {
             class ConstantOperator : public virtual OrphanOperator,
                                      public virtual NonDifferentiableOperator {
             public:
-                dataType data_type;
+                DataType data_type;
 
-                ConstantOperator(dataType data_type):
+                ConstantOperator(DataType data_type):
                         data_type(data_type) {};
 
-                dataType get_data_type() const {
+                DataType get_data_type() const {
                     return data_type;
                 }
             };
 
             class LogicalOperator: public virtual NonDifferentiableOperator{
             public:
-                dataType get_data_type() const {
+                DataType get_data_type() const {
                     return b8;
                 };
 
-                Node backward_diff_parent(Node my_derivative, short index){
+                Node backward_diff_parent(Node my_derivative, int index){
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
                     err->log(logger());
                     throw err;
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return Node();
                 }
             };
 
             class IntegerOperator: public virtual AbstractOperator{
             public:
-                dataType get_data_type() const{
+                DataType get_data_type() const{
                     return graph->props.max_int;
                 }
 
-                Node backward_diff_parent(Node my_derivative, short index){
+                Node backward_diff_parent(Node my_derivative, int index){
                     auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
                     err->log(logger());
                     throw err;
                 }
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return Node();
                 }
             };
 
             class FloatOperator: public virtual AbstractOperator{
             public:
-                dataType get_data_type() const{
+                DataType get_data_type() const{
                     return graph->props.max_float;
                 }
             };
@@ -221,19 +221,19 @@ namespace md {
                 NodeVec parents;
                 AssociativeOperator(NodeVec parents) :
                         parents(parents) {
-                    if (parents.size() < 2) {
-                        auto err = std::make_shared<InvalidArguments>
-                                (parents, name, "All NaryOperators require at least 2 parents");
-                        err->log(logger());
-                        throw err;
-                    }
+//                    if (parents.size() < 2) {
+//                        auto err = std::make_shared<InvalidArguments>
+//                                (parents, name, "All NaryOperators require at least 2 parents");
+//                        err->log(logger());
+//                        throw err;
+//                    }
                 };
 
                 NodeVec get_parents() const {
                     return parents;
                 };
 
-                dataType get_data_type() const {
+                DataType get_data_type() const {
                     return parents[0]->data_type;
                 }
             };
@@ -242,7 +242,7 @@ namespace md {
             protected:
                 MorphOperator(): UnaryOperator() {};
             public:
-                dataType get_data_type() const{
+                DataType get_data_type() const{
                     return parent->data_type;
                 }
             };
@@ -253,28 +253,28 @@ namespace md {
             public:
                 Axes axes;
                 ReductionOperator(Axes axes) : axes(axes){
-                    if(not validate_axes(axes)){
-                        std::string axes_str;
-                        for (auto i = 0; i < axes.size(); ++i) {
-                            axes_str += std::to_string(axes[i]);
-                            if (i < axes.size() - 1) {
-                                axes_str += ", ";
-                            }
-                        }
-                        if (axes.size() == 0) {
-                            axes_str = "NULL";
-                        }
-                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent}, name, "Invalid axes: " + axes_str);
-                        err->log(logger());
-                        throw err;
-                    }
-                    // TODO should we forbid summing over axes where shape[i] = 1?
-                    for(auto i=0; i<axes.size(); ++i){
-                        if(parent->shape[axes[i]] == 1){
-                            axes.erase(std::remove(axes.begin(), axes.end(), i), axes.end());
-                        }
-                    }
-                    this->axes = axes;
+//                    if(not validate_axes(axes)){
+//                        std::string axes_str;
+//                        for (auto i = 0; i < axes.size(); ++i) {
+//                            axes_str += std::to_string(axes[i]);
+//                            if (i < axes.size() - 1) {
+//                                axes_str += ", ";
+//                            }
+//                        }
+//                        if (axes.size() == 0) {
+//                            axes_str = "NULL";
+//                        }
+//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent}, name, "Invalid axes: " + axes_str);
+//                        err->log(logger());
+//                        throw err;
+//                    }
+//                    // TODO should we forbid summing over axes where shape[i] = 1?
+//                    for(auto i=0; i<axes.size(); ++i){
+//                        if(parent->shape[axes[i]] == 1){
+//                            axes.erase(std::remove(axes.begin(), axes.end(), i), axes.end());
+//                        }
+//                    }
+//                    this->axes = axes;
                 };
 
                 Shape get_shape() const {
@@ -283,6 +283,26 @@ namespace md {
                         p_shape[axes[i]] = 1;
                     }
                     return p_shape;
+                }
+            };
+
+            class MonitorOperator: public virtual ElementwiseOperator, public virtual MorphOperator{
+            public:
+                Node monitored;
+                std::string msg;
+                MonitorOperator(Node monitored, std::string msg):
+                        monitored(monitored), msg(msg) {};
+
+                NodeVec get_arguments() const {
+                    return NodeVec{monitored};
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return my_derivative;
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return parent_derivatives[index];
                 }
             };
 
@@ -296,7 +316,7 @@ namespace md {
             class FloatUnaryElementwiseOperator: public virtual FloatOperator,
                                                  public virtual UnaryElementwiseOperator {
 
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return backward_diff_parent(parent_derivatives[index], index);
                 }
             };
@@ -315,7 +335,7 @@ namespace md {
 
             class BinaryFloatElementwiseOperator: public virtual FloatOperator,
                                                public virtual BinaryElementwiseOperator{
-                Node forward_diff_parent(NodeVec & parent_derivatives, short index){
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return backward_diff_parent(parent_derivatives[index], index);
                 }
             };

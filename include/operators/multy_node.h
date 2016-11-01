@@ -18,11 +18,11 @@ namespace metadiff{
          */
         class MultiNode : public UnaryOperator {
         public:
-            unsigned short size;
+            unsigned int size;
             MultiNode(std::string const name,
                       GraphInPtr graph,
                       Node parent,
-                      unsigned short size) :
+                      unsigned int size) :
                     UnaryOperator(name, graph, parent),
                 size(size){
                 if(size < 1){
@@ -32,10 +32,10 @@ namespace metadiff{
                 }
             }
 
-            virtual Shape get_shape(unsigned short index) const = 0;
-            virtual dType get_dtype(unsigned short index) const = 0;
-            virtual nodeType get_node_type(unsigned short index) const = 0;
-            virtual Node child_to_my_grad(Node my_grad, unsigned short index)  = 0;
+            virtual Shape get_shape(unsigned int index) const = 0;
+            virtual dType get_dtype(unsigned int index) const = 0;
+            virtual nodeType get_node_type(unsigned int index) const = 0;
+            virtual Node child_to_my_grad(Node my_grad, unsigned int index)  = 0;
 
             Shape get_shape() const {
                 return get_shape(0);
@@ -49,7 +49,7 @@ namespace metadiff{
                 return get_node_type(0);
             }
 
-            Node backward_diff(Node my_grad, unsigned short index) {
+            Node backward_diff(Node my_grad, unsigned int index) {
                 return my_grad;
             }
         };
@@ -60,7 +60,7 @@ namespace metadiff{
         class MultiNodeIndex : public Operator {
         public:
             Node parent;
-            unsigned short index;
+            unsigned int index;
             
             MultiNodeIndex(GraphInPtr graph,
                            Node parent,
@@ -100,7 +100,7 @@ namespace metadiff{
                 return multi_op->get_node_type(index);
             };
 
-            unsigned short get_grad_level() const {
+            unsigned int get_grad_level() const {
                 return parent->grad_level;
             }
 
@@ -113,7 +113,7 @@ namespace metadiff{
             }
 
             /** The MultiNode class is responsible for fetching correctly the child gradients */
-            Node backward_diff(Node my_grad, unsigned short index) {
+            Node backward_diff(Node my_grad, unsigned int index) {
                 std::shared_ptr<MultiNode> multi_op = std::static_pointer_cast<MultiNode>(parent->op);
                 return multi_op->child_to_my_grad(my_grad, this->index);
             }
@@ -130,9 +130,9 @@ namespace metadiff{
         /** Return the max as first child and the argmax as second */
         class MaxAndArgMax : public MultiNode {
         public:
-            short axis;
+            int axis;
             MaxAndArgMax(GraphInPtr graph,
-                         Node parent, short axis) :
+                         Node parent, int axis) :
                     MultiNode("MaxAndArgMax", graph, parent, 2),
                     axis(axis) {
                 if (parent->dtype == dType::b8) {
@@ -142,13 +142,13 @@ namespace metadiff{
                 }
             }
 
-            Shape get_shape(unsigned short index) const{
+            Shape get_shape(unsigned int index) const{
                 Shape shape = parent->shape;
                 shape[axis] = SymInt::one;
                 return shape;
             }
 
-            dType get_dtype(unsigned short index) const{
+            dType get_dtype(unsigned int index) const{
                 if(index == 0){
                     return parent->dtype;
                 } else {
@@ -156,7 +156,7 @@ namespace metadiff{
                 }
             }
 
-            nodeType get_node_type(unsigned short index) const{
+            nodeType get_node_type(unsigned int index) const{
                 if(parent->node_type == INPUT or parent->node_type == INPUT_DERIVED){
                     if(index == 0){
                         return INPUT_DERIVED;
@@ -168,7 +168,7 @@ namespace metadiff{
                 }
             }
 
-            Node child_to_my_grad(Node my_grad, unsigned short index){
+            Node child_to_my_grad(Node my_grad, unsigned int index){
                 // The max should always be the first child
                 if(index == 0){
                     Node argmax;
@@ -199,9 +199,9 @@ namespace metadiff{
          */
         class SortAndArgSort : public MultiNode {
         public:
-            short axis;
+            int axis;
             SortAndArgSort(GraphInPtr graph,
-                         Node parent, short axis) :
+                         Node parent, int axis) :
                     MultiNode("SortAndArgSort", graph, parent, 2),
                     axis(axis) {
                 if (parent->dtype == dType::b8) {
@@ -211,13 +211,13 @@ namespace metadiff{
                 }
             }
 
-            Shape get_shape(unsigned short index) const{
+            Shape get_shape(unsigned int index) const{
                 Shape shape = parent->shape;
                 shape[axis] = SymInt::one;
                 return shape;
             }
 
-            dType get_dtype(unsigned short index) const{
+            dType get_dtype(unsigned int index) const{
                 if(index == 0){
                     return parent->dtype;
                 } else {
@@ -225,7 +225,7 @@ namespace metadiff{
                 }
             }
 
-            nodeType get_node_type(unsigned short index) const{
+            nodeType get_node_type(unsigned int index) const{
                 if(parent->node_type == INPUT or parent->node_type == INPUT_DERIVED){
                     if(index == 0){
                         return INPUT_DERIVED;
@@ -237,7 +237,7 @@ namespace metadiff{
                 }
             }
 
-            Node child_to_my_grad(Node my_grad, unsigned short index){
+            Node child_to_my_grad(Node my_grad, unsigned int index){
                 // The max should always be the first child
                 if(index == 0){
                     Node argsort;
@@ -265,7 +265,7 @@ namespace metadiff{
     }
 
     namespace core{
-        Node Node::max(short axis) {
+        Node Node::max(int axis) {
             GraphInPtr graph = unwrap()->graph;
             if (axis == AUTO_INFER_AXIS) {
                 for (size_t i = 0; i < 4; i++) {
@@ -279,7 +279,7 @@ namespace metadiff{
             return graph->derived_node(std::make_shared<op::MultiNodeIndex>(graph, max_and_arg_max, 0));
         }
 
-        Node Node::argMax(short axis) {
+        Node Node::argMax(int axis) {
             GraphInPtr graph = unwrap()->graph;
             if (axis == AUTO_INFER_AXIS) {
                 for (size_t i = 0; i < 4; i++) {
@@ -293,7 +293,7 @@ namespace metadiff{
             return graph->derived_node(std::make_shared<op::MultiNodeIndex>(graph, max_and_arg_max, 1));
         }
 
-        std::pair<Node, Node> Node::maxAndArgMax(short axis){
+        std::pair<Node, Node> Node::maxAndArgMax(int axis){
             GraphInPtr graph = unwrap()->graph;
             if (axis == AUTO_INFER_AXIS) {
                 for (size_t i = 0; i < 4; i++) {
@@ -308,7 +308,7 @@ namespace metadiff{
                     graph->derived_node(std::make_shared<op::MultiNodeIndex>(graph, max_and_arg_max, 1))};
         }
 
-        Node Node::sort(short axis) {
+        Node Node::sort(int axis) {
             GraphInPtr graph = unwrap()->graph;
             if (axis == AUTO_INFER_AXIS) {
                 for (size_t i = 0; i < 4; i++) {
@@ -322,7 +322,7 @@ namespace metadiff{
             return graph->derived_node(std::make_shared<op::MultiNodeIndex>(graph, sort_and_arg_sort, 0));
         }
 
-        Node Node::argSort(short axis) {
+        Node Node::argSort(int axis) {
             GraphInPtr graph = unwrap()->graph;
             if (axis == AUTO_INFER_AXIS) {
                 for (size_t i = 0; i < 4; i++) {
@@ -336,7 +336,7 @@ namespace metadiff{
             return graph->derived_node(std::make_shared<op::MultiNodeIndex>(graph, sort_and_arg_sort, 1));
         }
 
-        std::pair<Node, Node> Node::sortAndArgSort(short axis){
+        std::pair<Node, Node> Node::sortAndArgSort(int axis){
             GraphInPtr graph = unwrap()->graph;
             if (axis == AUTO_INFER_AXIS) {
                 for (size_t i = 0; i < 4; i++) {

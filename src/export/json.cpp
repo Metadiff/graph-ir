@@ -43,7 +43,7 @@ namespace md{
             writer.EndObject();
         }
 
-        void write_policies(Policies const policies, PrettyWriter<StringBuffer>& writer){
+        void write_policies(GraphPolicies const policies, PrettyWriter<StringBuffer>& writer){
             writer.StartObject();
             writer.String("implicit_broadcast");
             writer.String(to_string(policies.implicit_broadcast));
@@ -247,8 +247,8 @@ namespace md{
                 // ApproximatelyEquals
                 auto cast_op = std::dynamic_pointer_cast<op::ApproximatelyEquals>(op);
                 if (cast_op) {
-                    writer.String("tol");
-                    writer.Double(cast_op->tol);
+                    writer.String("tolerance");
+                    writer.Double(cast_op->tolerance);
                 }
             }
             {
@@ -283,8 +283,12 @@ namespace md{
                 // Softmax
                 auto cast_op = std::dynamic_pointer_cast<op::Softmax>(op);
                 if (cast_op) {
-                    writer.String("axis");
-                    writer.Int(cast_op->axis);
+                    writer.String("axes");
+                    writer.StartArray();
+                    for(auto i=0; i<cast_op->axes.size(); ++i){
+                        writer.Int(cast_op->axes[i]);
+                    }
+                    writer.EndArray();
                 }
             }
             {
@@ -304,19 +308,47 @@ namespace md{
                 }
             }
             {
-                // Monitor
-                auto cast_op = std::dynamic_pointer_cast<op::Monitor>(op);
+                // Print
+                auto cast_op = std::dynamic_pointer_cast<op::Print>(op);
                 if (cast_op) {
-                    writer.String("id");
-                    writer.String(cast_op->id);
-                    writer.String("print");
-                    writer.Bool(cast_op->print);
-                    writer.String("log");
-                    writer.Bool(cast_op->log);
-                    writer.String("provide");
-                    writer.Bool(cast_op->provide);
-                    writer.String("guard");
-                    writer.Bool(cast_op->guard);
+                    writer.String("msg");
+                    writer.String(cast_op->msg);
+                    writer.String("monitored");
+                    writer.Uint64(cast_op->monitored->id);
+                }
+            }
+            {
+                // Retrieve
+                auto cast_op = std::dynamic_pointer_cast<op::Retrieve>(op);
+                if (cast_op) {
+                    writer.String("msg");
+                    writer.String(cast_op->msg);
+                    writer.String("monitored");
+                    writer.Uint64(cast_op->monitored->id);
+                }
+            }
+            {
+                // LogToFile
+                auto cast_op = std::dynamic_pointer_cast<op::LogToFile>(op);
+                if (cast_op) {
+                    writer.String("msg");
+                    writer.String(cast_op->msg);
+                    writer.String("monitored");
+                    writer.Uint64(cast_op->monitored->id);
+                }
+            }
+            {
+                // Guard
+                auto cast_op = std::dynamic_pointer_cast<op::Guard>(op);
+                if (cast_op) {
+                    writer.String("msg");
+                    writer.String(cast_op->msg);
+                    writer.String("monitored");
+                    writer.Uint64(cast_op->monitored->id);
+                    writer.String("low");
+                    writer.Double(cast_op->low);
+                    writer.String("high");
+                    writer.Double(cast_op->high);
                 }
             }
 

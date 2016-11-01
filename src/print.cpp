@@ -9,7 +9,7 @@
 
 namespace md{
     namespace core{
-        std::string to_string(dataType data_type) {
+        std::string to_string(DataType data_type) {
             switch (data_type){
                 case b8: return "b8";
                 case u8: return "u8";
@@ -28,7 +28,7 @@ namespace md{
             }
         }
 
-        std::string to_string(deviceType device_type) {
+        std::string to_string(DeviceType device_type) {
             switch (device_type){
                 case CPU: return "CPU";
                 default: return "GPU";
@@ -36,7 +36,7 @@ namespace md{
             }
         }
 
-        std::string to_string(policy policy) {
+        std::string to_string(Policy policy) {
             switch (policy){
                 case QUIET: return "Quiet";
                 case WARN: return "Warn";
@@ -46,9 +46,9 @@ namespace md{
         }
 
         std::string to_string(Device device){
-            if(device == host()){
-                return "Host";
-            }
+//            if(device == host()){
+//                return "Host";
+//            }
             switch (device.type) {
                 case CPU: return "Cpu[" + std::to_string(device.id) + "]";
                 default: return "Gpu[" + std::to_string(device.id) + "]";

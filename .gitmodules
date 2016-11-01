@@ -7,3 +7,6 @@
 [submodule "external/rapidjson"]
 	path = external/rapidjson
 	url = git@github.com:miloyip/rapidjson.git
+[submodule "external/symbolic-integers"]
+	path = external/symbolic-integers
+	url = git@github.com:Metadiff/symbolic-integers.git
