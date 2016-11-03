@@ -2,7 +2,7 @@
 // Created by alex on 19/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
     namespace api{
@@ -13,9 +13,9 @@ namespace md{
                 return alias(node);
             }
             // Validate axes
-            axes = validate_axes(node->shape, axes);
+            validate_axes(node->shape, axes, "Sum");
             // Verify correctness
-            Graph g = node->g();
+            Graph g = node.g();
             auto base = get_base_node(node);
             // The sum(sum(x,a),b) = sum(x, a U b)
             if (base->op->name == "Sum") {
@@ -52,9 +52,9 @@ namespace md{
                 return alias(node);
             }
             // Validate axes
-            axes = validate_axes(node->shape, axes);
+            validate_axes(node->shape, axes, "Mean");
             // Verify correctness
-            Graph g = node->g();
+            Graph g = node.g();
             auto base = get_base_node(node);
             // The mean(mean(x,a),b) = mean(x, a U b)
             if (base->op->name == "Mean") {
@@ -91,9 +91,9 @@ namespace md{
                 return alias(node);
             }
             // Validate axes
-            axes = validate_axes(node->shape, axes);
+            validate_axes(node->shape, axes, "Variance");
             // Verify correctness
-            Graph g = node->g();
+            Graph g = node.g();
             // Standard
             Operator op = std::make_shared<op::Variance>(g.get(), node, axes);
             return g->derived_node(op);
@@ -121,9 +121,9 @@ namespace md{
                 return alias(node);
             }
             // Validate axes
-            axes = validate_axes(node->shape, axes);
+            validate_axes(node->shape, axes, "Product");
             // Verify correctness
-            Graph g = node->g();
+            Graph g = node.g();
             auto base = get_base_node(node);
             if (base->op->name == "Product") {
                 // The prod(prod(x,a),b) = prod(x, a U b)
@@ -160,13 +160,13 @@ namespace md{
                 return alias(node);
             }
             // Validate axes
-            axes = validate_axes(node->shape, axes);
+            validate_axes(node->shape, axes, "AllTrue");
             // Verify correctness
-            Graph g = node->g();
+            Graph g = node.g();
             auto base = get_base_node(node);
             if(node->data_type != b8){
                 // Node should be b8
-                node = cast_or_throw(node, b8, "AllTrue");
+                node = implicit_cast(node, b8, "AllTrue");
             } else if (base->op->name == "AllTrue") {
                 // The all_true(all_true(x,a),b) = all_true(x, a U b)
                 auto cast_op = std::dynamic_pointer_cast<op::AllTrue>(base->op);
@@ -202,13 +202,13 @@ namespace md{
                 return alias(node);
             }
             // Validate axes
-            axes = validate_axes(node->shape, axes);
+            validate_axes(node->shape, axes, "AnyTrue");
             // Verify correctness
-            Graph g = node->g();
+            Graph g = node.g();
             auto base = get_base_node(node);
             if(node->data_type != b8){
                 // Node should be b8
-                node = cast_or_throw(node, b8, "AnyTrue");
+                node = implicit_cast(node, b8, "AnyTrue");
             } else if (base->op->name == "AnyTrue") {
                 // The all_true(all_true(x,a),b) = all_true(x, a U b)
                 auto cast_op = std::dynamic_pointer_cast<op::AnyTrue>(base->op);

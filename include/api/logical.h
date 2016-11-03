@@ -2,8 +2,8 @@
 // Created by alex on 28/10/16.
 //
 
-#ifndef METADIFF_API_LOGICAL_H
-#define METADIFF_API_LOGICAL_H
+#ifndef GRAPH_IR_API_LOGICAL_H
+#define GRAPH_IR_API_LOGICAL_H
 
 namespace md{
     namespace api{
@@ -102,7 +102,7 @@ namespace md{
         Node isInf(Node node);
     }
 
-    namespace core {
+    namespace gir {
         // not A
         inline Node operator!(Node node) {
             return api::logical_not(node);
@@ -115,12 +115,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator&&(Node node1, T node2) {
-            return api::logical_and(node1, wrap(node2, node1->g()));
+            return api::logical_and(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator&&(T node1, Node node2) {
-            return api::logical_and(wrap(node1, node2->g()), node2);
+            return api::logical_and(wrap(node1, node2.g()), node2);
         };
 
         // A or B
@@ -130,12 +130,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator||(Node node1, T node2) {
-            return api::logical_or(node1, wrap(node2, node1->g()));
+            return api::logical_or(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator||(T node1, Node node2) {
-            return api::logical_or(wrap(node1, node2->g()), node2);
+            return api::logical_or(wrap(node1, node2.g()), node2);
         };
 
         // A > B
@@ -145,12 +145,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator>(Node node1, T node2) {
-            return api::greater_than(node1, wrap(node2, node1->g()));
+            return api::greater_than(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator>(T node1, Node node2) {
-            return api::greater_than(wrap(node1, node2->g()), node2);
+            return api::greater_than(wrap(node1, node2.g()), node2);
         };
 
         // A < B
@@ -160,12 +160,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator<(Node node1, T node2) {
-            return api::less_than(node1, wrap(node2, node1->g()));
+            return api::less_than(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator<(T node1, Node node2) {
-            return api::less_than(wrap(node1, node2->g()), node2);
+            return api::less_than(wrap(node1, node2.g()), node2);
         };
 
         // A >= B
@@ -175,12 +175,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator>=(Node node1, T node2) {
-            return api::greater_than_or_equal(node1, wrap(node2, node1->g()));
+            return api::greater_than_or_equal(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator>=(T node1, Node node2) {
-            return api::greater_than_or_equal(wrap(node1, node2->g()), node2);
+            return api::greater_than_or_equal(wrap(node1, node2.g()), node2);
         };
 
         // A <= B
@@ -190,12 +190,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator<=(Node node1, T node2) {
-            return api::less_than_or_equal(node1, wrap(node2, node1->g()));
+            return api::less_than_or_equal(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator<=(T node1, Node node2) {
-            return api::less_than_or_equal(wrap(node1, node2->g()), node2);
+            return api::less_than_or_equal(wrap(node1, node2.g()), node2);
         };
 
         // A == B
@@ -205,12 +205,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator==(Node node1, T node2) {
-            return api::equals(node1, wrap(node2, node1->g()));
+            return api::equals(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator==(T node1, Node node2) {
-            return api::equals(wrap(node1, node2->g()), node2);
+            return api::equals(wrap(node1, node2.g()), node2);
         };
 
         // A != B
@@ -220,13 +220,13 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator!=(Node node1, T node2) {
-            return api::not_equals(node1, wrap(node2, node1->g()));
+            return api::not_equals(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator!=(T node1, Node node2) {
-            return api::not_equals(wrap(node1, node2->g()), node2);
+            return api::not_equals(wrap(node1, node2.g()), node2);
         };
     }
 }
-#endif //METADIFF_API_LOGICAL_H
+#endif //GRAPH_IR_API_LOGICAL_H

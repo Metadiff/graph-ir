@@ -2,8 +2,8 @@
 // Created by alex on 29/10/16.
 //
 
-#ifndef METADIFF_API_REDUCTION_H
-#define METADIFF_API_REDUCTION_H
+#ifndef GRAPH_IR_API_REDUCTION_H
+#define GRAPH_IR_API_REDUCTION_H
 
 namespace md{
     namespace api{
@@ -260,4 +260,4 @@ namespace md{
         Node any_true(Node node, int axis0, int axis1, int axis2);
     }
 }
-#endif //METADIFF_API_REDUCTION_H
+#endif //GRAPH_IR_API_REDUCTION_H

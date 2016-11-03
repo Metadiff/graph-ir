@@ -1,6 +1,3 @@
-[submodule "external/symbolic_integers"]
-	path = external/symbolic_integers
-	url = git@github.com:Metadiff/symbolic_integers.git
 [submodule "external/spdlog"]
 	path = external/spdlog
 	url = git@github.com:gabime/spdlog.git

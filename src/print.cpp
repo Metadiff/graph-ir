@@ -5,10 +5,10 @@
 #include "string"
 #include "iomanip"
 #include "sstream"
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
         std::string to_string(DataType data_type) {
             switch (data_type){
                 case b8: return "b8";

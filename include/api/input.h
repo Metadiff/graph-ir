@@ -2,10 +2,20 @@
 // Created by alex on 27/10/16.
 //
 
-#ifndef METADIFF_API_INPUT_H
-#define METADIFF_API_INPUT_H
+#ifndef GRAPH_IR_API_INPUT_H
+#define GRAPH_IR_API_INPUT_H
 namespace md{
     namespace api {
+
+        /** @brief Creates an input variable with the same attributes and the one provied
+         *
+         * @param node
+         * @param name
+         * @return
+         */
+        inline Node tensor_as(Node node, std::string name = ""){
+            return node.g()->tensor_as(node, name);
+        }
 
 //        /** @brief Creates a four dimensional variable in the default_graph
 //         *
@@ -177,15 +187,6 @@ namespace md{
 //        Node scalar(DataType data_type,
 //                    std::string name = "Scalar",
 //                    Graph g = default_graph);
-
-        /** @brief Creates a variable in the default_graph, with the same attributes as the one provided
-         *
-         * @param node
-         * @param name
-         * @return
-         */
-        Node tensor_as(Node node, std::string name = "");
-
         /** @brief Creates a new symbloic integer
          *
          * @return
@@ -196,4 +197,4 @@ namespace md{
     }
 }
 
-#endif //METADIFF_API_INPUT_H
+#endif //GRAPH_IR_API_INPUT_H

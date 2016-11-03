@@ -2,10 +2,10 @@
 // Created by alex on 19/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
 
         Node GraphInternal::gemm(NodeVec nodes, std::vector<bool> transpositions){
             // TODO check if some of them is not inverse to each other
@@ -39,7 +39,7 @@ namespace md{
 
         Node GraphInternal::determinant(Node node){
             // If scalar do nothing
-            if(node.dims() == 0){
+            if(node.order() == 0){
                 return api::alias(node);
             }
             // Standard
@@ -48,7 +48,7 @@ namespace md{
 
         Node GraphInternal::log_det(Node node){
             // If scalar return just the log
-            if(node.dims() == 0){
+            if(node.order() == 0){
                 return log(node);
             }
             // Standard
@@ -57,7 +57,7 @@ namespace md{
 
         Node GraphInternal::trace(Node node){
             // If scalar do nothing
-            if(node.dims() == 0){
+            if(node.order() == 0){
                 return api::alias(node);
             }
             // Standard

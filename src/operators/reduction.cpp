@@ -2,10 +2,10 @@
 // Created by alex on 19/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
         Node GraphInternal::sum(Node node, Axes axes){
             return op::apply_reduction<op::Sum>(this, node, axes);
         }

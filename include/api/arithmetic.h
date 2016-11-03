@@ -2,8 +2,8 @@
 // Created by alex on 28/10/16.
 //
 
-#ifndef METADIFF_API_ARITHMETIC_H
-#define METADIFF_API_ARITHMETIC_H
+#ifndef GRAPH_IR_API_ARITHMETIC_H
+#define GRAPH_IR_API_ARITHMETIC_H
 
 namespace md{
     namespace api{
@@ -126,7 +126,7 @@ namespace md{
         Node int_mod(Node node1, Node node2);
     }
 
-    namespace core {
+    namespace gir {
         // Add
         inline Node operator+(Node node) {
                 return node;
@@ -138,12 +138,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator+(Node node1, T node2) {
-                return api::add(node1, wrap(node2, node1->g()));
+                return api::add(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator+(T node1, Node node2) {
-                return api::add(wrap(node1, node2->g()), node2);
+                return api::add(wrap(node1, node2.g()), node2);
         };
 
         // Compound Add
@@ -154,7 +154,7 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator+=(Node & node1, T const & node2) {
-            node1.ptr = api::add(node1, wrap(node2, node1->g())).ptr;
+            node1.ptr = api::add(node1, wrap(node2, node1.g())).ptr;
             return node1;
         };
 
@@ -169,12 +169,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator-(Node node1, T node2) {
-            return api::neg(node1, wrap(node2, node1->g()));
+            return api::neg(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator-(T node1, Node node2) {
-            return api::neg(wrap(node1, node2->g()), node2);
+            return api::neg(wrap(node1, node2.g()), node2);
         };
 
         // Compound Neg
@@ -185,7 +185,7 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator-=(Node & node1, T const & node2) {
-            node1.ptr = api::neg(node1, wrap(node2, node1->g())).ptr;
+            node1.ptr = api::neg(node1, wrap(node2, node1.g())).ptr;
             return node1;
         };
 
@@ -196,12 +196,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator*(Node node1, T node2) {
-            return api::mul(node1, wrap(node2, node1->g()));
+            return api::mul(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator*(T node1, Node node2) {
-            return api::mul(wrap(node1, node2->g()), node2);
+            return api::mul(wrap(node1, node2.g()), node2);
         };
 
         // Compound Mul
@@ -212,7 +212,7 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator*=(Node & node1, T const & node2) {
-            node1.ptr = api::mul(node1, wrap(node2, node1->g())).ptr;
+            node1.ptr = api::mul(node1, wrap(node2, node1.g())).ptr;
             return node1;
         };
 
@@ -223,12 +223,12 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator/(Node node1, T node2) {
-            return api::div(node1, wrap(node2, node1->g()));
+            return api::div(node1, wrap(node2, node1.g()));
         };
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator/(T node1, Node node2) {
-            return api::div(wrap(node1, node2->g()), node2);
+            return api::div(wrap(node1, node2.g()), node2);
         };
 
         // Compound Div
@@ -239,10 +239,10 @@ namespace md{
 
         template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
         inline Node operator/=(Node & node1, T const & node2) {
-            node1.ptr = api::div(node1, wrap(node2, node1->g())).ptr;
+            node1.ptr = api::div(node1, wrap(node2, node1.g())).ptr;
             return node1;
         };
 
     }
 }
-#endif //METADIFF_API_ARITHMETIC_H
+#endif //GRAPH_IR_API_ARITHMETIC_H

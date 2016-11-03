@@ -2,13 +2,11 @@
 // Created by alex on 27/10/16.
 //
 
-#ifndef METADIFF_API_CONSTANT_H
-#define METADIFF_API_CONSTANT_H
+#ifndef GRAPH_IR_API_CONSTANT_H
+#define GRAPH_IR_API_CONSTANT_H
 
 namespace md{
     namespace api{
-        using namespace core;
-
 //        /** @brief Creates a variable wrapping a SharedVar
 //         *
 //         * @param var
@@ -248,4 +246,4 @@ namespace md{
     }
 }
 
-#endif //METADIFF_API_CONSTANT_H
+#endif //GRAPH_IR_API_CONSTANT_H

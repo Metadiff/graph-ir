@@ -2,12 +2,12 @@
 // Created by alex on 21/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 // TODO implement checks for all operators here
 
 namespace md{
-    namespace core{
+    namespace gir{
         Node GraphInternal::softplus(Node node, double threshold){
             Operator op = std::make_shared<op::Softplus>(this, node, threshold);
             return derived_node(op);

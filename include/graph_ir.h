@@ -1,10 +1,18 @@
 //
-// Created by alex on 27/10/16.
+// Created by alex on 29/09/16.
 //
 
-#ifndef METADIFF_API_GENERAL_H
-#define METADIFF_API_GENERAL_H
+#ifndef METADIFF_GRAPH_IR_H
+#define METADIFF_GRAPH_IR_H
+
+// External includes
 #include "type_traits"
+#include "iostream"
+#include "string"
+#include "symbolic_integers.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/dist_sink.h"
+
 namespace md{
     template<class...> struct disjunction : std::false_type { };
     template<class B1> struct disjunction<B1> : B1 { };
@@ -18,25 +26,20 @@ namespace md{
     template<class B1, class... Bn>
     struct conjunction<B1, Bn...>
             : std::conditional<B1::value != false, conjunction<Bn...>, B1>  {};
-
-    namespace api{
-        using namespace core;
-
-        inline Graph default_graph(){
-            static std::shared_ptr<GraphInternal> graph;
-            if(not graph){
-                graph = std::make_shared<GraphInternal>();
-            }
-            return graph;
-        }
-
-        bool check_independent(Node anchor, Node monitored);
-
-        Axes validate_axes(Shape shape, Axes axes);
-
-        Axes auto_infer_axes(Shape shape);
-    }
-
 }
 
-#endif //METADIFF_API_GENERAL_H
+#include "enums.h"
+#include "definitions.h"
+#include "props.h"
+#include "shared.h"
+#include "exceptions.h"
+#include "export.h"
+#include "node.h"
+#include "utils.h"
+#include "print.h"
+#include "graph.h"
+#include "api.h"
+#include "operators.h"
+#include "optimization.h"
+
+#endif //METADIFF_GRAPH_IR_H

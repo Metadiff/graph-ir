@@ -2,8 +2,8 @@
 // Created by alex on 31/10/16.
 //
 
-#ifndef METADIFF_CORE_OPTIMIZED_H
-#define METADIFF_CORE_OPTIMIZED_H
+#ifndef GRAPH_IR_OPTIMIZED_H
+#define GRAPH_IR_OPTIMIZED_H
 
 namespace md{
     namespace api{
@@ -105,4 +105,4 @@ namespace md{
         Node softmax(Node node, int axis0, int axis1, int axis2);
     }
 }
-#endif //METADIFF_CORE_OPTIMIZED_H
+#endif //GRAPH_IR_OPTIMIZED_H

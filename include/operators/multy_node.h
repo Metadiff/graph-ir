@@ -2,12 +2,12 @@
 // Created by alex on 15/12/15.
 //
 
-#ifndef METADIFF_OPERATORS_MULTY_NODE_H
-#define METADIFF_OPERATORS_MULTY_NODE_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_MULTY_NODE_H
+#define METADIFF_GRAPH_IR_OPERATORS_MULTY_NODE_H
 
 namespace metadiff{
     namespace op {
-        using namespace core;
+        using namespace gir;
         using namespace exceptions;
         
         /**
@@ -172,18 +172,18 @@ namespace metadiff{
                 // The max should always be the first child
                 if(index == 0){
                     Node argmax;
-                    if(parent->children[0]->id != owner->id){
+                    if(parent->children[0]->id != result->id){
                         argmax = parent->children[0];
                     } else {
                         argmax = parent->children[1];
                     }
 //                    return graph->derived_node(std::make_shared<IndexGrad>(graph,
 //                                                                           my_grad,
-//                                                                           owner.argmax(axis), axis,
-//                                                                           owner->shape[axis]));
+//                                                                           result.argmax(axis), axis,
+//                                                                           result->shape[axis]));
                     return graph->constant_value(22.0);
                 } else {
-                    auto err = WrongGradient(NodeVec{owner, my_grad}, name);
+                    auto err = WrongGradient(NodeVec{result, my_grad}, name);
                     logger()->error() << err.msg;
                     throw err;
                 }
@@ -241,18 +241,18 @@ namespace metadiff{
                 // The max should always be the first child
                 if(index == 0){
                     Node argsort;
-                    if(parent->children[0]->id != owner->id){
+                    if(parent->children[0]->id != result->id){
                         argsort = parent->children[0];
                     } else {
                         argsort = parent->children[1];
                     }
 //                    return graph->derived_node(std::make_shared<IndexGrad>(graph,
 //                                                                           my_grad,
-//                                                                           owner.argmax(axis), axis,
-//                                                                           owner->shape[axis]));
+//                                                                           result.argmax(axis), axis,
+//                                                                           result->shape[axis]));
                     return graph->constant_value(22.0);
                 } else {
-                    auto err = WrongGradient(NodeVec{owner, my_grad}, name);
+                    auto err = WrongGradient(NodeVec{result, my_grad}, name);
                     logger()->error() << err.msg;
                     throw err;
                 }
@@ -264,7 +264,7 @@ namespace metadiff{
         };
     }
 
-    namespace core{
+    namespace gir{
         Node Node::max(int axis) {
             GraphInPtr graph = unwrap()->graph;
             if (axis == AUTO_INFER_AXIS) {
@@ -352,4 +352,4 @@ namespace metadiff{
         }
     }
 }
-#endif //METADIFF_OPERATORS_MULTY_NODE_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_MULTY_NODE_H

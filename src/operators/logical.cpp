@@ -2,10 +2,10 @@
 // Created by alex on 10/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
 
         Node GraphInternal::logical_not(Node node){
             auto base = get_base_node(node);

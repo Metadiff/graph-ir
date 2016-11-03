@@ -2,20 +2,20 @@
 // Created by alex on 31/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
     namespace api{
 
         Node softplus(Node node, double threshold){
-            Graph g = node->g();
+            Graph g = node.g();
             // Standard
             Operator op = std::make_shared<op::Softplus>(g.get(), node, threshold);
             return g->derived_node(op);
         }
 
         Node sigmoid(Node node) {
-            Graph g = node->g();
+            Graph g = node.g();
             // Standard
             Operator op = std::make_shared<op::Sigmoid>(g.get(), node);
             return g->derived_node(op);
@@ -27,9 +27,9 @@ namespace md{
                 return alias(node);
             }
             // Validate axes
-            axes = validate_axes(node->shape, axes);
+            validate_axes(node->shape, axes, "LogSumExp");
             // Verify correctness
-            Graph g = node->g();
+            Graph g = node.g();
             auto base = get_base_node(node);
             if (base->op->name == "Log") {
                 // If the parent is a log return remove it
@@ -58,14 +58,15 @@ namespace md{
         }
 
         Node softmax(Node node, Axes axes){
-            if(node.dims() == 0){
-                // TODO throw proper error
-                utils::op_logger("Softmax")->error("Can not work on scalars");
+            if(node.order() == 0){
+                op_logger("Softmax")->error("The input is a scalar.");
+                throw InvalidOperatorArgument(NodeVec{node},
+                                              "Softmax", "The input is a scalar.");
             }
             // Validate axes
-            axes = validate_axes(node->shape, axes);
+            validate_axes(node->shape, axes, "Softmax");
             // Verify correctness
-            Graph g = node->g();
+            Graph g = node.g();
             // Standard
             Operator op = std::make_shared<op::Softmax>(g.get(), node, axes);
             return g->derived_node(op);

@@ -2,11 +2,11 @@
 // Created by alex on 13/12/15.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_BASE_H
-#define METADIFF_CORE_OPERATORS_BASE_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_ARITHMETIC_H
+#define METADIFF_GRAPH_IR_OPERATORS_ARITHMETIC_H
 
 namespace md {
-    namespace core {
+    namespace gir {
         namespace op {
             /** Addition */
             class Add : public AssociativeElementwiseOperator {
@@ -94,7 +94,7 @@ namespace md {
                     if (parents.size() == 2) {
                         return mul(my_derivative, parents[1 - index]);
                     } else {
-                        return div(mul(my_derivative, owner), parents[index]);
+                        return div(mul(my_derivative, result), parents[index]);
                     }
                 }
 
@@ -102,7 +102,7 @@ namespace md {
                     if(parents.size() == 2){
                         return mul(parent_derivatives[index], parents[1-index]);
                     } else {
-                        return div(mul(parent_derivatives[index], owner), parents[index]);
+                        return div(mul(parent_derivatives[index], result), parents[index]);
                     }
                 }
 
@@ -152,9 +152,7 @@ namespace md {
             class IntDiv : public BinaryIntegerElementwiseOperator{
             public:
                 IntDiv(GraphInPtr graph, Node parent1, Node parent2) :
-                AbstractOperator(graph, "IntDiv"), BinaryOperator(parent1, parent2){
-                    // TODO check types of parent1 and parent2 and cast them to ints if needed
-                };
+                AbstractOperator(graph, "IntDiv"), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IntDiv>(graph, ancestors[0], ancestors[1]);
@@ -165,9 +163,7 @@ namespace md {
             class IntMod : public BinaryIntegerElementwiseOperator {
             public:
                 IntMod(GraphInPtr graph, Node parent1, Node parent2) :
-                        AbstractOperator(graph, "IntMod"), BinaryOperator(parent1, parent2){
-                    // TODO check types of parent1 and parent2 and cast them to ints if needed
-                };
+                        AbstractOperator(graph, "IntMod"), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IntMod>(graph, ancestors[0], ancestors[1]);
@@ -177,4 +173,4 @@ namespace md {
     }
 }
 
-#endif //METADIFF_OPERATORS_BASE_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_ARITHMETIC_H

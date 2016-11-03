@@ -2,11 +2,11 @@
 // Created by alex on 15/12/15.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_ELEMENTWISE_H
-#define METADIFF_CORE_OPERATORS_ELEMENTWISE_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_ELEMENTWISE_H
+#define METADIFF_GRAPH_IR_OPERATORS_ELEMENTWISE_H
 namespace md{
     using namespace api;
-    namespace core {
+    namespace gir {
         namespace op {
 
             /** Absolute value */
@@ -21,7 +21,7 @@ namespace md{
 
                 Node backward_diff_parent(Node my_derivative, int index){
                     auto zero = graph->constant(0);
-                    auto factor = cast(greater_than(parent, zero), owner->data_type);
+                    auto factor = cast(greater_than(parent, zero), result->data_type);
                         factor = neg(mul(graph->constant(2), factor), graph->constant(1));
                     return mul(my_derivative, factor);
                 }
@@ -59,7 +59,7 @@ namespace md{
 
                 Node backward_diff_parent(Node my_derivative, int index) {
                     Node two = graph->constant(2);
-                    return div(my_derivative, mul(two, owner));
+                    return div(my_derivative, mul(two, result));
                 }
             };
 
@@ -74,7 +74,7 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
-                    return mul(my_derivative, owner);
+                    return mul(my_derivative, result);
                 }
             };
 
@@ -225,7 +225,7 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
-                    Node derivative = neg(graph->constant(1), square(owner));
+                    Node derivative = neg(graph->constant(1), square(result));
                     return mul(my_derivative, derivative);
                 }
             };
@@ -242,7 +242,7 @@ namespace md{
 
                 Node backward_diff_parent(Node my_derivative, int index) {
                     auto one = graph->constant(1);
-                    Node derivative = neg(one, square(owner));
+                    Node derivative = neg(one, square(result));
                     return mul(my_derivative, derivative);
                 }
             };
@@ -258,7 +258,7 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    Node product = mul(my_derivative, owner);
+                    Node product = mul(my_derivative, result);
                     if (index == 0) {
                         Node factor = div(parent2, parent1);
                         return mul(product, factor);
@@ -271,4 +271,4 @@ namespace md{
     }
 }
 
-#endif //METADIFF_ELEMENTWISE_FUNC_H
+#endif //METADIFF_GRAPH_IR_ELEMENTWISE_FUNC_H

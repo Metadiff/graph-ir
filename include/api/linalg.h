@@ -2,8 +2,8 @@
 // Created by alex on 31/10/16.
 //
 
-#ifndef METADIFF_API_LINALG_H
-#define METADIFF_API_LINALG_H
+#ifndef GRAPH_IR_API_LINALG_H
+#define GRAPH_IR_API_LINALG_H
 
 namespace md{
     namespace api{
@@ -63,7 +63,7 @@ namespace md{
         Node trace(Node node);
     }
 
-    namespace core {
+    namespace gir {
         // Matrix inverse
         inline Node operator~(Node node) {
             return api::matrix_inverse(node);
@@ -76,14 +76,14 @@ namespace md{
 //
 //        template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
 //        inline Node operator&(Node node1, T node2) {
-//            return api::dot(node1, wrap(node2, node1->g()));
+//            return api::dot(node1, wrap(node2, node1.g()));
 //        };
 //
 //        template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
 //        inline Node operator&(T node1, Node node2) {
-//            return api::dot(wrap(node1, node2->g()), node2);
+//            return api::dot(wrap(node1, node2.g()), node2);
 //        };
     }
 }
 
-#endif //METADIFF_API_LINALG_H
+#endif //GRAPH_IR_API_LINALG_H

@@ -2,10 +2,10 @@
 // Created by alex on 04/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
 
         Node GraphInternal::add(NodeVec nodes){
             // TODO check for redundancies like x + (-x)

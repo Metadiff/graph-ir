@@ -2,10 +2,10 @@
 // Created by alex on 17/12/15.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_CONSTANTS_H
-#define METADIFF_CORE_OPERATORS_CONSTANTS_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_CONSTANTS_H
+#define METADIFF_GRAPH_IR_OPERATORS_CONSTANTS_H
 namespace md {
-    namespace core {
+    namespace gir {
         namespace op {
 
             /** Single value repeated over some Shape */
@@ -120,4 +120,4 @@ namespace md {
     }
 }
 
-#endif //METADIFF_CORE_OPERATORS_CONSTANTS_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_CONSTANTS_H

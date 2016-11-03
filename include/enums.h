@@ -2,10 +2,10 @@
 // Created by alex on 29/09/16.
 //
 
-#ifndef METADIFF_CORE_ENUMS_H
-#define METADIFF_CORE_ENUMS_H
+#ifndef METADIFF_GRAPH_IR_ENUMS_H
+#define METADIFF_GRAPH_IR_ENUMS_H
 namespace md{
-    namespace core{
+    namespace gir{
         /** Data type of the storage */
         enum DataType{
             /** 8 bit boolean */
@@ -128,4 +128,4 @@ namespace md{
         };
     }
 }
-#endif //METADIFF_CORE_ENUMS_H
+#endif //METADIFF_GRAPH_IR_ENUMS_H

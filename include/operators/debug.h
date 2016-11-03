@@ -2,11 +2,11 @@
 // Created by alex on 21/10/16.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_DEBUG_H
-#define METADIFF_CORE_OPERATORS_DEBUG_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_DEBUG_H
+#define METADIFF_GRAPH_IR_OPERATORS_DEBUG_H
 
 namespace md{
-    namespace core{
+    namespace gir{
         namespace op{
             /** The operator will print the monitored node at runtime, exactly after the execution */
             class Print: public MonitorOperator{
@@ -57,4 +57,4 @@ namespace md{
         }
     }
 }
-#endif //METADIFF_CORE_OPERATORS_DEBUG_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_DEBUG_H

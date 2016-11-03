@@ -2,88 +2,144 @@
 // Created by alex on 04/05/16.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_ABSTRACT_H
-#define METADIFF_CORE_OPERATORS_ABSTRACT_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_ABSTRACT_H
+#define METADIFF_GRAPH_IR_OPERATORS_ABSTRACT_H
 
 namespace md {
-    namespace core {
+    namespace gir {
         namespace op {
+            using namespace api;
+
             /** The abstract class for all operatros */
             class AbstractOperator {
             protected:
                 /** Pointer to the owning GraphInternal */
                 GraphInPtr const graph;
 
-                /** This should never be called directly, it exists ONLY because of virtual inheritance */
+                /** This should never be called directly, it exists ONLY for virtual inheritance purposes */
                 AbstractOperator():  graph(nullptr), name("") {};
-
-                /** Easy way to get logging for the corresponding operator */
-                std::shared_ptr<spdlog::logger> logger() const {
-                    return md::utils::logger("operator::" + name);
-                }
             public:
                 /** Unique name of the concrete Operator class */
                 std::string const name;
-                /** Pointer to the owning Node */
-                Node owner;
+                /** Pointer to the output Node of the operator */
+                Node result;
 
-                /** The Node owner should be set by the graph after creating the output Node */
+                /** Note that the output Node should always be set after the construction of the Operator */
                 AbstractOperator(GraphInPtr const graph, std::string const name) :
                         graph(graph), name(name){};
 
-                /** Copies the operator to a separate graph with the corresponding ancestors there */
+                /** @brief Copies the Operator to the new graph with the provided ancestors
+                 *
+                 * @param graph
+                 * @param ancestors
+                 * @return
+                 */
                 virtual Operator copy_to(GraphInPtr graph, NodeVec ancestors) const = 0;
 
-                /** Calculates the DataType for the output Node based on its ancestors*/
+                /** @brief  Calculates the DataType for the output Node based on its ancestors
+                 *
+                 * @return
+                 */
                 virtual DataType get_data_type() const = 0;
 
-                /** Calculates the Shape for the output Node based on its ancestors*/
+                /** @brief Calculates the Shape for the output Node based on its ancestors
+                 *
+                 * @return
+                 */
                 virtual Shape get_shape() const = 0;
 
-                /** Calculates if the output Node is input dependent based on its ancestors*/
+                /** @brief Calculates if the output Node is input dependent based on its ancestors
+                 * The default implementation returns true if any of the ancestors is input dependent.
+                 *
+                 * @return
+                 */
                 virtual bool is_input_dependent() const;
 
-                /** Calculates if the output Node is differentiable dependent based on its ancestors*/
+                /** @brief Calculates if the output Node is differentiable based on its ancestors
+                 * The default implementation returns true if any of the parents are differentiable
+                 *
+                 * @return
+                 */
                 virtual bool is_differentiable() const;
 
-                /** Calculates the maximum grad level of its ancestors */
+                /** @brief Calculates the grad level of the output Node
+                 * The default implementation returns the maximum of the grad levels of its ancestors
+                 *
+                 * @return
+                 */
                 unsigned int get_grad_level() const;
 
-                /** Returns the parents of this operator (all ancestors influencing in differentiable way) */
+                /** @brief  Returns all of the parents of this operator in order
+                 * Parents are defined as all ancestors which affect the node in a differentiable way
+                 *
+                 * @return
+                 */
                 virtual NodeVec get_parents() const  = 0;
 
-                /** Returns the arguments of this operator (all ancestors influencing in non-differentiable way) */
+                /** @brief  Returns all of the arguments of this operator in order
+                 * Parents are defined as all ancestors which affect the node in a non-differentiable way
+                 *
+                 * @return
+                 */
                 virtual NodeVec get_arguments() const;
 
-                /** Returns the union of the parents and arguments */
+                /** @brief Returns the union of the parents and arguments
+                 *
+                 * @return
+                 */
                 virtual NodeVec get_ancestors() const;
 
-                /** The method generates and sends the gradients for all parents, provided the incoming gradient messages */
+                /** @brief Generates and sends the backward differentiation messages to all parents using the messages incoming to the output Node
+                 *
+                 * @param messages
+                 * @param flow_tree
+                 */
                 void backward_diff(std::vector<NodeVec> &messages, std::vector<bool>& flow_tree);
 
-                /** Returns the gradient with respect to the paret at index during Backward Differentiation */
+                /** @brief Returns the backward diferentiation message to the parent at the index specified
+                 *
+                 * @param my_derivative
+                 * @param index
+                 * @return
+                 */
                 virtual Node backward_diff_parent(Node my_derivative, int index) = 0;
 
-                /** Combines the gradients of all of the children of the operator. This is relevant only for
-                 * multy-output operators, for all others this is just add */
+                /** @brief Combines the backward differentiation messages in coming to this Node
+                 * The default implementation sums all of the messages
+                 *
+                 * @param derivatives
+                 * @return
+                 */
                 virtual Node backward_diff_combine(NodeVec & derivatives) const;
 
-                /** The method pulls messages from all of the parents, and generates the gradient of the current node. */
+                /** @brief Combines all of the parent_derivatives apropirately and computes the derivative of the output Node
+                 *
+                 * @param messages
+                 * @param flow_tree
+                 */
                 void forward_diff(NodeVec & parent_derivatives);
 
-                /** Returns the gradient with respect to the paret at index during Backward Differentiation */
+                /** @brief Returns the forward diferentiation message from the parent at the index specified
+                 *
+                 * @param my_derivative
+                 * @param index
+                 * @return
+                 */
                 virtual Node forward_diff_parent(NodeVec & parent_derivatives, int index) = 0;
 
-                /** Combines the gradients of all of the children of the operator. This is relevant only for
-                 * multy-output operators, for all others this is just add */
+                /** @brief Combines the forward differentiation messages in coming to this Node
+                 * The default implementation sums all of the messages
+                 *
+                 * @param derivatives
+                 * @return
+                 */
                 virtual Node forward_diff_combine(NodeVec & parent_derivatives) const;
 
-                /**
-                 * TODO this and the symbolic_equals are things which aren't yet well done
-                 * Compares only if this operator is equal to the other, not the other way around.
-                 * Note that although equality is symmetric, because of mathematical idenitities
-                 * and the fact that the code is with each operator separately the true equality
-                 * operator is `op1.equals(op2) or op2.equals(op1)`
+                /** @brief Returns whether the Operator op is symbolically equivalent to this one.
+                 * TODO This together with find_same_node() and symbolic_equals() still need to be implemented well
+                 *
+                 * @param op
+                 * @return
                  */
                 virtual bool equals(Operator const op) const{
                     return false;
@@ -105,9 +161,8 @@ namespace md {
                 }
 
                 Node backward_diff_parent(Node my_grad, int index) {
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_grad}, name);
-                    err->log(logger());
-                    throw err;
+                    op_logger(name)->error("Calling backward_diff unexpectedly.");
+                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivative, int index){
@@ -146,9 +201,8 @@ namespace md {
                 };
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
-                    err->log(logger());
-                    throw err;
+                    op_logger(name)->error("Calling backward_diff unexpectedly.");
+                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
@@ -163,9 +217,8 @@ namespace md {
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
-                    err->log(logger());
-                    throw err;
+                    op_logger(name)->error("Calling backward_diff unexpectedly.");
+                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
@@ -220,14 +273,7 @@ namespace md {
             public:
                 NodeVec parents;
                 AssociativeOperator(NodeVec parents) :
-                        parents(parents) {
-//                    if (parents.size() < 2) {
-//                        auto err = std::make_shared<InvalidArguments>
-//                                (parents, name, "All NaryOperators require at least 2 parents");
-//                        err->log(logger());
-//                        throw err;
-//                    }
-                };
+                        parents(parents) {};
 
                 NodeVec get_parents() const {
                     return parents;
@@ -252,30 +298,7 @@ namespace md {
                 ReductionOperator(): UnaryOperator() {};
             public:
                 Axes axes;
-                ReductionOperator(Axes axes) : axes(axes){
-//                    if(not validate_axes(axes)){
-//                        std::string axes_str;
-//                        for (auto i = 0; i < axes.size(); ++i) {
-//                            axes_str += std::to_string(axes[i]);
-//                            if (i < axes.size() - 1) {
-//                                axes_str += ", ";
-//                            }
-//                        }
-//                        if (axes.size() == 0) {
-//                            axes_str = "NULL";
-//                        }
-//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent}, name, "Invalid axes: " + axes_str);
-//                        err->log(logger());
-//                        throw err;
-//                    }
-//                    // TODO should we forbid summing over axes where shape[i] = 1?
-//                    for(auto i=0; i<axes.size(); ++i){
-//                        if(parent->shape[axes[i]] == 1){
-//                            axes.erase(std::remove(axes.begin(), axes.end(), i), axes.end());
-//                        }
-//                    }
-//                    this->axes = axes;
-                };
+                ReductionOperator(Axes axes) : axes(axes){};
 
                 Shape get_shape() const {
                     Shape p_shape = parent->shape;
@@ -331,10 +354,10 @@ namespace md {
                                             public virtual BinaryElementwiseOperator {};
 
             class BinaryIntegerElementwiseOperator: public virtual IntegerOperator,
-                                                 public virtual BinaryElementwiseOperator{};
+                                                    public virtual BinaryElementwiseOperator{};
 
             class BinaryFloatElementwiseOperator: public virtual FloatOperator,
-                                               public virtual BinaryElementwiseOperator{
+                                                  public virtual BinaryElementwiseOperator{
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return backward_diff_parent(parent_derivatives[index], index);
                 }
@@ -359,4 +382,4 @@ namespace md {
     }
 }
 
-#endif //METADIFF_CORE_OP_ABSTRACT_H
+#endif //METADIFF_GRAPH_IR_OP_ABSTRACT_H

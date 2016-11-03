@@ -2,12 +2,11 @@
 // Created by alex on 11/10/16.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_SPECIAL_H
-#define METADIFF_CORE_OPERATORS_SPECIAL_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_SPECIAL_H
+#define METADIFF_GRAPH_IR_OPERATORS_SPECIAL_H
 
 namespace md{
-    using namespace api;
-    namespace core{
+    namespace gir{
         namespace op{
             /** Casting to a specified DataType */
             class Cast : public UnaryElementwiseOperator {
@@ -77,17 +76,7 @@ namespace md{
                           Node parent,
                           Shape to_shape) :
                         AbstractOperator(graph, "Broadcast"), UnaryOperator(parent),
-                        to_shape(to_shape) {
-                    for (int i = 0; i < 4; i++) {
-                        if (parent->shape[i] != 1 and parent->shape[i] != to_shape[i]) {
-                            auto err = std::make_shared<InvalidArguments>
-                                    (NodeVec{parent}, name, "Can not broadcast to shape " +
-                                                            core::to_string(to_shape));
-                            err->log(logger());
-                            throw err;
-                        }
-                    }
-                }
+                        to_shape(to_shape) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Broadcast>(graph, ancestors[0], to_shape);
@@ -97,23 +86,15 @@ namespace md{
                     return to_shape;
                 }
 
-                DataType get_data_type() const {
-                    return parent->data_type;
-                }
-
-                Axes get_broadcast_axes() const {
+                Node backward_diff_parent(Node my_derivative, int index){
                     Axes axes;
-                    auto p1_shape = this->parent->shape;
-                    for (size_t i = 0; i < 4; i++) {
-                        if (p1_shape[i] != to_shape[i]) {
+                    auto parent_shape = this->parent->shape;
+                    for (auto i = 0; i < 4; i++) {
+                        if (parent_shape[i] != to_shape[i]) {
                             axes.push_back(i);
                         }
                     }
-                    return axes;
-                }
-
-                Node backward_diff_parent(Node my_derivative, int index){
-                    return sum(my_derivative, get_broadcast_axes());
+                    return sum(my_derivative, axes);
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
@@ -145,9 +126,8 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    auto err = std::make_shared<WrongGradient>(NodeVec{owner, my_derivative}, name);
-                    err->log(logger());
-                    throw err;
+                    op_logger(name)->error("Calling backward_diff unexpectedly.");
+                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
@@ -165,27 +145,7 @@ namespace md{
                        Node trueParent,
                        Node falseParent) :
                         AbstractOperator(graph, "Select"), BinaryOperator(trueParent, falseParent),
-                        condition(condition) {
-//                    if (condition->data_type != b8) {
-//                        auto err = std::make_shared<InvalidArguments>(NodeVec{condition, trueParent, falseParent},
-//                                                                      name,
-//                                                                      "Calling Select with condition of type "
-//                                                                      + to_string(condition->data_type));
-//                        operate_policy(graph->props.policies.cast, logger(), err);
-//                        this->condition = graph->cast(condition, b8);
-//                    }
-//
-//                    Shape shape = verify_elementwise_shapes({condition, trueParent, falseParent}, logger());
-//                    if (condition.dims() == 0) {
-//                        this->condition = graph->broadcast(condition, shape);
-//                    }
-//                    if (trueParent.dims() == 0) {
-//                        this->parent1 = graph->broadcast(parent1, shape);
-//                    }
-//                    if (falseParent.dims() == 0) {
-//                        this->parent1 = graph->broadcast(parent2, shape);
-//                    }
-                };
+                        condition(condition) {};
 
                 DataType get_data_type() const {
                     return parent1->data_type;
@@ -235,4 +195,4 @@ namespace md{
         }
     }
 }
-#endif //METADIFF_CORE_OPERATORS_SPECIAL_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_SPECIAL_H

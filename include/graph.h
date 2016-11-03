@@ -2,19 +2,19 @@
 // Created by alex on 01/10/16.
 //
 
-#ifndef METADIFF_CORE_GRAPH_H
-#define METADIFF_CORE_GRAPH_H
+#ifndef METADIFF_GRAPH_IR_GRAPH_H
+#define METADIFF_GRAPH_IR_GRAPH_H
 
 #include "math.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
 
         /**
          * The internal computation graph class
          * TODO: Should think what to be made private
-         * TODO: Should add an ordering to the computation, so that it does not
-         * necessarily follows the order of creation of the variables.
+         * TODO: Should add an ordering to the computation, so that it does not  necessarily follows the order of creation of the variables.
+         * TODO: Should add both group_map and operator_map
          */
         class GraphInternal : public std::enable_shared_from_this<GraphInternal> {
         public:
@@ -23,86 +23,146 @@ namespace md{
             /** The list of all of the nodes */
             std::vector<std::shared_ptr<NodeData>> nodes;
             /** List of all of the updates */
-            Updates updates;
-            /** List of temporary updates */
-            Updates temporary_updates;
-
-            /** List of groups */
-//            std::vector<std::shared_ptr<NodeGroup>> base_groups;
-            std::vector<std::shared_ptr<NodeGroup>> groups;
+            std::unordered_map<size_t, Node> updates;
             /** Current group */
-            Group current_group;
-
-            std::shared_ptr<spdlog::logger> logger() const {
-                return md::utils::logger("graph::" + name);
-            }
-
-            std::shared_ptr<spdlog::logger> op_logger(std::string name) const {
-                return md::utils::logger("op::" + name);
-            }
+            std::string current_group;
+            /** Mapping group name to all Nodes in that group */
+            std::unordered_map<std::string, NodeVec> group_map;
+            /** Mapping operator name to all Nodes who are results of that op */
+            std::unordered_map<std::string, NodeVec> op_map;
         public:
             /** The name of the graph */
             std::string name;
             /** Properties the user can assign of the graph */
             Properties props;
 
-            GraphInternal(std::string name = "Function"):
+            GraphInternal(std::string name = "graph"):
                     name(name),
                     props(default_properties()){
-                groups.push_back(std::make_shared<NodeGroup>("", this));
-                current_group = groups[0];
+                current_group = "";
             }
 
-            /** Copies the computations with value `true` in the mask to the new_graph */
+            /** @brief Copies the nodes to the new_graph for which mask[node->id] = true
+             *
+             * @param new_graph
+             * @param mask
+             * @return
+             */
             NodeVec copy(Graph new_graph, std::vector<bool> const & mask) const;
 
-            /** Returns an array masking all descendants of the marked nodes */
+            /** @brief Returns a boolean mask over the nodes of the graph, specifiying which nodes are descendants of roots
+             *  Includes the roots in the mask as well
+             *
+             * @param roots
+             * @return
+             */
             std::vector<bool> get_descendants_mask(NodeVec const & roots) const;
 
-            /** Returns an array masking all ancestors of the marked nodes */
+            /** @brief Returns a boolean mask over the nodes of the graph, specifiying which nodes are ancestors of leafs
+             *  Includes the leafs in the mask as well
+             *
+             * @param leafs
+             * @return
+             */
             std::vector<bool> get_ancestors_mask(NodeVec const &  leafs) const;
 
-            /** Returns the intersection of the descendants mask of the roots and the ancestor mask of the leafs */
+            /** @brief Returns the intersection of get_ancestors_mask() and get_descendants_mask()
+             *
+             * @param roots
+             * @param leafs
+             * @return
+             */
             std::vector<bool> get_flow_tree_mask(NodeVec const & roots, NodeVec const & leafs) const;
 
-            /** Adds the updates to the temporary updates of the graph */
-            void add_temporary_updates(Updates const &updates);
+//            /** @brief Adds the updates to for a temporary
+//             *
+//             * @param updates
+//             */
+//            void add_temporary_updates(Updates const &updates);
+//
+//            /** @brief Clears all the updates in the temporary
+//             *
+//             */
+//            void clear_temporary_updates();
 
-            /** Removes all temporary updates of the graph */
-            void clear_temporary_updates();
-
-            /** Returns the gradient of f with respect to w. f should be a scalar */
-            NodeVec gradient(Node const f, NodeVec const & w, bool backward_diff = true);
-
-            /** Computes u^T J_f, where J_f is the Jacobian of f with respect to w (Theano's Lop) */
+            /** @brief Performs a backward differentiation of f with respect to w at evaluation poins u
+             * Formally this computes u^T J_f, where J_f is the Jacobian of f with respect to w (Theano's Lop)
+             *
+             * @param f
+             * @param u
+             * @param w
+             * @return
+             */
             NodeVec backward_diff(NodeVec const & f, NodeVec const & u, NodeVec const & w);
 
-            /** Computes J_f v, where J_f is the Jacobian of f with respect to w (Theano's Rop) */
+            /** @brief Performs a forward differentiation of f with respect to w at evaluation poins v
+             * Formally this computes J_f v, where J_f is the Jacobian of f with respect to w (Theano's Rop)
+             *
+             * @param f
+             * @param v
+             * @param w
+             * @return
+             */
             NodeVec forward_diff(NodeVec const & f, NodeVec const & v, NodeVec const & w);
 
-            Group get_or_create_group(std::string full_name);
+            /** @brief Returns the name of the parent group
+             *
+             * @param full_name
+             * @return
+             */
+            std::string get_parent_group_name(std::string full_name);
 
+            /** @brief Sets the current group
+             *
+             * @param full_name
+             */
             void set_group(std::string full_name);
 
+            /** @brief Adds the group as a child to the current group and changes the current to it
+             *
+             * @param name
+             */
             void push_group(std::string name);
 
+            /** @brief Sets the current group to the parent of the current group
+             *
+             */
             void pop_group();
 
+            /** @brief Sets the current group to the null group
+             *
+             */
             void reset_group();
 
-            /** Creates a new derived node (INTERNAL) */
+            /** @brief Creates a new dervied node from the Operator. This is strictly for internal usage.
+             *
+             * @param op
+             * @param name
+             * @return
+             */
             Node derived_node(Operator op, std::string name = "Derived");
 
-            /** Adds an update for the shared node */
+            /** @brief Adds an update to the shared node. Throws an exception if there is already an update to that
+             * node or if the shared node is not the result of a SharedInput operator.
+             *
+             * @param shared
+             * @param update
+             */
             void update_node(Node shared, Node update);
 
-            /**
-             * Finds a node which performs the same operation
-             * TODO Not implemented correctly
+            /** @brief Finds a Node which exists and is symbolically equivalent to the result of the Operator.
+             * If such node does not exist returns empty node.
+             *
+             * @param op
+             * @return
              */
             Node find_same_node(Operator op);
 
-            /** Looks up the max_float and max_int and limits the data_type accordingly */
+            /** @brief Looks up the max_float and max_int and limits the data_type accordingly
+             *
+             * @param data_type
+             * @return
+             */
             DataType limit_type(DataType data_type) const;
 
             /** @brief Creates a four dimensional variable in the default_graph
@@ -250,6 +310,14 @@ namespace md{
             Node scalar(DataType data_type,
                         std::string name = "Scalar");
 
+            /** @brief Creates an input variable with the same attributes as the node
+             * Note that this operation does not require the Node to be from this graph.
+             *
+             * @param node
+             * @param name
+             * @return
+             */
+            Node tensor_as(Node node, std::string name = "");
 
             /** @brief Creates a variable wrapping a SharedVar
              *
@@ -716,40 +784,36 @@ namespace md{
             return g->constant(value, {1, 1, 1, 1});
         }
 
-        inline Graph create_graph() {
-            return std::make_shared<GraphInternal>();
-        }
-
-        /** Convenience for applying an unary operator for a derived node */
-        template<typename T>
-        Node apply(Node node) {
-            auto g = node->g();
-            return g->derived_node(std::make_shared<T>(g.get(), node));
-        }
-
-        /** Convenience for applying a binary operator trough template */
-        template<typename T>
-        Node apply(Node node1, Node node2) {
-            // TODO verify the nodes are part of the same graph
-            auto g = node1->g();
-            return g->derived_node(std::make_shared<T>(g.get(), node1, node2));
-        }
-
-        /** Convenience for applying a binary operator trough template */
-        template<typename T>
-        Node apply(Node node1, Node node2, Node node3) {
-            // TODO verify the nodes are part of the same graph
-            auto g = node1->g();
-            return g->derived_node(std::make_shared<T>(g.get(), node1, node2, node3));
-        }
-
-        /** Convenience for applying a nary operator trough template */
-        template<typename T>
-        Node apply(NodeVec nodes) {
-            // TODO verify the nodes are part of the same graph
-            auto g = nodes[0]->g();
-            return g->derived_node(std::make_shared<T>(g.get(), nodes));
-        }
+//        /** Convenience for applying an unary operator for a derived node */
+//        template<typename T>
+//        Node apply(Node node) {
+//            auto g = node.g();
+//            return g->derived_node(std::make_shared<T>(g.get(), node));
+//        }
+//
+//        /** Convenience for applying a binary operator trough template */
+//        template<typename T>
+//        Node apply(Node node1, Node node2) {
+//            // TODO verify the nodes are part of the same graph
+//            auto g = node1.g();
+//            return g->derived_node(std::make_shared<T>(g.get(), node1, node2));
+//        }
+//
+//        /** Convenience for applying a binary operator trough template */
+//        template<typename T>
+//        Node apply(Node node1, Node node2, Node node3) {
+//            // TODO verify the nodes are part of the same graph
+//            auto g = node1.g();
+//            return g->derived_node(std::make_shared<T>(g.get(), node1, node2, node3));
+//        }
+//
+//        /** Convenience for applying a nary operator trough template */
+//        template<typename T>
+//        Node apply(NodeVec nodes) {
+//            // TODO verify the nodes are part of the same graph
+//            auto g = nodes[0].g();
+//            return g->derived_node(std::make_shared<T>(g.get(), nodes));
+//        }
     }
 }
-#endif //METADIFF_CORE_GRAPH_H
+#endif //METADIFF_GRAPH_IR_GRAPH_H

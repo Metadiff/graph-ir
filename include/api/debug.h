@@ -2,8 +2,8 @@
 // Created by alex on 31/10/16.
 //
 
-#ifndef METADIFF_API_DEBUG_H
-#define METADIFF_API_DEBUG_H
+#ifndef GRAPH_IR_API_DEBUG_H
+#define GRAPH_IR_API_DEBUG_H
 
 namespace md{
     namespace api{
@@ -49,4 +49,4 @@ namespace md{
         Node guard(Node monitored, std::string msg, double low, double high, Node anchor = Node());
     }
 }
-#endif //METADIFF_API_DEBUG_H
+#endif //GRAPH_IR_API_DEBUG_H

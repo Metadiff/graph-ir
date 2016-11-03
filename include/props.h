@@ -2,35 +2,35 @@
 // Created by alex on 29/09/16.
 //
 
-#ifndef METADIFF_CORE_UTILS_PROPS_H
-#define METADIFF_CORE_UTILS_PROPS_H
+#ifndef METADIFF_GRAPH_IR_PROPS_H
+#define METADIFF_GRAPH_IR_PROPS_H
 namespace md{
-    namespace core{
-        /**
-         * This class contains gloal properties which should be loaded from file at begining of execution of the program
-         * or filled in with default values;
-         */
+    namespace gir{
+        /** A container class for all user specified properties, which affect the response of the API */
         class Properties{
         public:
+            /** A Http Proxy, if the API would need internet access this can be handy */
             std::string http_proxy;
-            std::string base_group_prefix;
+            /** The delimiter used for combining group names */
             char group_delimiter;
+            /** The default device */
             Device default_device;
+            /** The maixmum allowed floating numbers precision */
             DataType max_float;
+            /** The maixmum allowed integer numbers precision */
             DataType max_int;
+            /** The collection of policies for reaction to errors */
             GraphPolicies policies;
+            /** Currently not used */
             DataType promotion_table[13][13];
-            unsigned long long random_seed;
 
             Properties():
                     http_proxy("HTTP_PROXY"),
-                    base_group_prefix("Grads"),
                     group_delimiter('.'),
-                    default_device(host()),
+                    default_device(HOST),
                     max_float(f32),
                     max_int(i32),
-                    policies(WARN, WARN, WARN, WARN),
-                    random_seed(0) {
+                    policies(WARN, WARN, WARN){
                 for(auto i=0; i<13; ++i){
                     for(auto j=0; j<13; ++j){
                         promotion_table[i][j] = default_promotion_table[i][j];
@@ -40,7 +40,6 @@ namespace md{
 
             Properties(std::shared_ptr<Properties> ptr):
                     http_proxy(ptr->http_proxy),
-                    base_group_prefix(ptr->base_group_prefix),
                     group_delimiter(ptr->group_delimiter),
                     default_device(ptr->default_device),
                     max_float(ptr->max_float),
@@ -52,25 +51,20 @@ namespace md{
                     }
                 }
             }
-
-//            Properties(Properties* const ptr):
-//                    http_proxy(ptr->http_proxy),
-//                    base_group_prefix(ptr->base_group_prefix),
-//                    group_delimiter(ptr->group_delimiter),
-//                    default_device(ptr->default_device),
-//                    max_float(ptr->max_float),
-//                    max_int(ptr->max_int),
-//                    policies(ptr->policies) {
-//                for(auto i=0; i<13; ++i){
-//                    for(auto j=0; j<13; ++j){
-//                        promotion_table[i][j] = ptr->promotion_table[i][j];
-//                    }
-//                }
-//            }
         };
 
-        /** These should be loaded from a system file at start */
-        std::shared_ptr<Properties> default_properties();
+        /** @brief The default properties are defined by the configuration files and environmental flags on the system
+         *
+         * @return
+         */
+        inline std::shared_ptr<Properties> default_properties(){
+            static std::shared_ptr<Properties> props;
+            if(not props){
+                // TODO Load this from a file
+                props = std::make_shared<Properties>();
+            }
+            return props;
+        }
     }
 }
-#endif //METADIFF_CORE_UTILS_PROPS_H
+#endif //METADIFF_GRAPH_IR_PROPS_H

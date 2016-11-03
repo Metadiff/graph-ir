@@ -2,7 +2,8 @@
 // Created by alex on 19/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
+
 
 namespace md{
     namespace cytoscape{
@@ -31,27 +32,26 @@ namespace md{
             return cleaned;
         }
 
-        void write_graph(Graph g, std::ostream& s){
-            write_header(g->name, s);
+        void export_graph(Graph g, std::ostream& s){
+            export_header(g->name, s);
             s << "                elements: [\n";
-            auto result = write_nodes(g, s);
-            write_edges(result.first, s);
-            write_groups(result.second, s);
+            auto result = export_nodes(g, s);
+            export_edges(result.first, s);
+            export_groups(g, result.second, s);
             s << "      ]\n            });\n";
-            write_footer(g->name,s);
+            export_footer(g->name,s);
         };
 
-        std::pair<Edges, GroupMap> write_nodes(Graph g, std::ostream& s){
+        std::pair<Edges, GroupSet> export_nodes(Graph g, std::ostream& s){
             Edges edges;
-            GroupMap groups;
+            GroupSet groups;
             s << "// Nodes" << std::endl;
             for(auto i=0; i < g->nodes.size(); ++i) {
                 auto node = g->nodes[i];
-                auto group = node->group.lock();
                 std::string parent_name = "Grads_0";
-                if(not group->is_base()) {
-                    parent_name = clear_full_name(group->full_name + "_" + std::to_string(node->grad_level));
-                    groups.insert({parent_name, group});
+                if(node->group != ""){
+                    parent_name = clear_full_name(node->group + "_" + std::to_string(node->grad_level));
+                    groups.insert(parent_name);
                 }
                 auto parents = node->op->get_parents();
                 auto children = node->children;
@@ -88,11 +88,17 @@ namespace md{
                 s << "]'," << std::endl
                   << "    group: 'false'" << std::endl
                   << "}}," << std::endl;
+                // Insert all parents' groups
+                parent_name = g->get_parent_group_name(parent_name);
+                while(parent_name != ""){
+                    groups.insert(parent_name);
+                    parent_name = g->get_parent_group_name(parent_name);
+                }
             }
             return {edges, groups};
         };
 
-        void write_edges(Edges& edges, std::ostream& s){
+        void export_edges(Edges& edges, std::ostream& s){
             s << "// Edges" << std::endl;
             for(auto i=0; i < edges.size(); ++i){
                 s << "{data: {" << std::endl
@@ -103,19 +109,19 @@ namespace md{
             }
         }
 
-        void write_groups(GroupMap& groups, std::ostream& s){
+        void export_groups(Graph g, GroupSet& groups, std::ostream& s){
             int max_grad_level = 0;
             s << "// Groups" << std::endl;
             for(auto i = groups.begin(); i != groups.end(); ++i) {
-                auto name = (*i).first;
-                auto g = (*i).second.lock();
+                auto name = (*i);
+                auto parent_name = g->get_parent_group_name(name);
                 int grad_level = name[name.length()-1] - '0';
                 max_grad_level = grad_level > max_grad_level ? grad_level : max_grad_level;
                 s << "{data: {" << std::endl
                   << "    id: 'g_" << name << "'," << std::endl
-                  << "    label: '" << g->name << "'," << std::endl;
-                if(not g->parent.lock()->is_base()){
-                    s << "    parent: 'g_" << clear_full_name(g->parent.lock()->full_name + "_" + std::to_string(grad_level)) << "'," << std::endl;
+                  << "    label: '" << name.substr(0, name.length()-2) << "'," << std::endl;
+                if(parent_name != ""){
+                    s << "    parent: 'g_" << clear_full_name(parent_name + "_" + std::to_string(grad_level)) << "'," << std::endl;
                 } else {
                     s << "    parent: 'g_Grads_" << grad_level << "'," << std::endl;
                 }
@@ -134,7 +140,7 @@ namespace md{
             }
         }
 
-        void write_header(std::string name, std::ostream& s){
+        void export_header(std::string name, std::ostream& s){
             s <<    "<!doctype html>\n"
                     "<html>\n"
                     "<head>\n"
@@ -225,7 +231,7 @@ namespace md{
                       "                layout: { name: 'dagre' },\n";
         }
 
-        void write_footer(std::string name, std::ostream& s){
+        void export_footer(std::string name, std::ostream& s){
             s <<    "            cy.elements().filter('node[group = \"false\"]').qtip({\n"
                     "                content: function(){\n"
                     "                    return \"Name: \" + this.data('Name') + \"<br/>\" +\n"

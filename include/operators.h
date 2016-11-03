@@ -2,8 +2,8 @@
 // Created by alex on 30/09/16.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_H
-#define METADIFF_CORE_OPERATORS_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_H
+#define METADIFF_GRAPH_IR_OPERATORS_H
 
 #include "operators/abstract.h"
 #include "operators/input.h"
@@ -20,4 +20,4 @@
 #include "operators/optimized.h"
 
 
-#endif //METADIFF_CORE_OPERATORS_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_H

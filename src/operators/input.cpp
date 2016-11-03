@@ -2,10 +2,10 @@
 // Created by alex on 06/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
 
 
 

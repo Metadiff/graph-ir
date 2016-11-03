@@ -2,10 +2,27 @@
 // Created by alex on 26/10/16.
 //
 
-#ifndef METADIFF_API_H
-#define METADIFF_API_H
+#ifndef METADIFF_GRAPH_IR_API_H
+#define METADIFF_GRAPH_IR_API_H
 
-#include "api/general.h"
+namespace md {
+    namespace api {
+        using namespace gir;
+
+        inline Graph create_graph() {
+            return std::make_shared<GraphInternal>();
+        }
+
+        inline Graph default_graph() {
+            static std::shared_ptr<GraphInternal> graph;
+            if (not graph) {
+                graph = create_graph();
+            }
+            return graph;
+        }
+    }
+}
+
 #include "api/input.h"
 #include "api/constant.h"
 #include "api/special.h"
@@ -17,5 +34,6 @@
 #include "api/linalg.h"
 #include "api/debug.h"
 #include "api/optimized.h"
+#include "api/grad.h"
 
-#endif //METADIFF_API_H
+#endif //METADIFF_GRAPH_IR_API_H

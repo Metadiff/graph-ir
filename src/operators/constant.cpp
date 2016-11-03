@@ -2,10 +2,10 @@
 // Created by alex on 06/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core {
+    namespace gir {
         Node GraphInternal::constant(double value, DataType data_type, Shape shape) {
             // Limit the data type based on the max allowed
             DataType limit = limit_type(data_type);

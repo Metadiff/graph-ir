@@ -2,18 +2,119 @@
 // Created by alex on 27/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace api {
+    namespace gir{
+        Node GraphInternal::tensor4(DataType data_type,
+                                    std::array<SymInt, 4> shape,
+                                    std::string name) {
+            auto op = std::make_shared<op::Input>(this, data_type, shape);
+            auto result = std::make_shared<NodeData>(shared_from_this(), nodes.size(),
+                                                     name, props.default_device,
+                                                     op, 0, current_group);
+            nodes.push_back(result);
+            result->op->result = result;
+            // Add the node to the group map
+            if(group_map.find(current_group) == group_map.end()){
+                group_map[current_group] = NodeVec{result};
+            } else {
+                group_map[current_group].push_back(result);
+            }
+            // Add the node to the op map
+            if(op_map.find(op->name) == op_map.end()){
+                op_map[op->name] = NodeVec{result};
+            } else {
+                group_map[op->name].push_back(result);
+            }
+            return result;
+        }
 
-        Node tensor_as(Node node, std::string name) {
+        Node GraphInternal::tensor4(DataType data_type,
+                                    SymInt shape0,
+                                    SymInt shape1,
+                                    SymInt shape2,
+                                    SymInt shape3,
+                                    std::string name) {
+            return tensor4(data_type, {shape0, shape1, shape2, shape3}, name);
+        }
+
+        Node GraphInternal::tensor4(DataType data_type,
+                                    std::string name) {
+            return tensor4(data_type, {new_sym(), new_sym(), new_sym(), new_sym()}, name);
+        }
+
+        Node GraphInternal::tensor3(DataType data_type,
+                                    std::array<SymInt, 3> shape,
+                                    std::string name) {
+            return tensor4(data_type, {shape[0], shape[1], shape[2], 1}, name);
+        }
+
+        Node GraphInternal::tensor3(DataType data_type,
+                                    SymInt shape0,
+                                    SymInt shape1,
+                                    SymInt shape2,
+                                    std::string name) {
+            return tensor4(data_type, {shape0, shape1, shape2, 1}, name);
+        }
+
+        Node GraphInternal::tensor3(DataType data_type,
+                                    std::string name) {
+            return tensor4(data_type, {new_sym(), new_sym(), new_sym(), 1}, name);
+        }
+
+        Node GraphInternal::matrix(DataType data_type,
+                                   std::array<SymInt, 2> shape,
+                                   std::string name) {
+            return tensor4(data_type, {shape[0], shape[1], 1, 1}, name);
+        }
+
+        Node GraphInternal::matrix(DataType data_type,
+                                   SymInt shape0,
+                                   SymInt shape1,
+                                   std::string name) {
+            return tensor4(data_type, {shape0, shape1, 1, 1}, name);
+        }
+
+        Node GraphInternal::matrix(DataType data_type,
+                                   std::string name) {
+            return tensor4(data_type, {new_sym(), new_sym(), 1, 1}, name);
+        }
+
+        Node GraphInternal::square_matrix(DataType data_type,
+                                          SymInt shape,
+                                          std::string name) {
+            return tensor4(data_type, {shape, shape, 1, 1}, name);
+        }
+
+        Node GraphInternal::vector(DataType data_type,
+                                   SymInt shape,
+                                   std::string name) {
+            return tensor4(data_type, {shape, 1, 1, 1}, name);
+        }
+
+        Node GraphInternal::vector(DataType data_type,
+                                   std::string name) {
+            return tensor4(data_type, {new_sym(), 1, 1, 1}, name);
+        }
+
+        Node GraphInternal::scalar(DataType data_type, std::string name) {
+            return tensor4(data_type, {1, 1, 1, 1}, name);
+        }
+
+        Node GraphInternal::tensor_as(Node node, std::string name) {
             if (name == "") {
                 name = node->name + "_clone";
             }
-            return node->g()->tensor4(node->data_type, node->shape, name);
+            return node.g()->tensor4(node->data_type, node->shape, name);
         }
-
+    }
+//    namespace api {
+//
+//        Node tensor_as(Node node, std::string name) {
+//            return node.g()->tensor_as(node, name);
+//        }
+//
 //        Node tensor4(DataType data_type,
 //                     std::array<SymInt, 4> shape,
 //                     std::string name,
@@ -23,7 +124,7 @@ namespace md{
 //                    name, g->props.default_device,
 //                    op, 0, g->current_group);
 //            g->nodes.push_back(result);
-//            result->op->owner = result;
+//            result->op->result = result;
 //            return result;
 //        }
 //
@@ -114,92 +215,7 @@ namespace md{
 //            if(name == ""){
 //                name = node->name + "_clone";
 //            }
-//            return tensor4(node->data_type, node->shape, name, node->g());
+//            return tensor4(node->data_type, node->shape, name, node.g());
 //        }
-    }
-    namespace core{
-        Node GraphInternal::tensor4(DataType data_type,
-                                    std::array<SymInt, 4> shape,
-                                    std::string name) {
-            auto op = std::make_shared<op::Input>(this, data_type, shape);
-            auto result = std::make_shared<NodeData>(shared_from_this(), nodes.size(),
-                                                     name, props.default_device,
-                                                     op, 0, current_group);
-            nodes.push_back(result);
-            result->op->owner = result;
-            return result;
-        }
-
-        Node GraphInternal::tensor4(DataType data_type,
-                                    SymInt shape0,
-                                    SymInt shape1,
-                                    SymInt shape2,
-                                    SymInt shape3,
-                                    std::string name) {
-            return tensor4(data_type, {shape0, shape1, shape2, shape3}, name);
-        }
-
-        Node GraphInternal::tensor4(DataType data_type,
-                                    std::string name) {
-            return tensor4(data_type, {new_sym(), new_sym(), new_sym(), new_sym()}, name);
-        }
-
-        Node GraphInternal::tensor3(DataType data_type,
-                                    std::array<SymInt, 3> shape,
-                                    std::string name) {
-            return tensor4(data_type, {shape[0], shape[1], shape[2], 1}, name);
-        }
-
-        Node GraphInternal::tensor3(DataType data_type,
-                                    SymInt shape0,
-                                    SymInt shape1,
-                                    SymInt shape2,
-                                    std::string name) {
-            return tensor4(data_type, {shape0, shape1, shape2, 1}, name);
-        }
-
-        Node GraphInternal::tensor3(DataType data_type,
-                                    std::string name) {
-            return tensor4(data_type, {new_sym(), new_sym(), new_sym(), 1}, name);
-        }
-
-        Node GraphInternal::matrix(DataType data_type,
-                                   std::array<SymInt, 2> shape,
-                                   std::string name) {
-            return tensor4(data_type, {shape[0], shape[1], 1, 1}, name);
-        }
-
-        Node GraphInternal::matrix(DataType data_type,
-                                   SymInt shape0,
-                                   SymInt shape1,
-                                   std::string name) {
-            return tensor4(data_type, {shape0, shape1, 1, 1}, name);
-        }
-
-        Node GraphInternal::matrix(DataType data_type,
-                                   std::string name) {
-            return tensor4(data_type, {new_sym(), new_sym(), 1, 1}, name);
-        }
-
-        Node GraphInternal::square_matrix(DataType data_type,
-                                          SymInt shape,
-                                          std::string name) {
-            return tensor4(data_type, {shape, shape, 1, 1}, name);
-        }
-
-        Node GraphInternal::vector(DataType data_type,
-                                   SymInt shape,
-                                   std::string name) {
-            return tensor4(data_type, {shape, 1, 1, 1}, name);
-        }
-
-        Node GraphInternal::vector(DataType data_type,
-                                   std::string name) {
-            return tensor4(data_type, {new_sym(), 1, 1, 1}, name);
-        }
-
-        Node GraphInternal::scalar(DataType data_type, std::string name) {
-            return tensor4(data_type, {1, 1, 1, 1}, name);
-        }
-    }
+//    }
 }

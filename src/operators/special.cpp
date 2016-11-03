@@ -2,10 +2,10 @@
 // Created by alex on 18/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
         Node GraphInternal::cast(Node node, DataType data_type) {
             // If same data_type do nothing
             if(node->data_type == data_type){

@@ -2,11 +2,11 @@
 // Created by alex on 30/09/16.
 //
 
-#ifndef METADIFF_CORE_PRINT_H
-#define METADIFF_CORE_PRINT_H
+#ifndef METADIFF_GRAPH_IR_PRINT_H
+#define METADIFF_GRAPH_IR_PRINT_H
 
 namespace md{
-    namespace core{
+    namespace gir{
 
         std::string to_string(DataType data_type);
 
@@ -51,4 +51,4 @@ namespace md{
         }
     }
 }
-#endif //METADIFF_CORE_PRINT_H
+#endif //METADIFF_GRAPH_IR_PRINT_H

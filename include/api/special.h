@@ -2,8 +2,8 @@
 // Created by alex on 27/10/16.
 //
 
-#ifndef METADIFF_API_SPECIAL_H
-#define METADIFF_API_SPECIAL_H
+#ifndef GRAPH_IR_API_SPECIAL_H
+#define GRAPH_IR_API_SPECIAL_H
 
 
 namespace md{
@@ -39,6 +39,13 @@ namespace md{
          */
         Node make_constant(Node node);
 
+        /** @brief Adds to the graph an update of the shared node provided to the update
+         *
+         * @param shared
+         * @param update
+         */
+        void update(Node shared, Node update);
+
         /** @brief Makes a selection elementwise between two tensors based on the condition
          *
          * Formally R = select(C, A, B), then
@@ -55,23 +62,23 @@ namespace md{
         template <typename T, typename F, typename = std::enable_if<
                 !conjunction<std::is_same<T, Node>, std::is_same<F, Node>>::value>>
         Node select(Node condition, T if_true, F if_false){
-            Graph g = condition->g();
+            Graph g = condition.g();
             return select(condition, wrap(if_true, g), wrap(if_false, g));
         };
 
         template <typename C, typename F, typename = std::enable_if<
                 !conjunction<std::is_same<C, Node>, std::is_same<F, Node>>::value>>
         Node select(C condition, Node if_true, F if_false){
-            Graph g = if_true->g();
+            Graph g = if_true.g();
             return select(wrap(condition, g), if_true, wrap(if_false, g));
         };
 
         template <typename C, typename T, typename = std::enable_if<
                 !conjunction<std::is_same<C, Node>, std::is_same<T, Node>>::value>>
         Node select(C condition, T if_true, Node if_false){
-            Graph g = if_false->g();
+            Graph g = if_false.g();
             return select(wrap(condition, g), wrap(if_true, g), if_false);
         };
     }
 }
-#endif //METADIFF_API_SPECIAL_H
+#endif //GRAPH_IR_API_SPECIAL_H

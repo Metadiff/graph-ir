@@ -2,18 +2,13 @@
 // Created by alex on 30/09/16.
 //
 
-#ifndef METADIFF_CORE_NODE_H
-#define METADIFF_CORE_NODE_H
+#ifndef METADIFF_GRAPH_IR_NODE_H
+#define METADIFF_GRAPH_IR_NODE_H
 
 namespace md{
-    namespace core{
+    namespace gir{
 
-        /** This class stores all of the data for each single node of the Graph
-         * TODO: Add extra meta data like:
-         * positive, negative or unkown
-         * symmetric, skew-symmteric, unkown
-         * positive definite, positive semi-definite, negative definate, negative semi-definite or indefinite
-         */
+        /** The main storage class for all data on each node of the graph */
         class NodeData {
         public:
             std::weak_ptr<GraphInternal> const graph;
@@ -35,7 +30,7 @@ namespace md{
             Device device;
             ExecutionData execution;
 
-            Group group;
+            std::string group;
 
             NodeData(std::weak_ptr<GraphInternal> const graph, Device const device) :
                     graph(graph),
@@ -47,22 +42,12 @@ namespace md{
                      Device device,
                      Operator op,
                      unsigned int grad_level,
-                     Group group);
-
-            Graph g() const {
-                if (graph.expired()) {
-                    utils::logger("XXX::node::XXX")->error("Trying to access a Node whose pointer has expired");
-                    throw 1;
-                }
-                return graph.lock();
-            }
+                     std::string group);
         };
 
 
         /** This is the API wrapper around the internal storage for each node - NodeData */
         class Node {
-        private:
-            std::shared_ptr<spdlog::logger> logger() const;
         public:
             std::weak_ptr<NodeData> ptr;
 
@@ -74,29 +59,32 @@ namespace md{
             Node(Node const &node) :
                     ptr(node.ptr) { };
 
-//            Node(Node const *node) :
-//                    ptr(node->ptr) { };
+            /** @brief Unwraps the ptr to the underlying NodeData
+             *
+             * @return std::shared_ptr<NodeData> or throws an error if the pointer has expired.
+             */
+            std::shared_ptr<NodeData> unwrap() const;
 
-            /** Unwraps the pointer to the underlying NodeData.
-             * Exits the program if the pointer has expired */
-            std::shared_ptr<NodeData> unwrap() const{
-                if (ptr.expired()) {
-                    utils::logger("XXX::node::XXX")->error("Trying to access a Node whose pointer has expired");
-                }
-                return ptr.lock();
-            }
-
-            /** The pointer operator is overloaded to call the unwrap method */
+            /** @brief See unwrap()
+             *
+             * @return
+             */
             std::shared_ptr<NodeData> operator->() const{
                 return unwrap();
             }
 
-            /** Copies the node to a new graph */
-            void copy_to(const Graph graph, NodeVec ancestors) const;
+            /** @brief Returns the Graph from the NodeData
+             *
+             * @return
+             */
+            Graph g() const;
 
-            /** Returns the actual dimensionality of the tensor */
-            int dims() const;
+            /** @brief Returns the order of the tensor (currently are supported only tensors up to order 4)
+             *
+             * @return
+             */
+            int order() const;
         };
     }
 }
-#endif //METADIFF_CORE_NODE_H
+#endif //METADIFF_GRAPH_IR_NODE_H

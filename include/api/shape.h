@@ -2,8 +2,8 @@
 // Created by alex on 27/10/16.
 //
 
-#ifndef METADIFF_API_SHAPE_H
-#define METADIFF_API_SHAPE_H
+#ifndef GRAPH_IR_API_SHAPE_H
+#define GRAPH_IR_API_SHAPE_H
 
 namespace md{
     namespace api{
@@ -25,6 +25,15 @@ namespace md{
          */
         Node reshape(Node node, Shape shape);
 
+        /** @brief Reshapes the tensor to a vector
+         *
+         * @param node
+         * @param shape
+         * @param g
+         * @return
+         */
+        Node flatten(Node node);
+
         /** @brief Reorders the dimensions of the tensor as specified
          *
          * @param node
@@ -43,4 +52,4 @@ namespace md{
         Node transpose(Node node);
     }
 }
-#endif //METADIFF_API_SHAPE_H
+#endif //GRAPH_IR_API_SHAPE_H

@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 2.8) # Could be even lower. Works with 3.0
 
 # Project name and versions
-project(GraphIntermediateRepresentation)
-set(GIR_MAJOR_VERSION 0)
-set(GIR_INTEGERS_VERSION 0)
-set(GIR_INTEGERS_VERSION 1)
-set(GIR__VERSION
-        ${GIR_MAJOR_VERSION}.${GIR_MINOR_VERSION}.${GIR_PATCH_VERSION})
+project(Graph_IR)
+set(GRAPH_IR_MAJOR_VERSION 0)
+set(GRAPH_IR_INTEGERS_VERSION 0)
+set(GRAPH_IR_INTEGERS_VERSION 1)
+set(GRAPH_IR__VERSION
+        ${GRAPH_IR_MAJOR_VERSION}.${GRAPH_IR_MINOR_VERSION}.${GRAPH_IR_PATCH_VERSION})
 
 # *** DEBUG ***
-set(GIR_SHARED 1)
+set(GRAPH_IR_SHARED 1)
 # *** DEBUG ***
 
 # Build flags
@@ -49,17 +49,7 @@ include_directories(include)
 #link_libraries(curl)
 
 # All of the project source files
-set(GIR_SOURCES
-        ${PROJECT_SOURCE_DIR}/src/utils.cpp
-        ${PROJECT_SOURCE_DIR}/src/definitions.cpp
-        ${PROJECT_SOURCE_DIR}/src/props.cpp
-        ${PROJECT_SOURCE_DIR}/src/helpers.cpp
-        ${PROJECT_SOURCE_DIR}/src/node.cpp
-        ${PROJECT_SOURCE_DIR}/src/graph.cpp
-        ${PROJECT_SOURCE_DIR}/src/print.cpp
-        ${PROJECT_SOURCE_DIR}/src/exceptions.cpp
-        ${PROJECT_SOURCE_DIR}/src/abstract_operator.cpp
-        ${PROJECT_SOURCE_DIR}/src/api/general.cpp
+set(API_SOURCES
         ${PROJECT_SOURCE_DIR}/src/api/input.cpp
         ${PROJECT_SOURCE_DIR}/src/api/constant.cpp
         ${PROJECT_SOURCE_DIR}/src/api/special.cpp
@@ -72,12 +62,24 @@ set(GIR_SOURCES
         ${PROJECT_SOURCE_DIR}/src/api/random.cpp
         ${PROJECT_SOURCE_DIR}/src/api/debug.cpp
         ${PROJECT_SOURCE_DIR}/src/api/optimized.cpp
+        ${PROJECT_SOURCE_DIR}/src/api/grad.cpp
+        )
+
+set(GRAPH_IR_SOURCES
+        ${PROJECT_SOURCE_DIR}/src/props.cpp
+        ${PROJECT_SOURCE_DIR}/src/utils.cpp
+        ${PROJECT_SOURCE_DIR}/src/node.cpp
+        ${PROJECT_SOURCE_DIR}/src/graph.cpp
+        ${PROJECT_SOURCE_DIR}/src/print.cpp
+        ${PROJECT_SOURCE_DIR}/src/abstract_operator.cpp
         ${PROJECT_SOURCE_DIR}/src/export/cytoscape.cpp
         ${PROJECT_SOURCE_DIR}/src/export/json.cpp
         )
 
+list(APPEND GRAPH_IR_SOURCES ${API_SOURCES})
+
 # Append them to all of the source fiels
-list(APPEND ALL_SOURCES ${GIR_SOURCES})
+list(APPEND ALL_SOURCES ${GRAPH_IR_SOURCES})
 
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
     # Build under anohter project umbrella
@@ -85,15 +87,15 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
 endif()
 
 # Build libs (static by default)
-if(GIR_SHARED)
+if(GRAPH_IR_SHARED)
     # Create shared libs
-    add_library(gir SHARED ${ALL_SOURCES})
+    add_library(graph_ir SHARED ${ALL_SOURCES})
 else()
     # Create static library
-    add_library(gir STATIC ${ALL_SOURCES})
+    add_library(graph_ir STATIC ${ALL_SOURCES})
 endif()
 
 # Build test example
 add_executable(try examples/src/test.cpp)
-target_link_libraries(try gir)
+target_link_libraries(try graph_ir)
 

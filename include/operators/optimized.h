@@ -2,11 +2,11 @@
 // Created by alex on 19/12/15.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_OPTIMIZED_H
-#define METADIFF_CORE_OPERATORS_OPTIMIZED_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_OPTIMIZED_H
+#define METADIFF_GRAPH_IR_OPERATORS_OPTIMIZED_H
 
 namespace md {
-    namespace core {
+    namespace gir {
         namespace op {
 
             /** Logarithm of exp(x) + 1 */
@@ -61,7 +61,7 @@ namespace md {
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    return mul(my_derivative, owner, neg(graph->constant(1), owner));
+                    return mul(my_derivative, result, neg(graph->constant(1), result));
                 }
             };
 
@@ -71,26 +71,19 @@ namespace md {
                 Axes axes;
                 Softmax(GraphInPtr graph, Node parent, Axes axes) :
                         AbstractOperator(graph, "Softmax"), UnaryOperator(parent),
-                        axes(axes) {
-//                    if(parent.dims() < 1){
-//                        // TODO raise an error
-//                    }
-//                    axis = parent.dims() - 1;
-                };
+                        axes(axes) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<Softmax>(graph, ancestors[0], axes);
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    auto vtg = sum(mul(my_derivative, owner), axes);
-                    return neg(mul(owner, my_derivative), mul(owner, vtg));
+                    auto vtg = sum(mul(my_derivative, result), axes);
+                    return neg(mul(result, my_derivative), mul(result, vtg));
                 }
             };
 
-            /**
-             * The Binary cross entropy of p and q = sigmoid(x)
-             */
+            /** The Binary cross entropy of p and q = sigmoid(x) */
             class BinaryCrossEntropyLogits: public BinaryFloatElementwiseOperator {
             public:
                 Node softplus_x, softplus_minus_x;
@@ -154,4 +147,4 @@ namespace md {
 };
 
 
-#endif //METADIFF_CORE_OPERATORS_OPTIMIZED_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_OPTIMIZED_H

@@ -2,13 +2,13 @@
 // Created by alex on 18/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
         Node GraphInternal::diag(Node node){
             // If it is a scalar nothing to do
-            if(node.dims() == 0){
+            if(node.order() == 0){
                 return api::alias(node);
             }
             // diag(diag(x)) = x
@@ -36,7 +36,7 @@ namespace md{
 
         Node GraphInternal::reorder(Node node, Axes order){
             // For a scalar do nothing
-            if(node.dims() == 0){
+            if(node.order() == 0){
                 return api::alias(node);
             }
             bool ordered = true;
@@ -79,11 +79,11 @@ namespace md{
 
         Node GraphInternal::transpose(Node node){
             // For a scalar do nothing
-            if(node.dims() == 0){
+            if(node.order() == 0){
                 return api::alias(node);
             }
             // Switch the last two dimensions
-            int dims = node.dims();
+            int dims = node.order();
             dims = dims == 1 ? 2 : dims;
             Axes order;
             for(auto i=0;i<dims-2; ++i){

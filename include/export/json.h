@@ -2,8 +2,8 @@
 // Created by alex on 25/10/16.
 //
 
-#ifndef METADIFF_CORE_JSON_H
-#define METADIFF_CORE_JSON_H
+#ifndef METADIFF_GRAPH_IR_JSON_H
+#define METADIFF_GRAPH_IR_JSON_H
 
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "rapidjson/rapidjson.h"
@@ -15,35 +15,34 @@ namespace md{
     namespace json{
         using namespace rapidjson;
 
-        /** Writes a graph to a stream in a json format */
-        void write_graph(Graph const g, std::ostream& s);
+        /** Exprots the graph to a stream in a json format */
+        void export_graph(Graph const g, std::ostream& s);
 
-        /** Writes a graph to a wrtier from RapidJson */
-        void write_graph(Graph const g, PrettyWriter<StringBuffer>& writer);
+        /** Exports a graph to a wrtier from RapidJson */
+        void export_graph(Graph const g, PrettyWriter<StringBuffer>& writer);
 
-        /** Writes a Properties object to a wrtier from RapidJson */
-        void write_props(Properties const properties, PrettyWriter<StringBuffer>& writer);
+        /** Exports a Properties object to a wrtier from RapidJson */
+        void export_props(Properties const properties, PrettyWriter<StringBuffer>& writer);
 
-        /** Writes a Policies object to a wrtier from RapidJson */
-        void write_policies(GraphPolicies const policies, PrettyWriter<StringBuffer>& writer);
+        /** Exports a Policies object to a wrtier from RapidJson */
+        void export_policies(GraphPolicies const policies, PrettyWriter<StringBuffer>& writer);
 
-        /** Writes a vector of NodeGroup objects to a wrtier from RapidJson */
-        void write_groups(std::vector<std::shared_ptr<NodeGroup>> const & groups,
-                          PrettyWriter<StringBuffer>& writer);
+        /** Exports a Shape object to a writer from RapidJson */
+        void export_shape(Shape const shape,  PrettyWriter<StringBuffer>& writer);
 
-        /** Writes a vector of NodeData objects to a wrtier from RapidJson */
-        void write_nodes(std::vector<std::shared_ptr<NodeData>> const &  nodes,
+        /** Exports a SymInt object to a writer from RapidJson */
+        void export_sym_int(SymInt const sym_int,  PrettyWriter<StringBuffer>& writer);
+
+        /** Exports an ExecutionData object to a writer from RapidJson */
+        void export_execution_data(ExecutionData execution, PrettyWriter<StringBuffer>& writer);
+
+        /** Exports a vector of NodeData objects to a wrtier from RapidJson */
+        void export_nodes(std::vector<std::shared_ptr<NodeData>> const &  nodes,
                          PrettyWriter<StringBuffer>& writer);
 
-        /** Writes an Operator object to a wrtier from RapidJson */
-        void write_op(Operator const op,  PrettyWriter<StringBuffer>& writer);
-
-        /** Write an Shape object to a writer from RapidJson */
-        void write_shape(Shape const shape,  PrettyWriter<StringBuffer>& writer);
-
-        /** Write an SymInt object to a writer from RapidJson */
-        void write_sym_int(SymInt const sym_int,  PrettyWriter<StringBuffer>& writer);
+        /** Exports an Operator object to a wrtier from RapidJson */
+        void export_op(Operator const op,  PrettyWriter<StringBuffer>& writer);
     }
 }
 
-#endif //METADIFF_CORE_JSON_H
+#endif //METADIFF_GRAPH_IR_JSON_H

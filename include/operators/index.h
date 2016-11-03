@@ -2,12 +2,12 @@
 // Created by alex on 15/02/16.
 //
 
-#ifndef METADIFF_INDEX_H
-#define METADIFF_INDEX_H
+#ifndef METADIFF_GRAPH_IR_INDEX_H
+#define METADIFF_GRAPH_IR_INDEX_H
 
 namespace metadiff{
     namespace op {
-        using namespace core;
+        using namespace gir;
         using namespace exceptions;
 
         // TODO Think well how to design the indexing operations
@@ -25,10 +25,10 @@ namespace metadiff{
 //                    index(index),
 //                    axis(axis) {
 //                if (axis > 3) {
-//                    throw InvalidArguments(name, {owner}, "Axis should be between [0, 3]");
+//                    throw InvalidArguments(name, {result}, "Axis should be between [0, 3]");
 //                }
 //                if (not index.is_vector()) {
-//                    throw InvalidArguments(name, {owner}, "The indexes should be a column vector");
+//                    throw InvalidArguments(name, {result}, "The indexes should be a column vector");
 //                }
 //            };
 //
@@ -74,10 +74,10 @@ namespace metadiff{
 //                    axis(axis),
 //                    result(result) {
 //                if (axis > 3) {
-//                    throw InvalidArguments(name, {owner}, "Axis should be between [0, 3]");
+//                    throw InvalidArguments(name, {result}, "Axis should be between [0, 3]");
 //                }
 //                if (not index.is_vector()) {
-//                    throw InvalidArguments(name, {owner}, "The indexes should be a column vector");
+//                    throw InvalidArguments(name, {result}, "The indexes should be a column vector");
 //                }
 //            };
 //
@@ -108,7 +108,7 @@ namespace metadiff{
 //
 //        Node Slice::backward_diff(Node my_grad, size_t index) {
 //            return graph->derived_node(
-//                    std::make_shared<SliceGrad>(graph, my_grad, this->index, axis, owner.unwrap()->shape));
+//                    std::make_shared<SliceGrad>(graph, my_grad, this->index, axis, result.unwrap()->shape));
 //        }
 //
 //        Node SliceGrad::backward_diff(Node my_grad, size_t index) {
@@ -132,11 +132,11 @@ namespace metadiff{
 //                    index(index),
 //                    axis(axis) {
 //                if (axis > 3) {
-//                    throw InvalidArguments(name, {owner}, "Axis should be between [0, 3]");
+//                    throw InvalidArguments(name, {result}, "Axis should be between [0, 3]");
 //                }
 //                for (size_t i = 0; i < 4; i++) {
 //                    if (axis != i and parent.unwrap()->shape[i] != index.unwrap()->shape[i]) {
-//                        throw InvalidArguments(name, {owner}, "The shape of the node and its index should be equal"
+//                        throw InvalidArguments(name, {result}, "The shape of the node and its index should be equal"
 //                                " along all of the dimensions except the one specified by axis.");
 //                    }
 //                }
@@ -184,7 +184,7 @@ namespace metadiff{
 //                    axis(axis),
 //                    result(result) {
 //                if (axis > 3) {
-//                    throw InvalidArguments(name, {owner}, "Axis should be between [0, 3]");
+//                    throw InvalidArguments(name, {result}, "Axis should be between [0, 3]");
 //                }
 //            };
 //
@@ -216,7 +216,7 @@ namespace metadiff{
 //
 //        Node Index::backward_diff(Node my_grad, size_t index) {
 //            return graph->derived_node(
-//                    std::make_shared<IndexGrad>(graph, my_grad, this->index, axis, owner.unwrap()->shape[axis]));
+//                    std::make_shared<IndexGrad>(graph, my_grad, this->index, axis, result.unwrap()->shape[axis]));
 //        }
 //
 //        Node IndexGrad::backward_diff(Node my_grad, size_t index) {
@@ -237,4 +237,4 @@ namespace metadiff{
 //        }
     }
 }
-#endif //METADIFF_INDEX_H
+#endif //METADIFF_GRAPH_IR_INDEX_H

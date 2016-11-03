@@ -2,10 +2,10 @@
 // Created by alex on 11/10/16.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_REDUCTIONS_H
-#define METADIFF_CORE_OPERATORS_REDUCTIONS_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_REDUCTION_H
+#define METADIFF_GRAPH_IR_OPERATORS_REDUCTION_H
 namespace md{
-    namespace core{
+    namespace gir{
         namespace op{
             /** Summation along an axes */
             class Sum : public MorphReductionOperator {
@@ -46,7 +46,7 @@ namespace md{
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     auto factor = div(parent_derivatives[index], parent);
-                    return sum(mul(owner, factor), axes);
+                    return sum(mul(result, factor), axes);
                 }
             };
 
@@ -134,25 +134,7 @@ namespace md{
                     return std::make_shared<AnyTrue>(graph, ancestors[0], axes);
                 }
             };
-
-//            template <typename T>
-//            Node apply_reduction(GraphInPtr g,Node node, Axes axes){
-//                // If scalar do nothing
-//                if(node.dims() == 0 or axes.size() == 0){
-//                    return api::alias(node);
-//                }
-//                auto op = std::make_shared<T>(g, node, axes);
-//                return g->derived_node(op);
-//            }
-//
-//            template <typename T>
-//            Node apply_reduction(GraphInPtr g, Node node, int axis){
-//                if(axis != auto_infer){
-//                    return sum(node, {axis});
-//                }
-//                return apply_reduction<T>(g, node, auto_infer_axes(node));
-//            }
         }
     }
 }
-#endif //METADIFF_CORE_OPERATORS_REDUCTIONS_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_REDUCTION_H

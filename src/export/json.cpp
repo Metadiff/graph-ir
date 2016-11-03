@@ -2,31 +2,29 @@
 // Created by alex on 25/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
     namespace json{
-        void write_graph(Graph const g, std::ostream& s){
+        void export_graph(Graph const g, std::ostream& s){
             StringBuffer sb;
             PrettyWriter<StringBuffer> writer(sb);
-            write_graph(g, writer);
-            s << sb.GetString();
+            export_graph(g, writer);
+            s << sb.GetString() << std::endl;
         }
 
-        void write_graph(Graph const g, PrettyWriter<StringBuffer>& writer){
+        void export_graph(Graph const g, PrettyWriter<StringBuffer>& writer){
             writer.StartObject();
             writer.String("name");
             writer.String(g->name);
             writer.String("props");
-            write_props(g->props, writer);
-            writer.String("groups");
-            write_groups(g->groups, writer);
+            export_props(g->props, writer);
             writer.String("nodes");
-            write_nodes(g->nodes, writer);
+            export_nodes(g->nodes, writer);
             writer.EndObject();
         }
 
-        void write_props(Properties const properties, PrettyWriter<StringBuffer>& writer){
+        void export_props(Properties const properties, PrettyWriter<StringBuffer>& writer){
             writer.StartObject();
             writer.String("http_proxy");
             writer.String(properties.http_proxy);
@@ -37,36 +35,56 @@ namespace md{
             writer.String("max_int");
             writer.String(to_string(properties.max_int));
             writer.String("policies");
-            write_policies(properties.policies, writer);
-            writer.String("random_seed");
-            writer.Uint64(properties.random_seed);
+            export_policies(properties.policies, writer);
             writer.EndObject();
         }
 
-        void write_policies(GraphPolicies const policies, PrettyWriter<StringBuffer>& writer){
+        void export_policies(GraphPolicies const policies, PrettyWriter<StringBuffer>& writer){
             writer.StartObject();
             writer.String("implicit_broadcast");
             writer.String(to_string(policies.implicit_broadcast));
-            writer.String("data_type_promotion");
-            writer.String(to_string(policies.data_type_promotion));
-            writer.String("cast");
-            writer.String(to_string(policies.cast));
-            writer.String("non_dependable_gradient");
-            writer.String(to_string(policies.non_dependable_gradient));
+            writer.String("implicit_cast");
+            writer.String(to_string(policies.implicit_cast));
+            writer.String("independent_derivative");
+            writer.String(to_string(policies.independent_derivative));
             writer.EndObject();
         }
 
-        void write_groups(std::vector<std::shared_ptr<NodeGroup>> const & groups,
-                          PrettyWriter<StringBuffer>& writer){
+        void export_shape(Shape const shape,  PrettyWriter<StringBuffer>& writer){
             writer.StartArray();
-            for(auto i=0; i < groups.size(); ++i){
-                writer.String(groups[i]->full_name);
+            for(auto i=0; i<4; ++i){
+                if(shape[i].is_constant()){
+                    writer.Int64(shape[i].eval());
+                } else {
+                    export_sym_int(shape[i], writer);
+                }
             }
             writer.EndArray();
         }
 
-        void write_nodes(std::vector<std::shared_ptr<NodeData>> const & nodes,
-                         PrettyWriter<StringBuffer>& writer){
+        void export_sym_int(SymInt const sym_int,  PrettyWriter<StringBuffer>& writer){
+            // TODO
+            writer.StartObject();
+            writer.String("SymInt");
+            writer.String("TODO");
+            writer.EndObject();
+        }
+
+        void export_execution_data(ExecutionData execution, PrettyWriter<StringBuffer>& writer){
+            writer.StartObject();
+            writer.String("inplace_parent_id");
+            writer.Int(execution.inplace_parent_id);
+            writer.String("buffer_id");
+            writer.Int64(execution.buffer_id);
+            writer.String("buffer_offset");
+            export_sym_int(execution.buffer_offset, writer);
+            writer.String("buffer_size");
+            export_sym_int(execution.buffer_size, writer);
+            writer.EndObject();
+        }
+
+        void export_nodes(std::vector<std::shared_ptr<NodeData>> const & nodes,
+                          PrettyWriter<StringBuffer>& writer){
             writer.StartArray();
             for(auto i=0; i<nodes.size(); ++i){
                 writer.StartObject();
@@ -75,38 +93,19 @@ namespace md{
                 writer.String("name");
                 writer.String(nodes[i]->name);
                 writer.String("operator");
-                write_op(nodes[i]->op, writer);
+                export_op(nodes[i]->op, writer);
                 writer.String("grad_level");
                 writer.Uint(nodes[i]->grad_level);
                 writer.String("group");
-                writer.String(nodes[i]->group.lock()->full_name);
-                // TODO ExecutionData
+                writer.String(nodes[i]->group);
+                writer.String("execution_data");
+                export_execution_data(nodes[i]->execution, writer);
                 writer.EndObject();
             }
             writer.EndArray();
         }
 
-        void write_shape(Shape const shape,  PrettyWriter<StringBuffer>& writer){
-            writer.StartArray();
-            for(auto i=0; i<4; ++i){
-                if(shape[i].is_constant()){
-                    writer.Int(shape[i].eval());
-                } else {
-                    write_sym_int(shape[i], writer);
-                }
-            }
-            writer.EndArray();
-        }
-
-        void write_sym_int(SymInt const sym_int,  PrettyWriter<StringBuffer>& writer){
-            // TODO
-            writer.StartObject();
-            writer.String("SymInt");
-            writer.String("TODO");
-            writer.EndObject();
-        }
-
-        void write_op(Operator const op,  PrettyWriter<StringBuffer>& writer){
+        void export_op(Operator const op,  PrettyWriter<StringBuffer>& writer){
             auto parents = op->get_parents();
             auto arguments = op->get_arguments();
             writer.StartObject();
@@ -154,13 +153,15 @@ namespace md{
                     writer.String("data_type");
                     writer.String(to_string(cast_op->data_type));
                     writer.String("shape");
-                    write_shape(cast_op->shape, writer);
+                    export_shape(cast_op->shape, writer);
                 }
             }
             {
                 // SharedVar
                 auto cast_op = std::dynamic_pointer_cast<op::SharedInput>(op);
                 if (cast_op) {
+                    writer.String("SharedVar");
+                    writer.StartObject();
                     writer.String("id");
                     writer.Uint64(cast_op->var->id);
                     writer.String("name");
@@ -168,7 +169,8 @@ namespace md{
                     writer.String("data_type");
                     writer.String(to_string(cast_op->var->data_type));
                     writer.String("shape");
-                    write_shape(cast_op->var->shape, writer);
+                    export_shape(cast_op->var->shape, writer);
+                    writer.EndObject();
                 }
             }
             {
@@ -178,7 +180,7 @@ namespace md{
                     writer.String("value");
                     writer.Double(cast_op->value);
                     writer.String("shape");
-                    write_shape(cast_op->shape, writer);
+                    export_shape(cast_op->shape, writer);
                 }
             }
             {
@@ -186,7 +188,7 @@ namespace md{
                 auto cast_op = std::dynamic_pointer_cast<op::SymIntWrapper>(op);
                 if (cast_op) {
                     writer.String("value");
-                    write_sym_int(cast_op->value, writer);
+                    export_sym_int(cast_op->value, writer);
                 }
             }
             {
@@ -194,9 +196,9 @@ namespace md{
                 auto cast_op = std::dynamic_pointer_cast<op::Range>(op);
                 if (cast_op) {
                     writer.String("start");
-                    write_sym_int(cast_op->start, writer);
+                    export_sym_int(cast_op->start, writer);
                     writer.String("end");
-                    write_sym_int(cast_op->end, writer);
+                    export_sym_int(cast_op->end, writer);
                 }
             }
             {
@@ -204,7 +206,7 @@ namespace md{
                 auto cast_op = std::dynamic_pointer_cast<op::Eye>(op);
                 if (cast_op) {
                     writer.String("size");
-                    write_sym_int(cast_op->size, writer);
+                    export_sym_int(cast_op->size, writer);
                 }
             }
             {
@@ -220,7 +222,7 @@ namespace md{
                 auto cast_op = std::dynamic_pointer_cast<op::Broadcast>(op);
                 if (cast_op) {
                     writer.String("to_shape");
-                    write_shape(cast_op->to_shape, writer);
+                    export_shape(cast_op->to_shape, writer);
                 }
             }
             {
@@ -228,7 +230,7 @@ namespace md{
                 auto cast_op = std::dynamic_pointer_cast<op::Reshape>(op);
                 if (cast_op) {
                     writer.String("shape");
-                    write_shape(cast_op->shape, writer);
+                    export_shape(cast_op->shape, writer);
                 }
             }
             {
@@ -296,7 +298,7 @@ namespace md{
                 auto cast_op = std::dynamic_pointer_cast<op::RandomUniform>(op);
                 if (cast_op) {
                     writer.String("shape");
-                    write_shape(cast_op->shape, writer);
+                    export_shape(cast_op->shape, writer);
                 }
             }
             {
@@ -304,7 +306,7 @@ namespace md{
                 auto cast_op = std::dynamic_pointer_cast<op::RandomNormal>(op);
                 if (cast_op) {
                     writer.String("shape");
-                    write_shape(cast_op->shape, writer);
+                    export_shape(cast_op->shape, writer);
                 }
             }
             {

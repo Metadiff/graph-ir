@@ -2,11 +2,11 @@
 // Created by alex on 03/05/16.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_INPUT_H
-#define METADIFF_CORE_OPERATORS_INPUT_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_INPUT_H
+#define METADIFF_GRAPH_IR_OPERATORS_INPUT_H
 
 namespace md {
-    namespace core {
+    namespace gir {
         namespace op {
             /** Input variables */
             class Input : public InputOperator {
@@ -63,4 +63,4 @@ namespace md {
         }
     }
 }
-#endif //METADIFF_CORE_OPERATORS_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_H

@@ -2,8 +2,8 @@
 // Created by alex on 30/10/16.
 //
 
-#ifndef METADIFF_API_ELEMENTWISE_H
-#define METADIFF_API_ELEMENTWISE_H
+#ifndef GRAPH_IR_API_ELEMENTWISE_H
+#define GRAPH_IR_API_ELEMENTWISE_H
 
 namespace md{
     namespace api{
@@ -120,4 +120,4 @@ namespace md{
         Node pow(Node node1, Node node2);
     }
 }
-#endif //METADIFF_API_ELEMENTWISE_H
+#endif //GRAPH_IR_API_ELEMENTWISE_H

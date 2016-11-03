@@ -2,11 +2,11 @@
 // Created by alex on 25/10/16.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_RANDOM_H
-#define METADIFF_CORE_OPERATORS_RANDOM_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_RANDOM_H
+#define METADIFF_GRAPH_IR_OPERATORS_RANDOM_H
 
 namespace md{
-    namespace core{
+    namespace gir{
         namespace op {
             /** Node filled with uniformly distributed random numbers */
             class RandomUniform : public ConstantOperator {
@@ -48,4 +48,4 @@ namespace md{
         }
     }
 }
-#endif //METADIFF_CORE_OPERATORS_RANDOM_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_RANDOM_H

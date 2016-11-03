@@ -2,20 +2,19 @@
 // Created by alex on 31/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
     namespace api{
         Node print(Node monitored, std::string msg, Node anchor){
-            Graph g = monitored->g();
+            Graph g = monitored.g();
             if(anchor.ptr.expired()) {
                 // If the anchor is empty use the monitored
                 anchor = monitored;
             }
-            if (not check_independent(anchor, monitored)) {
-                // TODO throw proper exception
-                utils::op_logger("Print")->error("Anchor is before monitored");
-                throw 1;
+            if(is_dependent(anchor, monitored)){
+                op_logger("Print")->error("The anchor {} is dependent on the monitored {}.", anchor->id, monitored->id);
+                throw InvalidOperatorArgument({anchor, monitored}, "Print", "The anchor is dependent on the monitored.");
             }
             // Standard
             Operator op = std::make_shared<op::Print>(g.get(), anchor, monitored, msg);
@@ -23,15 +22,14 @@ namespace md{
         }
 
         Node retrieve(Node monitored, std::string msg, Node anchor){
-            Graph g = monitored->g();
+            Graph g = monitored.g();
             if(anchor.ptr.expired()) {
                 // If the anchor is empty use the monitored
                 anchor = monitored;
             }
-            if (not check_independent(anchor, monitored)) {
-                // TODO throw proper exception
-                utils::op_logger("Retrieve")->error("Anchor is before monitored");
-                throw 1;
+            if(is_dependent(anchor, monitored)){
+                op_logger("Retrieve")->error("The anchor {} is dependent on the monitored {}.", anchor->id, monitored->id);
+                throw InvalidOperatorArgument({anchor, monitored}, "Retrieve", "The anchor is dependent on the monitored.");
             }
             // Standard
             Operator op = std::make_shared<op::Retrieve>(g.get(), anchor, monitored, msg);
@@ -39,15 +37,16 @@ namespace md{
         }
 
         Node log_to_file(Node monitored, std::string msg, Node anchor){
-            Graph g = monitored->g();
+            Graph g = monitored.g();
             if(anchor.ptr.expired()) {
                 // If the anchor is empty use the monitored
                 anchor = monitored;
             }
-            if (not check_independent(anchor, monitored)) {
-                // TODO throw proper exception
-                utils::op_logger("LogToFile")->error("Anchor is before monitored");
-                throw 1;
+            if(is_dependent(anchor, monitored)){
+                op_logger("LogToFile")->error("The anchor {} is dependent on the monitored {}.", anchor->id, monitored->id);
+                throw InvalidOperatorArgument({anchor, monitored}, "LogToFile",
+                                              "The anchor " + std::to_string(anchor->id)
+                                              + " is dependent on the monitored " + std::to_string(monitored->id) + ".");
             }
             // Standard
             Operator op = std::make_shared<op::LogToFile>(g.get(), anchor, monitored, msg);
@@ -55,20 +54,22 @@ namespace md{
         }
 
         Node guard(Node monitored, std::string msg, double low, double high, Node anchor){
-            Graph g = monitored->g();
+            Graph g = monitored.g();
             if(anchor.ptr.expired()) {
                 // If the anchor is empty use the monitored
                 anchor = monitored;
             }
-            if (not check_independent(anchor, monitored)) {
-                // TODO throw proper exception
-                utils::op_logger("Guard")->error("Anchor is before monitored");
-                throw 1;
+            if(is_dependent(anchor, monitored)){
+                op_logger("Guard")->error("The anchor {} is dependent on the monitored {}.", anchor->id, monitored->id);
+                throw InvalidOperatorArgument({anchor, monitored}, "Guard",
+                                              "The anchor " + std::to_string(anchor->id)
+                                              + " is dependent on the monitored " + std::to_string(monitored->id) + ".");
             }
             if (low >= high){
-                // TODO throw proper exception
-                utils::op_logger("Guard")->error("low is not <= high");
-                throw 1;
+                op_logger("Guard")->error("The low value - {} is not < the high value {}.", low, high);
+                throw InvalidOperatorArgument({anchor, monitored}, "Guard",
+                                              "The low value - " + std::to_string(low)
+                                              + " is not < the high value " + std::to_string(high) + ".");
             }
             // Standard
             Operator op = std::make_shared<op::Guard>(g.get(), anchor, monitored, msg, low, high);

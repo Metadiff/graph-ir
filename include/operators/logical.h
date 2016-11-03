@@ -2,26 +2,18 @@
 // Created by alex on 15/12/15.
 //
 
-#ifndef METADIFF_CORE_OPERATORS_LOGICAL_H
-#define METADIFF_CORE_OPERATORS_LOGICAL_H
+#ifndef METADIFF_GRAPH_IR_OPERATORS_LOGICAL_H
+#define METADIFF_GRAPH_IR_OPERATORS_LOGICAL_H
 
 namespace md {
-    namespace core {
+    namespace gir {
         namespace op {
 
             /** Logical not - !p */
             class LogicalNot : public LogicalUnaryElementwise {
             public:
                 LogicalNot(GraphInPtr graph, Node parent) :
-                        AbstractOperator(graph, "LogicalNot"), UnaryOperator(parent) {
-//                    if (parent->data_type != b8) {
-//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent}, name,
-//                                                                      "Calling logical not on node of type "
-//                                                                      + to_string(parent->data_type));
-//                        operate_policy(graph->props.policies.cast, logger(), err);
-//                        this->parent = api::cast(parent, b8);
-//                    }
-                }
+                        AbstractOperator(graph, "LogicalNot"), UnaryOperator(parent) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LogicalNot>(graph, ancestors[0]);
@@ -34,24 +26,7 @@ namespace md {
                 LogicalAnd(GraphInPtr graph,
                            Node parent1,
                            Node parent2) :
-                        AbstractOperator(graph, "LogicalAnd"), BinaryOperator(parent1, parent2) {
-//                    if (parent1->data_type != b8) {
-//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
-//                                                                      "Calling logical operator"
-//                                                                              " on node of type "
-//                                                                      + to_string(parent1->data_type));
-//                        operate_policy(graph->props.policies.cast, logger(), err);
-//                        this->parent1 = api::cast(parent1, b8);
-//                    }
-//                    if (parent2->data_type != b8) {
-//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
-//                                                                      "Calling logical operator"
-//                                                                              " on node of type "
-//                                                                      + to_string(parent2->data_type));
-//                        operate_policy(graph->props.policies.cast, logger(), err);
-//                        this->parent2 = api::cast(parent2, b8);
-//                    }
-                };
+                        AbstractOperator(graph, "LogicalAnd"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LogicalAnd>(graph, ancestors[0], ancestors[1]);
@@ -64,24 +39,7 @@ namespace md {
                 LogicalOr(GraphInPtr graph,
                           Node parent1,
                           Node parent2) :
-                        AbstractOperator(graph, "LogicalOr"), BinaryOperator(parent1, parent2) {
-//                    if (parent1->data_type != b8) {
-//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
-//                                                                      "Calling logical operator"
-//                                                                              " on node of type "
-//                                                                      + to_string(parent1->data_type));
-//                        operate_policy(graph->props.policies.cast, logger(), err);
-//                        this->parent1 = api::cast(parent1, b8);
-//                    }
-//                    if (parent2->data_type != b8) {
-//                        auto err = std::make_shared<InvalidArguments>(NodeVec{parent1, parent2}, name,
-//                                                                      "Calling logical operator"
-//                                                                              " on node of type "
-//                                                                      + to_string(parent2->data_type));
-//                        operate_policy(graph->props.policies.cast, logger(), err);
-//                        this->parent2 = api::cast(parent2, b8);
-//                    }
-                };
+                        AbstractOperator(graph, "LogicalOr"), BinaryOperator(parent1, parent2) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<LogicalOr>(graph, ancestors[0], ancestors[1]);
@@ -166,7 +124,7 @@ namespace md {
                 }
             };
 
-            /**  Checks if the two nodes are equal, up to a tolerance measure */
+            /**  Returns if the two nodes are equal, up to a tolerance measure */
             class ApproximatelyEquals : public LogicalBinaryElementwise {
             public:
                 double tolerance;
@@ -183,7 +141,7 @@ namespace md {
                 }
             };
 
-            /** Verifies if any of the elements is NaN */
+            /** Returns whether the elements of the input are NaN */
             class IsNaN : public LogicalUnaryElementwise {
             public:
                 IsNaN(GraphInPtr const graph, Node parent) :
@@ -194,7 +152,7 @@ namespace md {
                 }
             };
 
-            /** Verifies if any of the elements is Inf */
+            /** Returns whether the elements of the input are Inf */
             class IsInf : public LogicalUnaryElementwise {
             public:
                 IsInf(GraphInPtr const graph, Node parent) :
@@ -207,4 +165,4 @@ namespace md {
         }
     }
 }
-#endif //METADIFF_CORE_OPERATORS_LOGICAL_H
+#endif //METADIFF_GRAPH_IR_OPERATORS_LOGICAL_H

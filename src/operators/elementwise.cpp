@@ -2,10 +2,10 @@
 // Created by alex on 19/10/16.
 //
 
-#include "metadiff.h"
+#include "graph_ir.h"
 
 namespace md{
-    namespace core{
+    namespace gir{
         Node GraphInternal::square(Node node){
             // If parent is square root return the upper node
             auto base = get_base_node(node);
@@ -103,7 +103,7 @@ namespace md{
         }
 
         Node GraphInternal::pow(Node node, Node power){
-            if(power.dims() == 0 and power->op->name == "ConstValue"){
+            if(power.order() == 0 and power->op->name == "ConstValue"){
                 auto cast_op = std::dynamic_pointer_cast<op::ConstantValue>(power->op);
                 if(cast_op->value == 2){
                     return square(node);
