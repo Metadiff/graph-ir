@@ -71,7 +71,7 @@ namespace md{
                                               "The variable provided for updating is not a SharedInput.");
             }
             // Check that Shared does not already have an update
-            if(g->updates.find(shared->id) != g->updates.end()){
+            if(g->updates.find(shared.ptr.lock()) != g->updates.end()){
                 op_logger("Update")->error("Trying to update a shared variable which already has an update rule.");
                 throw InvalidOperatorArgument(NodeVec{shared, update}, "Update",
                                               "Trying to update a shared variable which already has an update rule.");
@@ -79,7 +79,7 @@ namespace md{
             // Broadcast if needed
             update = implicit_broadcast(update, shared->shape, "Update");
             // Add to the updates
-            g->updates[shared->id] = update;
+            g->updates[shared.ptr.lock()] = update.ptr.lock();
         }
 
         Node select(Node condition, Node if_true, Node if_false){

@@ -23,7 +23,7 @@ namespace md{
             /** The list of all of the nodes */
             std::vector<std::shared_ptr<NodeData>> nodes;
             /** List of all of the updates */
-            std::unordered_map<size_t, Node> updates;
+            std::unordered_map<std::shared_ptr<NodeData>, std::shared_ptr<NodeData>> updates;
             /** Current group */
             std::string current_group;
             /** Mapping group name to all Nodes in that group */

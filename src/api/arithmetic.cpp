@@ -7,16 +7,13 @@
 namespace md{
     namespace api{
 
-        Node add(NodeVec nodes){
+        Node add(NodeVec nodes, std::vector<bool> neg){
             if(nodes.size() == 0){
                 op_logger("Add")->error("Zero nodes provided.");
-                throw InvalidOperatorArgument(nodes,
-                                              "Add", "Zero nodes provided.");
+                throw InvalidOperatorArgument(nodes, "Add", "Zero nodes provided.");
             } else if(nodes.size() == 1){
-                // TODO
                 op_logger("Add")->error("One nodes provided.");
-                throw InvalidOperatorArgument(nodes,
-                                              "Add", "One nodes provided.");
+                throw InvalidOperatorArgument(nodes, "Add", "One nodes provided.");
             }
             Graph g = nodes[0].g();
             for(auto i=1; i<nodes.size(); ++i){
@@ -26,10 +23,16 @@ namespace md{
                                                   "Add", "The input variables are not from the same graph.");
                 }
             }
+            // If empty by default means it is only false
+            if(neg.size() == 0){
+                for(auto i=0; i<nodes.size(); ++i){
+                    neg.push_back(false);
+                }
+            }
             // TODO check for redundancies like x + (-x)
             verify_shapes_and_broadcast(nodes, "Add");
             // Standard
-            Operator op = std::make_shared<op::Add>(g.get(), nodes);
+            Operator op = std::make_shared<op::Add>(g.get(), nodes, neg);
             return g->derived_node(op);
         }
 
@@ -50,19 +53,26 @@ namespace md{
             // Enforcing neg(neg(x)) = x
             auto base = get_base_node(node);
             // The -(-x) = x
-            if(base->op->name == "Neg"){
-                return api::alias(base->op->get_parents()[0]);
+            if(base->op->name == "Add" and base->op->get_parents().size() == 1){
+                auto cast_op = std::dynamic_pointer_cast<op::Add>(base->op);
+                if(cast_op->neg[0]) {
+                    alias(base->op->get_parents()[0]);
+                } else {
+                    Operator op =  std::make_shared<op::Add>(g.get(), base->op->get_parents(),
+                                                             std::vector<bool> {true});
+                    return g->derived_node(op);
+                }
             }
             // Standard
-            Operator op = std::make_shared<op::Neg>(g.get(), node);
+            Operator op = std::make_shared<op::Add>(g.get(), NodeVec {node}, std::vector<bool> {true});
             return g->derived_node(op);
         }
 
         Node neg(Node node1, Node node2){
-            return add({node1, neg(node2)});
+            return add({node1, node2}, {false, true});
         }
 
-        Node mul(NodeVec nodes){
+        Node mul(NodeVec nodes, std::vector<bool> div){
             if(nodes.size() == 0){
                 op_logger("Mul")->error("Zero nodes provided.");
                 throw InvalidOperatorArgument(nodes,
@@ -81,10 +91,16 @@ namespace md{
                                                   "Mul", "The input variables are not from the same graph.");
                 }
             }
+            // If empty by default means it is only false
+            if(div.size() == 0){
+                for(auto i=0; i<nodes.size(); ++i){
+                    div.push_back(false);
+                }
+            }
             // TODO check for redundancies like x * (1/x)
             verify_shapes_and_broadcast(nodes, "Mul");
             // Standard
-            Operator op = std::make_shared<op::Mul>(g.get(), nodes);
+            Operator op = std::make_shared<op::Mul>(g.get(), nodes, div);
             return g->derived_node(op);
         }
 
@@ -105,16 +121,23 @@ namespace md{
             // Enforcing neg(neg(x)) = x
             auto base = get_base_node(node);
             // The div(div(x)) = x
-            if(base->op->name == "Div"){
-                return api::alias(base->op->get_parents()[0]);
+            if(base->op->name == "Mul" and base->op->get_parents().size() == 1){
+                auto cast_op = std::dynamic_pointer_cast<op::Mul>(base->op);
+                if(cast_op->div[0]) {
+                    alias(base->op->get_parents()[0]);
+                } else {
+                    Operator op =  std::make_shared<op::Mul>(g.get(), base->op->get_parents(),
+                                                             std::vector<bool> {true});
+                    return g->derived_node(op);
+                }
             }
             // Standard
-            Operator op = std::make_shared<op::Division>(g.get(), node);
+            Operator op = std::make_shared<op::Mul>(g.get(), NodeVec {node}, std::vector<bool> {true});
             return g->derived_node(op);
         }
 
         Node div(Node node1, Node node2){
-            return mul({node1, div(node2)});
+            return mul({node1, node2}, {false, true});
         }
 
         Node int_div(Node node1, Node node2){

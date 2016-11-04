@@ -12,7 +12,7 @@ namespace md{
          * @param nodes
          * @return
          */
-        Node add(NodeVec nodes);
+        Node add(NodeVec nodes, std::vector<bool> neg = std::vector<bool>());
 
         /** @brief see add(NodeVec)
          *
@@ -61,7 +61,7 @@ namespace md{
          * @param nodes
          * @return
          */
-        Node mul(NodeVec nodes);
+        Node mul(NodeVec nodes, std::vector<bool> div = std::vector<bool>());
 
         /** @brief see mul(NodeVec)
          *

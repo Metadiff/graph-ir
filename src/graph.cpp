@@ -48,6 +48,14 @@ namespace md{
                     NodeVec ancestors = nodes[i]->op->get_ancestors();
                     NodeVec new_ancestors;
                     for (size_t j = 0; j < ancestors.size(); j++) {
+                        if(mapping[ancestors[j]->id].ptr.expired()){
+                            g_logger(name)->error("Attempted to copy node {} with ancestor {}, but the parent "
+                                                          "was not part of the mask.",
+                                                  i, ancestors[j]->id);
+                            throw InternalGraphError("Copy", "Attempted to copy node " + std::to_string(i)
+                                                             + " with ancestor " + std::to_string(ancestors[j]->id)
+                                                             + ", but the parent was not part of the mask.");
+                        }
                         new_ancestors.push_back(mapping[ancestors[j]->id]);
                     }
                     // Copy the node using the new ancestors and put it in the mapping
@@ -59,13 +67,13 @@ namespace md{
             for(auto it = updates.begin(); it != updates.end(); ++it){
                 if(mapping[it->second->id].ptr.expired()){
                     g_logger(name)->error("Could not copy the update for node {} "
-                                                  " because it was not part of the mask.", it->first);
+                                                  " because it was not part of the mask.", it->first->id);
                     throw InternalGraphError("Copy", "Could not copy the update for node "
-                                                     + std::to_string(it->first)
+                                                     + std::to_string(it->first->id)
                                                      + " because it was not part of the mask.");
                 } else {
-                    Node shared = mapping[it->first];
-                    Node update = mapping[it->second->id];
+                    Node shared = Node(mapping[it->first->id]);
+                    Node update = Node(mapping[it->second->id]);
                     api::update(shared, update);
                 }
             }

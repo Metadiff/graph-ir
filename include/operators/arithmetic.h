@@ -11,19 +11,21 @@ namespace md {
             /** Addition */
             class Add : public AssociativeElementwiseOperator {
             public:
-                Add(GraphInPtr graph, NodeVec parents) :
-                        AbstractOperator(graph, "Add"), AssociativeOperator(parents) {}
+                std::vector<bool> neg;
+                Add(GraphInPtr graph, NodeVec parents, std::vector<bool> neg) :
+                        AbstractOperator(graph, "Add"), AssociativeOperator(parents),
+                        neg(neg){}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Add>(graph, ancestors);
+                    return std::make_shared<Add>(graph, ancestors, neg);
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    return my_derivative;
+                    return neg[index] ? (- my_derivative) : my_derivative;
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
-                    return parent_derivatives[index];
+                    return backward_diff_parent(parent_derivatives[index], index);
                 }
 
 //                bool equals(Operator const op) const {
@@ -53,57 +55,56 @@ namespace md {
 //                }
             };
 
-            /** Negation */
-            class Neg : public UnaryElementwiseOperator {
-            public:
-                Neg(GraphInPtr graph, Node parent) :
-                AbstractOperator(graph, "Neg"), UnaryOperator(parent) {};
-
-                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Neg>(graph, ancestors[0]);
-                }
-
-                DataType get_data_type() const {
-                    // If unsigned make it signed
-                    if(parent->data_type < i8){
-                        return static_cast<DataType>(parent->data_type + 4);
-                    }
-                    return parent->data_type;
-                }
-
-                Node backward_diff_parent(Node my_derivative, int index){
-                    return neg(my_derivative);
-                }
-
-                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
-                    return neg(parent_derivatives[index]);
-                }
-            };
+//            /** Negation */
+//            class Neg : public UnaryElementwiseOperator {
+//            public:
+//                Neg(GraphInPtr graph, Node parent) :
+//                        AbstractOperator(graph, "Neg"), UnaryOperator(parent) {};
+//
+//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+//                    return std::make_shared<Neg>(graph, ancestors[0]);
+//                }
+//
+//                DataType get_data_type() const {
+//                    // If unsigned make it signed
+//                    if(parent->data_type < i8){
+//                        return static_cast<DataType>(parent->data_type + 4);
+//                    }
+//                    return parent->data_type;
+//                }
+//
+//                Node backward_diff_parent(Node my_derivative, int index){
+//                    return neg(my_derivative);
+//                }
+//
+//                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+//                    return neg(parent_derivatives[index]);
+//                }
+//            };
 
             /** Elementwise multiplication */
             class Mul : public AssociativeElementwiseOperator {
             public:
-                Mul(GraphInPtr graph, NodeVec parents) :
-                        AbstractOperator(graph, "Mul"), AssociativeOperator(parents) {};
+                std::vector<bool> div;
+                Mul(GraphInPtr graph, NodeVec parents, std::vector<bool> div) :
+                        AbstractOperator(graph, "Mul"), AssociativeOperator(parents),
+                        div(div){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Mul>(graph, ancestors);
+                    return std::make_shared<Mul>(graph, ancestors, div);
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    if (parents.size() == 2) {
-                        return mul(my_derivative, parents[1 - index]);
+                    if (parents.size() == 2 and not div[index]) {
+                        return parents[1-index];
                     } else {
-                        return div(mul(my_derivative, result), parents[index]);
+                        auto factor = mul({result, my_derivative, parents[index]}, {false, false, true});
+                        return div[index] ? (- factor) : factor;
                     }
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
-                    if(parents.size() == 2){
-                        return mul(parent_derivatives[index], parents[1-index]);
-                    } else {
-                        return div(mul(parent_derivatives[index], result), parents[index]);
-                    }
+                    return backward_diff_parent(parent_derivatives[index], index);
                 }
 
 //                bool equals(Operator const op) const {
@@ -133,26 +134,26 @@ namespace md {
 //                }
             };
 
-            /** Elementwise inverse (division) */
-            class Division : public FloatUnaryElementwiseOperator {
-            public:
-                Division(GraphInPtr graph, Node parent) :
-                        AbstractOperator(graph, "Division"), UnaryOperator(parent) {};
-
-                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<Division>(graph, ancestors[0]);
-                }
-
-                Node backward_diff_parent(Node my_derivative, int index){
-                    return - (my_derivative / square(parent));
-                }
-            };
+//            /** Elementwise inverse (division) */
+//            class Division : public FloatUnaryElementwiseOperator {
+//            public:
+//                Division(GraphInPtr graph, Node parent) :
+//                        AbstractOperator(graph, "Division"), UnaryOperator(parent) {};
+//
+//                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+//                    return std::make_shared<Division>(graph, ancestors[0]);
+//                }
+//
+//                Node backward_diff_parent(Node my_derivative, int index){
+//                    return - (my_derivative / square(parent));
+//                }
+//            };
 
             /** Integer division */
             class IntDiv : public BinaryIntegerElementwiseOperator{
             public:
                 IntDiv(GraphInPtr graph, Node parent1, Node parent2) :
-                AbstractOperator(graph, "IntDiv"), BinaryOperator(parent1, parent2){};
+                        AbstractOperator(graph, "IntDiv"), BinaryOperator(parent1, parent2){};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
                     return std::make_shared<IntDiv>(graph, ancestors[0], ancestors[1]);

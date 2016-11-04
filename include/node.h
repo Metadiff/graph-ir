@@ -45,6 +45,13 @@ namespace md{
                      std::string group);
         };
 
+        inline bool operator==(NodeData const & data1, NodeData const & data2){
+            if(data1.graph.expired() or data2.graph.expired()){
+                return false;
+            }
+            return data1.graph.lock() == data2.graph.lock() and data1.id == data2.id;
+        }
+
 
         /** This is the API wrapper around the internal storage for each node - NodeData */
         class Node {
