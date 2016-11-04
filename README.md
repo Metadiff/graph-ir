@@ -44,3 +44,60 @@ on the **GIR** which to benefit all software packages using it. These will inclu
 optimizations for both single device and distributed computation.
  
 
+## Development of the project
+
+The project is still in its very infancy, however a large part of the project
+has already been implemented. The main Graph and Operator representation 
+together with the meta-data has been defined and implemented. Forward and 
+backward automatic differentiation has been already implemented for most 
+of the operators. The main missing bit at this stage is a simple native 
+backend which to faciliate unit testing on very small problems. 
+
+
+### List of operators that have not yet been implemented
+
+1. *MultiOutputOperator* - this will be an abstract operator encapsulating 
+all operators which have more than one output.
+
+2. *MultiIndexOperator* - currently each operator can have a single output.
+For this the *MultiOutputOperator* will have a single output, but it will 
+be indexed by *MultiIndexOperator* and retrieve all of the relevant outputs 
+in order. 
+
+3. *SubRoutineOperator* - the subroutine will allow complex computation
+to be hidden from the overall graph and to be optimized on its own. 
+This will provide a form of encapsulation when the user needs it. 
+
+4. *MaxAndArgMax* 
+
+5. *SortAndArgSort*
+
+6. *Convolution* 
+
+7. *MaxPooling*
+
+8. *RandomIntegers*
+
+9. *QRDecomposition*
+
+10. *CholeskyDecomposition*
+
+11. *EigenDecomposition*
+
+12. *SVD*
+
+### The Native Backend
+
+Unit testing and verification of the **GIR** is crucial for the project. 
+In order to faciliate this without developing a significantly sophisticated
+general backend, a simple native C++ backend is needed. This most likely 
+will be a highly inefficient and slow for large tasks, however it will 
+be sufficient for verification of automatic differentiation rules. 
+
+
+### Contribution
+
+If anyone is interested in contributing to the project please contact the 
+authors at ...
+
+
