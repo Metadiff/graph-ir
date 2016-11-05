@@ -16,6 +16,22 @@ namespace md{
          */
         Node diag(Node node);
 
+        /** @brief Takes the lower triangular part of a matrix
+         *
+         * @param node
+         * @param k
+         * @return
+         */
+        Node lower_tri(Node node, int k = 0);
+
+        /** @brief Takes the upper triangular part of a matrix
+         *
+         * @param node
+         * @param k
+         * @return
+         */
+        Node upper_tri(Node node, int k = 0);
+
         /** @brief Reshapes the tensor to a specified shape
          *
          * @param node

@@ -136,7 +136,7 @@ namespace md{
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     if(not parent_derivatives[0].ptr.expired() and
-                            not parent_derivatives[1].ptr.expired()){
+                       not parent_derivatives[1].ptr.expired()){
                         if(index == 0){
                             auto d = dot(parent_derivatives[0], result, transpose);
                             auto diff = neg(parent_derivatives[1], d);
@@ -223,6 +223,148 @@ namespace md{
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return trace(parent_derivatives[index]);
+                }
+            };
+
+
+            /** Returns the Cholesky decomposition of the input */
+            class Cholesky : public FloatUnaryOperator {
+            public:
+                bool lower;
+                Cholesky(GraphInPtr graph, Node parent, bool lower) :
+                        AbstractOperator(graph, "Cholesky"), UnaryOperator(parent),
+                        lower(lower) {}
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<Cholesky>(graph, ancestors[0], lower);
+                }
+
+                Shape get_shape() const {
+                    return parent->shape;
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+            };
+
+            /** Returns the packed LU decomposition */
+            class LU : public FloatUnaryOperator {
+            public:
+                LU(GraphInPtr graph, Node parent) :
+                        AbstractOperator(graph, "LU"), UnaryOperator(parent) {}
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<LU>(graph, ancestors[0]);
+                }
+
+                Shape get_shape() const {
+                    return parent->shape;
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+            };
+
+            /** Returns the packed QR decomposition */
+            class QR : public MultiOutputOperator {
+            public:
+                QR(GraphInPtr graph, Node parent) :
+                        AbstractOperator(graph, "QR"), MultiOutputOperator(2) {}
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<QR>(graph, ancestors[0]);
+                }
+
+                Shape get_shape() const {
+                    return MultiOutputOperator::get_shape();
+                }
+
+                Shape get_shape_at(int index) const {
+                    if(index == 0){
+                        if(parent->shape[0] != parent->shape[1]){
+                            //TODO this should be
+                            throw NotImplementedError(__LINE__, __FILE__);
+                        }
+                        return parent->shape;
+                    } else {
+                        return parent->shape;
+                    }
+                };
+
+                DataType get_data_type_at(int index) const {
+                    return parent->data_type;
+                };
+
+                bool is_differentiable_at(int index) const {
+                    return is_differentiable();
+                };
+
+                Node backward_diff_parent_at(Node my_derivative, int index)  const {
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+
+                Node forward_diff_parent_at(NodeVec & parent_derivatives, int index) const {
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+            };
+
+            /** Returns the packed QR decomposition */
+            class SVD : public MultiOutputOperator {
+            public:
+                SVD(GraphInPtr graph, Node parent) :
+                        AbstractOperator(graph, "SVD"), MultiOutputOperator(3) {}
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<SVD>(graph, ancestors[0]);
+                }
+
+                Shape get_shape() const {
+                    return MultiOutputOperator::get_shape();
+                }
+
+                Shape get_shape_at(int index) const {
+                    if(index == 0){
+                        return {parent->shape[0], parent->shape[0], 1, 1};
+                    } else if(index == 1){
+                        // TODO
+                        throw NotImplementedError(__LINE__, __FILE__);
+                    } else {
+                        return {parent->shape[1], parent->shape[1], 1, 1};
+                    }
+                };
+
+                DataType get_data_type_at(int index) const {
+                    return parent->data_type;
+                };
+
+                bool is_differentiable_at(int index) const {
+                    return is_differentiable();
+                };
+
+                Node backward_diff_parent_at(Node my_derivative, int index) const {
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+
+                Node forward_diff_parent_at(NodeVec & parent_derivatives, int index) const {
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
                 }
             };
         }

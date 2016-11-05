@@ -28,7 +28,7 @@ namespace md{
 
             unsigned int grad_level;
             Device device;
-            ExecutionData execution;
+//            ExecutionData execution;
 
             std::string group;
 

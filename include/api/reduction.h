@@ -258,6 +258,36 @@ namespace md{
          * @return
          */
         Node any_true(Node node, int axis0, int axis1, int axis2);
+
+        /** @brief Returns the maximum values along the axis and the corresponding indices
+         *
+         * @param node
+         * @param axis
+         * @return
+         */
+        std::pair<Node, Node> max_and_arg_max(Node node, int axis);
+
+        /** @brief Returns the maximum values along the axis
+         *
+         * @param node
+         * @param axis
+         * @return
+         */
+        Node max(Node node, int axis);
+
+        Node arg_max(Node node, int axis);
+
+        std::pair<Node, Node> min_and_arg_min(Node node, int axis);
+
+        Node min(Node node, int axis);
+
+        Node arg_min(Node node, int axis);
+
+        std::pair<Node, Node> sort_and_arg_sort(Node node, int axis, bool ascending = true);
+
+        Node sort(Node node, int axis, bool ascending = true);
+
+        Node arg_sort(Node node, int axis, bool ascending = true);
     }
 }
 #endif //GRAPH_IR_API_REDUCTION_H

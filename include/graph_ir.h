@@ -40,6 +40,6 @@ namespace md{
 #include "graph.h"
 #include "api.h"
 #include "operators.h"
-#include "optimization.h"
+//#include "optimization.h"
 
 #endif //METADIFF_GRAPH_IR_H

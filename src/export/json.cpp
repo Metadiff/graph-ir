@@ -98,8 +98,8 @@ namespace md{
                 writer.Uint(nodes[i]->grad_level);
                 writer.String("group");
                 writer.String(nodes[i]->group);
-                writer.String("execution_data");
-                export_execution_data(nodes[i]->execution, writer);
+//                writer.String("execution_data");
+//                export_execution_data(nodes[i]->execution, writer);
                 writer.EndObject();
             }
             writer.EndArray();

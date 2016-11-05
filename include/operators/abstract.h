@@ -378,6 +378,33 @@ namespace md {
 
             class FloatReductionOperator: public virtual FloatOperator,
                                           public virtual ReductionOperator {};
+
+            class MultiOutputOperator: public virtual UnaryOperator{
+            public:
+                int outputs_number;
+                MultiOutputOperator(int const outputs_number): outputs_number(outputs_number) {};
+
+                DataType get_data_type() const {
+                    return graph->props.max_float;
+                }
+
+                Shape get_shape() const {
+                    return {0, 0, 0, 0};
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return my_derivative;
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index) {
+                    return parent_derivatives[0];
+                }
+
+                virtual Shape get_shape_at(int index) const = 0;
+                virtual DataType get_data_type_at(int index) const = 0;
+                virtual bool is_differentiable_at(int index) const = 0;
+                virtual Node forward_diff_parent_at(NodeVec & parent_derivatives, int index) const = 0;
+            };
         }
     }
 }

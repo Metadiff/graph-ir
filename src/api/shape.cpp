@@ -15,11 +15,13 @@ namespace md{
             } else if(node.order() > 2){
                 // If this is more than a 2D tensor throw an error
                 op_logger("Diagonal")->error("The input is of order {} > 2", node.order());
-                throw InvalidOperatorArgument(NodeVec{node}, "Diagonal", "The input is of order " + std::to_string(node.order()) + " > 2");
+                throw InvalidOperatorArgument(NodeVec{node}, "Diagonal",
+                                              "The input is of order " + std::to_string(node.order()) + " > 2");
             } else if(node.order() == 2 and node->shape[0] != 1 and node->shape[0] != node->shape[1]){
                 // If this is not a square matrix or a vector throw an error
                 op_logger("Diagonal")->error("The input is not a square matrix - {}", to_string(node->shape));
-                throw InvalidOperatorArgument(NodeVec{node}, "Diagonal", "The input is not a square matrix - " + to_string(node->shape));
+                throw InvalidOperatorArgument(NodeVec{node}, "Diagonal",
+                                              "The input is not a square matrix - " + to_string(node->shape));
             }
             // diag(diag(x)) = x, when x is a vector
             auto base = get_base_node(node);
@@ -28,6 +30,68 @@ namespace md{
             }
             // Standard
             Operator op = std::make_shared<op::Diagonal>(g.get(), node);
+            return g->derived_node(op);
+        }
+
+        Node lower_tri(Node node, int k){
+            Graph g = node.g();
+            if(node.order() == 0){
+                // If it is a scalar nothing to do
+                return alias(node);
+            } else if(node.order() > 2){
+                // If this is more than a 2D tensor throw an error
+                op_logger("LowerTriangular")->error("The input is of order {} > 2", node.order());
+                throw InvalidOperatorArgument(NodeVec{node}, "LowerTriangular",
+                                              "The input is of order " + std::to_string(node.order()) + " > 2");
+            } else if(node.order() == 2 and node->shape[0] != 1 and node->shape[0] != node->shape[1]){
+                // If this is not a square matrix or a vector throw an error
+                op_logger("LowerTriangular")->error("The input is not a square matrix - {}", to_string(node->shape));
+                throw InvalidOperatorArgument(NodeVec{node}, "LowerTriangular",
+                                              "The input is not a square matrix - " + to_string(node->shape));
+            }
+            // diag(diag(x)) = x, when x is a vector
+            auto base = get_base_node(node);
+            if(base->op->name == "LowerTriangular"){
+                auto cast_op = std::dynamic_pointer_cast<op::LowerTriangular>(base->op);
+                if(cast_op->k >= k){
+                    return alias(node);
+                } else {
+                    return lower_tri(base->op->get_parents()[0], k);
+                }
+            }
+            // Standard
+            Operator op = std::make_shared<op::LowerTriangular>(g.get(), node, k);
+            return g->derived_node(op);
+        }
+
+        Node upper_tri(Node node, int k){
+            Graph g = node.g();
+            if(node.order() == 0){
+                // If it is a scalar nothing to do
+                return alias(node);
+            } else if(node.order() > 2){
+                // If this is more than a 2D tensor throw an error
+                op_logger("UpperTriangular")->error("The input is of order {} > 2", node.order());
+                throw InvalidOperatorArgument(NodeVec{node}, "UpperTriangular",
+                                              "The input is of order " + std::to_string(node.order()) + " > 2");
+            } else if(node.order() == 2 and node->shape[0] != 1 and node->shape[0] != node->shape[1]){
+                // If this is not a square matrix or a vector throw an error
+                op_logger("UpperTriangular")->error("The input is not a square matrix - {}", to_string(node->shape));
+                throw InvalidOperatorArgument(NodeVec{node}, "UpperTriangular",
+                                              "The input is not a square matrix - " + to_string(node->shape));
+            }
+            // diag(diag(x)) = x, when x is a vector
+            auto base = get_base_node(node);
+            if(base->op->name == "UpperTriangular"){
+                auto cast_op = std::dynamic_pointer_cast<op::UpperTriangular>(base->op);
+                if(cast_op->k >= k){
+                    return alias(node);
+                } else {
+                    return upper_tri(base->op->get_parents()[0], k);
+                }
+            }
+            // Standard
+            Operator op = std::make_shared<op::UpperTriangular>(g.get(), node, k);
             return g->derived_node(op);
         }
 

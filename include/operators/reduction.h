@@ -134,6 +134,108 @@ namespace md{
                     return std::make_shared<AnyTrue>(graph, ancestors[0], axes);
                 }
             };
+
+            /** Reduction which returns the Max values and their indices along a single axis */
+            class MaxMinAndArgMaxMin: public MultiOutputOperator, public ReductionOperator {
+            public:
+                bool max;
+                bool only_values;
+                bool only_indices;
+                MaxMinAndArgMaxMin(GraphInPtr graph, Node parent, Axes axes, bool max,
+                                   bool only_values = false, bool only_indices = false):
+                        AbstractOperator(graph, "MaxMinAndArgMaxMin"), UnaryOperator(parent),
+                        MultiOutputOperator(2), ReductionOperator(axes),
+                        max(max), only_values(only_values), only_indices(only_indices){};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<MaxMinAndArgMaxMin>(graph, ancestors[0], axes, max, only_values, only_indices);
+                }
+
+                Shape get_shape() const {
+                    return MultiOutputOperator::get_shape();
+                }
+
+                Shape get_shape_at(int index) const {
+                    return ReductionOperator::get_shape();
+                };
+
+                DataType get_data_type_at(int index) const {
+                    if(index == 0){
+                        return parent->data_type;
+                    } else {
+                        return graph->props.max_int;
+                    }
+                };
+
+                bool is_differentiable_at(int index) const {
+                    if(index == 0){
+                        return is_differentiable();
+                    } else {
+                        return false;
+                    }
+                };
+
+                Node forward_diff_parent_at(NodeVec & parent_derivatives, int index) const{
+                    if(index == 0){
+                        // TODO
+                        throw NotImplementedError(__LINE__, __FILE__);
+                    } else {
+                        return Node();
+                    }
+                }
+
+            };
+
+            /** Reduction which returns the Max values and their indices along a single axis */
+            class SortAndArgSort: public MultiOutputOperator {
+            public:
+                int axis;
+                bool ascending;
+                bool only_sort;
+                bool only_arg_sort;
+                SortAndArgSort(GraphInPtr graph, Node parent, int axis, bool ascending,
+                               bool only_sort = false, bool only_arg_sort = false):
+                        AbstractOperator(graph, "SortAndArgSort"), UnaryOperator(parent),
+                        MultiOutputOperator(2), axis(axis),
+                        ascending(ascending), only_sort(only_sort), only_arg_sort(only_arg_sort){};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<SortAndArgSort>(graph, ancestors[0], axis, ascending, only_sort, only_arg_sort);
+                }
+
+                Shape get_shape() const {
+                    return MultiOutputOperator::get_shape();
+                }
+
+                Shape get_shape_at(int index) const {
+                    return parent->shape;
+                };
+
+                DataType get_data_type_at(int index) const {
+                    if(index == 0){
+                        return parent->data_type;
+                    } else {
+                        return graph->props.max_int;
+                    }
+                };
+
+                bool is_differentiable_at(int index) const {
+                    if(index == 0){
+                        return is_differentiable();
+                    } else {
+                        return false;
+                    }
+                };
+
+                Node forward_diff_parent_at(NodeVec & parent_derivatives, int index) const{
+                    if(index == 0){
+                        // TODO
+                        throw NotImplementedError(__LINE__, __FILE__);
+                    } else {
+                        return Node();
+                    }
+                }
+            };
         }
     }
 }

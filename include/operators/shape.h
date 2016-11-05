@@ -39,6 +39,56 @@ namespace md{
                 }
             };
 
+            /** Takes the lower triangular part of a matrix */
+            class LowerTriangular : public MorphOperator {
+            public:
+                int k;
+                LowerTriangular(GraphInPtr graph, Node parent, int k) :
+                        AbstractOperator(graph, "LowerTriangular"), UnaryOperator(parent),
+                        k(k) {};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<LowerTriangular>(graph, ancestors[0], k);
+                }
+
+                Shape get_shape() const {
+                    return parent->shape;
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return lower_tri(my_derivative, k);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return lower_tri(parent_derivatives[index], k);
+                }
+            };
+
+            /** Takes the upper triangular part of a matrix */
+            class UpperTriangular : public MorphOperator {
+            public:
+                int k;
+                UpperTriangular(GraphInPtr graph, Node parent, int k) :
+                        AbstractOperator(graph, "UpperTriangular"), UnaryOperator(parent),
+                        k(k){};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<UpperTriangular>(graph, ancestors[0], k);
+                }
+
+                Shape get_shape() const {
+                    return parent->shape;
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return upper_tri(my_derivative, k);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return upper_tri(parent_derivatives[index], k);
+                }
+            };
+
             /** Reshapes the input to a specified shape */
             class Reshape : public MorphOperator {
             public:
