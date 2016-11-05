@@ -50,12 +50,13 @@ namespace md{
             };
 
 
-            void AbstractOperator::backward_diff(std::vector<NodeVec> &messages, std::vector<bool>& flow_tree) {
-                if (messages[result->id].size() == 0) {
+            void AbstractOperator::backward_diff(std::vector<NodeVec> & derivative_messages,
+                                                 std::vector<bool>& flow_tree) {
+                if (derivative_messages[result->id].size() == 0) {
                     return;
                 }
                 // Retrieve the gradient with respect to the output of the operator
-                Node my_grad = backward_diff_combine(messages[result->id]);
+                Node my_grad = backward_diff_combine(derivative_messages[result->id]);
                 op_logger(name)->debug("Generating backward diff messages from node {}", result->id);
 
                 // Sets the current group to the group of the operator
@@ -89,26 +90,26 @@ namespace md{
                         }
                         op_logger(name)->debug("Sending backward diff message with id {} from {} to {}",
                                                parent_grad->id, result->id, parents[i]->id);
-                        messages[parents[i]->id].push_back(parent_grad);
+                        derivative_messages[parents[i]->id].push_back(parent_grad);
                     }
                 }
                 // Restore group
                 graph->current_group = old_group;
             }
 
-            Node AbstractOperator::backward_diff_combine(NodeVec & grads) const {
-                if(grads.size() == 0){
+            Node AbstractOperator::backward_diff_combine(NodeVec & incoming_derivatives) const {
+                if(incoming_derivatives.size() == 0){
                     op_logger(name)->error("backward_diff_combine got zero messages.");
                     throw InternalGraphError(name, "backward_diff_combine got zero messages.");
-                } else if(grads.size() == 1){
-                    return grads[0];
+                } else if(incoming_derivatives.size() == 1){
+                    return incoming_derivatives[0];
                 } else {
-                    return add(grads);
+                    return add(incoming_derivatives);
                 }
             }
 
-            void AbstractOperator::forward_diff(NodeVec &derivatives) {
-                if(derivatives[result->id].ptr.expired()){
+            void AbstractOperator::forward_diff(NodeVec & all_derivatives) {
+                if(all_derivatives[result->id].ptr.expired()){
                     return;
                 }
 
@@ -116,7 +117,7 @@ namespace md{
                 NodeVec parent_derivatives;
                 NodeVec parents = get_parents();
                 for(auto i=0; i<parents.size(); ++i){
-                    parent_derivatives.push_back(derivatives[parents[i]->id]);
+                    parent_derivatives.push_back(all_derivatives[parents[i]->id]);
                 }
                 op_logger(name)->debug("Generating derivative for {}", result->id);
 
@@ -145,18 +146,21 @@ namespace md{
                 if(messages.size() == 0) {
                     // Leave to empty Node
                 } else {
-                    derivatives[result->id] = forward_diff_combine(messages);
+                    all_derivatives[result->id] = forward_diff_combine(messages);
                 }
 
                 // Restore group
                 graph->current_group = old_group;
             }
 
-            Node AbstractOperator::forward_diff_combine(NodeVec & grads) const {
-                if(grads.size() == 1){
-                    return grads[0];
+            Node AbstractOperator::forward_diff_combine(NodeVec & incoming_derivatives) const {
+                if(incoming_derivatives.size() == 0){
+                    op_logger(name)->error("forward_diff_combine got zero messages.");
+                    throw InternalGraphError(name, "forward_diff_combine got zero messages.");
+                } else if(incoming_derivatives.size() == 1){
+                    return incoming_derivatives[0];
                 } else {
-                    return add(grads);
+                    return add(incoming_derivatives);
                 }
             }
         }

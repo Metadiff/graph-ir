@@ -94,4 +94,29 @@ namespace md{
         };
     }
 }
+
+namespace std {
+    template <>
+    class hash<md::gir::Node>{
+    public :
+        size_t operator()(md::gir::Node const & node ) const
+        {
+            return hash<std::shared_ptr<md::gir::NodeData>>()(node.ptr.lock());
+        }
+    };
+
+    template <>
+    class equal_to<md::gir::Node>{
+    public :
+        typedef md::gir::Node T;
+        bool operator()( const T& lhs, const T& rhs ) const {
+            if(lhs.ptr.expired() or rhs.ptr.expired()){
+                return false;
+            } else {
+                return lhs.unwrap() == rhs.unwrap();
+            }
+        }
+    };
+};
+
 #endif //METADIFF_GRAPH_IR_NODE_H

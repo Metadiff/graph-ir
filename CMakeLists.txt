@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8) # Could be even lower. Works with 3.0
 
 # Project name and versions
-project(Graph_IR)
+project(GraphIR)
 set(GRAPH_IR_MAJOR_VERSION 0)
 set(GRAPH_IR_INTEGERS_VERSION 0)
 set(GRAPH_IR_INTEGERS_VERSION 1)

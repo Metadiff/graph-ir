@@ -90,7 +90,7 @@ namespace md{
         }
 
         Node implicit_broadcast(Node const node, Shape const shape, std::string const op_name) {
-            if(node->shape != shape){
+            if(node->shape != shape and node.order() > 0){
                 Graph g = node.g();
                 switch (g->props.policies.implicit_broadcast){
                     case RAISE:

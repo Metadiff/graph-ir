@@ -7,6 +7,56 @@
 
 namespace md{
     namespace gir{
+        GraphFunction::GraphFunction(Graph const full_graph,
+                                     std::vector<Node> inputs,
+                                     std::vector<Node> outputs,
+                                     Updates extra_updates,
+                                     bool copy_updates) {
+            std::vector<Node> leafs = outputs;
+            // Add the updates of the graph
+            for(auto it=full_graph->updates.begin(); it != full_graph->updates.end();  ++it){
+                leafs.push_back((*it).second);
+            }
+            // Add the extra updates
+            for(auto it=extra_updates.begin(); it != extra_updates.end();  ++it){
+                leafs.push_back(it->first);
+                leafs.push_back(it->second);
+            }
+            // Get ancestor mask of all of the outputs
+            auto ancestor_mask = full_graph->get_ancestors_mask(leafs);
+            graph = api::create_graph();
+            auto mapping = full_graph->copy_into(graph, ancestor_mask, Updates{}, true, true, copy_updates);
+            // Add the extra updates
+            for(auto it=extra_updates.begin(); it != extra_updates.end();  ++it){
+                api::update(mapping[it->first], mapping[it->second]);
+            }
+        }
+
+        std::vector<Node> GraphFunction::apply(Graph other_graph, std::vector<Node> provided_inputs,
+                                               bool apply_updates) {
+            if(provided_inputs.size() != inputs.size()){
+                g_logger(other_graph->name)->error("Incorrect number of provided inputs");
+                throw InternalGraphError("FunctionApply", "Incorrect number of provided inputs");
+            }
+            std::vector<bool> flow_tree;
+            if(apply_updates){
+                flow_tree = std::vector<bool>(graph->nodes.size(), true);
+            } else {
+                flow_tree = graph->get_flow_tree_mask(inputs, outputs);
+            }
+            Updates provided;
+            for(auto i=0; i<inputs.size(); ++i){
+                provided[inputs[i]] = provided_inputs[i];
+            }
+            auto mapping = graph->apply(other_graph, flow_tree, provided, false, apply_updates);
+            std::vector<Node> outputs;
+            for(auto i=0; i<outputs.size(); ++i){
+                outputs.push_back(mapping[outputs[i]]);
+            }
+            return outputs;
+        }
+
+
         DataType GraphInternal::limit_type(DataType data_type) const {
             if(data_type > i64) {
                 return data_type <= props.max_float ? data_type : props.max_float;
@@ -30,25 +80,57 @@ namespace md{
             }
         }
 
-        NodeVec GraphInternal::copy(Graph new_graph, std::vector<bool> const & mask) const {
-            g_logger(name)->trace("Copying graph {}", name);
-            new_graph->name = name + "_copy";
-            new_graph->props = props;
+        Updates GraphInternal::copy_into(Graph new_graph, std::vector<bool> const & mask,
+                                         Updates const & provided,
+                                         bool allow_input_copies, bool allow_shared_copies,
+                                         bool copy_updates) const {
+            // Verify that the left nodes in the mapped are from this graph and the right are from the new
+            for(auto it = provided.begin(); it != provided.end(); ++it){
+                if(it->first.g().get() != this){
+                    g_logger(name)->error("A source node from the provided nodes is not part of this graph.");
+                    throw InternalGraphError("CopyInto", "A source node from the provided nodes is not part of this graph.");
+                } else if(it->second.g() != new_graph){
+                    g_logger(name)->error("A target node from the provided nodes is not part of this graph.");
+                    throw InternalGraphError("CopyInto", "A target node from the provided nodes is not part of this graph.");
+                }
+            }
+            g_logger(name)->trace("Copying into graph {}", new_graph->name);
             size_t n = nodes.size();
             // Variable which maps each node (by id) of the original graph to a Node in the new graph
-            NodeVec mapping(n, Node());
+            Updates mapping;
             // Copy nodes
             for (auto i = 0; i < n; i++) {
                 // Only nodes that are masked
                 if (mask[i]) {
-                    g_logger(name)->trace("Copying node {} to graph {} resulting in node {}",
-                                          i, new_graph->name, new_graph->nodes.size());
+                    g_logger(name)->trace("Copying node {} resulting in node {}", i, new_graph->nodes.size());
+                    // Check if this is a mapped node
+                    auto it = provided.find(nodes[i]);
+                    if(it != provided.end()){
+                        mapping[nodes[i]] = it->second;
+                        continue;
+                    }
+                    // Check if it is an input node
+                    if(nodes[i]->op->name == "Input" and not allow_input_copies){
+                        g_logger(name)->error("The input node {} did not had a provided mapped value during copying"
+                                                      "and allow_input_copies=false.", i);
+                        throw InternalGraphError("CopyInto", "The input node "
+                                                             + std::to_string(i)
+                                                             + " did not had a provided mapped value during copying"
+                                                                     "and allow_input_copies=false.");
+                    } else if(nodes[i]->op->name == "SharedInput" and not allow_shared_copies){
+                        g_logger(name)->error("The shared node {} did not had a provided mapped value during copying "
+                                                      "and allow_shared_copies=false.", i);
+                        throw InternalGraphError("CopyInto", "The shared node "
+                                                             + std::to_string(i)
+                                                             + " did not had a provided mapped value during copying "
+                                                                     "and allow_shared_copies=false.");
+                    }
                     // Get all of the ancestors of the node and find their corresponding nodes
                     // in the new graph
                     NodeVec ancestors = nodes[i]->op->get_ancestors();
                     NodeVec new_ancestors;
                     for (size_t j = 0; j < ancestors.size(); j++) {
-                        if(mapping[ancestors[j]->id].ptr.expired()){
+                        if(mapping[ancestors[j]].ptr.expired()){
                             g_logger(name)->error("Attempted to copy node {} with ancestor {}, but the parent "
                                                           "was not part of the mask.",
                                                   i, ancestors[j]->id);
@@ -56,29 +138,52 @@ namespace md{
                                                              + " with ancestor " + std::to_string(ancestors[j]->id)
                                                              + ", but the parent was not part of the mask.");
                         }
-                        new_ancestors.push_back(mapping[ancestors[j]->id]);
+                        new_ancestors.push_back(mapping[ancestors[j]]);
                     }
                     // Copy the node using the new ancestors and put it in the mapping
                     Operator op = nodes[i]->op->copy_to(new_graph.get(), new_ancestors);
-                    mapping[nodes[i]->id] = new_graph->derived_node(op, nodes[i]->name);
+                    mapping[nodes[i]] = new_graph->derived_node(op, nodes[i]->name);
                 }
             }
-            // Copy the updates, by just adding the corresponding nodes
-            for(auto it = updates.begin(); it != updates.end(); ++it){
-                if(mapping[it->second->id].ptr.expired()){
-                    g_logger(name)->error("Could not copy the update for node {} "
-                                                  " because it was not part of the mask.", it->first->id);
-                    throw InternalGraphError("Copy", "Could not copy the update for node "
-                                                     + std::to_string(it->first->id)
-                                                     + " because it was not part of the mask.");
-                } else {
-                    Node shared = Node(mapping[it->first->id]);
-                    Node update = Node(mapping[it->second->id]);
-                    api::update(shared, update);
+            if(copy_updates) {
+                // Copy the updates, by just adding the corresponding nodes
+                for (auto it = updates.begin(); it != updates.end(); ++it) {
+                    auto r1 = mapping.find(it->first);
+                    auto r2 = mapping.find(it->second);
+                    if(r1 == mapping.end() or r2 == mapping.end()) {
+                        g_logger(name)->error("Could not copy the update for node {} "
+                                                      " because it was not part of the mask.", it->first->id);
+                        throw InternalGraphError("Copy", "Could not copy the update for node "
+                                                         + std::to_string(it->first->id)
+                                                         + " because it was not part of the mask.");
+                    } else {
+                        api::update(mapping[r1->second], mapping[r2->second]);
+                    }
                 }
             }
             g_logger(name)->trace("Copy completed");
             return mapping;
+        }
+
+        Graph GraphInternal::clone(std::vector<bool> const & mask, bool copy_updates) const{
+            auto new_graph = create_graph();
+            new_graph->name = name + "_clone";
+            new_graph->props = props;
+            copy_into(new_graph, mask, Updates{} ,true, true, copy_updates);
+            new_graph->current_group = current_group;
+            new_graph->grad_level = grad_level;
+            return new_graph;
+        }
+
+        Graph GraphInternal::clone(bool copy_updates) const{
+            std::vector<bool> mask(nodes.size(), true);
+            return clone(mask, copy_updates);
+        }
+
+        Updates GraphInternal::apply(Graph new_graph, std::vector<bool> const & mask,
+                                     Updates const & provided,
+                                     bool copy_updates, bool allow_shared_copies) const{
+            return copy_into(new_graph, mask, provided ,false, allow_shared_copies, copy_updates);
         }
 
         std::vector<bool> GraphInternal::get_descendants_mask(NodeVec const & roots) const {
@@ -150,20 +255,6 @@ namespace md{
             }
             return Node();
         };
-
-//        void GraphInternal::add_temporary_updates(const Updates &temp_updates) {
-//            for (int i = 0; i < temp_updates.size(); i++) {
-//                g_logger(name)->trace("Adding a temporary update {} := {}",
-//                                      temp_updates[i].first->id, temp_updates[i].second->id);
-//                temporary_updates.push_back(temp_updates[i]);
-//            }
-//        };
-//
-//        void GraphInternal::clear_temporary_updates() {
-//            // Potentially might need to sort temporary_updates
-//            g_logger(name)->trace("Clearing temporary updates");
-//            temporary_updates.clear();
-//        }
 
         NodeVec GraphInternal::backward_diff(NodeVec const & f, NodeVec const & u_in, NodeVec const & w){
             // If no parameters return empty vector as well
@@ -263,7 +354,7 @@ namespace md{
                                                              "] has more than one backward message left.");
                 }
             }
-
+            op_logger("BackwardDiff")->trace("Finished BackwardDiff");
             return outputs;
         }
 
@@ -362,6 +453,9 @@ namespace md{
                     outputs.push_back(derivatives[f[i]->id]);
                 }
             }
+
+            op_logger("ForwardDiff")->trace("Finished ForwardDiff");
+
             return outputs;
         }
 
@@ -404,68 +498,6 @@ namespace md{
             }
         }
 
-        void GraphInternal::update_node(Node shared, Node update) {
-            throw NotImplementedError(__LINE__, __FILE__);
-//            // Check the first node is a shared variable
-//            if (shared->op->name != "Shared") {
-//                auto err = std::make_shared<InvalidArguments>(NodeVec {shared, update},
-//                                                              "Update",
-//                                                              "First argument must be a SHARED_VARIABLE");
-//                err->log(logger());
-//                throw err;
-//            }
-//            auto shared_shape = shared->shape;
-//            auto update_shape = update->shape;
-//
-//            // Check that the shapes are correct
-//            for (int i = 0; i < 4; i++) {
-//                if (shared_shape[i] != update_shape[i]) {
-//                    auto err = std::make_shared<IncompatibleShapes>(NodeVec{shared, update}, "Update");
-//                    err->log(logger());
-//                    throw err;
-//                }
-//            }
-//
-//            // Check that the value types are correct
-//            if (shared->data_type != update->data_type) {
-//                auto err = std::make_shared<InvalidArguments>(NodeVec{shared, update},
-//                                                              "Update",
-//                                                              "The Shared variable and the update should have the same dtype");
-//                err->log(logger());
-//                throw err;
-//            }
-//            // Add it to the updates
-//            updates.push_back(std::pair<Node, Node>(shared, update));
-        }
-
-
-//        Group GraphInternal::get_or_create_group(std::string full_name){
-//            Group group = groups[0];
-//            std::stringstream name_stream(full_name);
-//            std::string item;
-//            while (std::getline(name_stream, item, props.group_delimiter)) {
-//                auto index = group.lock()->children.size();
-//                for (auto i = 0; i < index; ++i) {
-//                    if (item.compare(group.lock()->children[i].lock()->name) == 0) {
-//                        index = i;
-//                        break;
-//                    }
-//                }
-//                // If not found make a new group
-//                if (index == group.lock()->children.size()) {
-//                    groups.push_back(std::make_shared<NodeGroup>(item, group));
-//                    auto new_group = groups.back();
-//                    group.lock()->children.push_back(new_group);
-//                    logger()->trace("Creating group {} with parent {} and name {}",
-//                                    new_group->full_name, group.lock()->name, item);
-//                    group = new_group;
-//                } else {
-//                    group = group.lock()->children[index];
-//                }
-//            }
-//            return group;
-//        }
-
         void GraphInternal::set_group(std::string full_name){
             current_group = full_name;
         };
@@ -496,6 +528,8 @@ namespace md{
                 return full_name.substr(0, last_delimiter);
             }
         }
+
+
     }
 }
 

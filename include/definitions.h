@@ -39,7 +39,7 @@ namespace md{
         /** An update is a pair of shared variable and a node */
         typedef std::pair<Node, Node> Update;
         /** A collection of updates */
-        typedef std::vector<std::pair<Node, Node>> Updates;
+        typedef std::unordered_map<Node, Node> Updates;
         /** A shared_ptr to GraphInternal */
         typedef std::shared_ptr<gir::GraphInternal> Graph;
 

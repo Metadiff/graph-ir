@@ -37,7 +37,7 @@ namespace md {
                 SharedVar var;
 
                 SharedInput(GraphInPtr graph, SharedVar var) :
-                        AbstractOperator(graph, "Shared"),
+                        AbstractOperator(graph, "SharedInput"),
                         var(var) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {

@@ -39,7 +39,6 @@ namespace md{
 #include "print.h"
 #include "graph.h"
 #include "api.h"
-#include "function.h"
 #include "operators.h"
 #include "optimization.h"
 

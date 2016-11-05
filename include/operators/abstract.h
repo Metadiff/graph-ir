@@ -94,7 +94,7 @@ namespace md {
                  * @param messages
                  * @param flow_tree
                  */
-                void backward_diff(std::vector<NodeVec> &messages, std::vector<bool>& flow_tree);
+                void backward_diff(std::vector<NodeVec> & derivative_messages, std::vector<bool>& flow_tree);
 
                 /** @brief Returns the backward diferentiation message to the parent at the index specified
                  *
@@ -110,14 +110,14 @@ namespace md {
                  * @param derivatives
                  * @return
                  */
-                virtual Node backward_diff_combine(NodeVec & derivatives) const;
+                virtual Node backward_diff_combine(NodeVec & incoming_derivatives) const;
 
                 /** @brief Combines all of the parent_derivatives apropirately and computes the derivative of the output Node
                  *
                  * @param messages
                  * @param flow_tree
                  */
-                void forward_diff(NodeVec & parent_derivatives);
+                void forward_diff(NodeVec & all_derivatives);
 
                 /** @brief Returns the forward diferentiation message from the parent at the index specified
                  *
@@ -133,7 +133,7 @@ namespace md {
                  * @param derivatives
                  * @return
                  */
-                virtual Node forward_diff_combine(NodeVec & parent_derivatives) const;
+                virtual Node forward_diff_combine(NodeVec & incoming_derivatives) const;
 
                 /** @brief Returns whether the Operator op is symbolically equivalent to this one.
                  * TODO This together with find_same_node() and symbolic_equals() still need to be implemented well

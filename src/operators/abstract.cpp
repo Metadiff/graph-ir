@@ -54,9 +54,9 @@ namespace md{
                 if (messages[result->id].size() == 0) {
                     return;
                 }
-                // Retrieve the gradient with respect to the output of the operator
+                // Retrieve the backward messages with respect to the result of the operator
                 Node my_grad = backward_diff_combine(messages[result->id]);
-                logger()->debug("Generating gradients for {}", result->id);
+                logger()->debug("Generating backward messages from {}", result->id);
 
                 // Sets the current group to the group of the operator
                 Group current_group = graph->current_group;
@@ -97,18 +97,18 @@ namespace md{
                 graph->current_group = current_group;
             }
 
-            Node AbstractOperator::backward_diff_combine(NodeVec & grads) const {
-                if(grads.size() == 0){
-                    // TODO throw an error
-                    throw 1;
-                } else if(grads.size() == 1){
+            Node AbstractOperator::backward_diff_combine(NodeVec & derivatives) const {
+                if(derivatives.size() == 0){
+                    op_logger("BackwardDiff")->error("Asked to combine messages, but there were 0.");
+                    throw InternalGraphError("BackwardDiff", "Asked to combine messages, but there were 0.");
+                } else if(derivatives.size() == 1){
                     return grads[0];
                 } else {
-                    return add(grads);
+                    return add(derivatives);
                 }
             }
 
-            void AbstractOperator::forward_diff(NodeVec &derivatives) {
+            void AbstractOperator::forward_diff(NodeVec & derivatives) {
                 if(derivatives[result->id].ptr.expired()){
                     return;
                 }
