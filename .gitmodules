@@ -7,3 +7,9 @@
 [submodule "external/symbolic-integers"]
 	path = external/symbolic-integers
 	url = git@github.com:Metadiff/symbolic-integers.git
+[submodule "external/filesystem"]
+	path = external/filesystem
+	url = https://github.com/boostorg/filesystem/
+[submodule "external/system"]
+	path = external/system
+	url = git@github.com:boostorg/system.git

@@ -1,7 +1,9 @@
 //
 // Created by alex on 29/09/16.
 //
-#include <graph_ir.h>
+#include "graph_ir.h"
+#include "boost/filesystem.hpp"
+#include "iostream"
 #include "fstream"
 
 /**
@@ -15,8 +17,15 @@ try{\
 **/
 
 using namespace md::api;
+using namespace md::backend;
 
-md::Graph build_model(){
+md::GraphFunction build_model(){
+    auto p = filesystem::path(default_properties()->default_work_dir);
+    if(exists(p)){
+        std::cout << "Exists" << std::endl;
+    } else {
+        std::cout << "Does not exists" << std::endl;
+    }
     // Use default graph
     auto g = default_graph();
     g->name = "MNIST";
@@ -57,22 +66,23 @@ md::Graph build_model(){
     // Some test nodes
     auto a = !grads[0];
     auto r = grads[0] > (grads[0] + 1);
-    return g;
+    return GraphFunction(g, NodeVec{input}, grads);
 }
 
 int main(){
     md::gir::console_logging(true);
-    auto g = build_model();
+    auto gf = build_model();
     std::ofstream f;
     f.open("test.html");
-    md::cytoscape::export_graph(g, f);
+    md::cytoscape::export_graph(gf.graph, f);
     f.close();
     f.open("test.json");
-    md::json::export_graph(g, f);
+    md::json::export_graph(gf.graph, f);
     f.close();
-    std::cout << g->name << " " << g->nodes.size() << std::endl;
-    std::cout << md::sym::registry()->total_ids << " "
-            << md::sym::registry()->floor_registry.size() << " "
-            << md::sym::registry()->ceil_registry.size() << std::endl;
+    auto backend = MockBackend(gf, "mock", false);
+    backend.complete();
+    VarVec vars;
+    auto r = backend(vars);
+    std::cout << r.first.size() << " - " << r.second.size() << std::endl;
     return 0;
 }

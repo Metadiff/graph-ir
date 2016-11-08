@@ -23,6 +23,8 @@ namespace md{
             GraphPolicies policies;
             /** Currently not used */
             DataType promotion_table[13][13];
+            /** Default working directory */
+            std::string default_work_dir;
 
             Properties():
                     http_proxy("HTTP_PROXY"),
@@ -30,7 +32,8 @@ namespace md{
                     default_device(HOST),
                     max_float(f32),
                     max_int(i32),
-                    policies(WARN, WARN, WARN){
+                    policies(WARN, WARN, WARN),
+                    default_work_dir("."){
                 for(auto i=0; i<13; ++i){
                     for(auto j=0; j<13; ++j){
                         promotion_table[i][j] = default_promotion_table[i][j];

@@ -7,11 +7,13 @@
 
 // External includes
 #include "type_traits"
-#include "iostream"
 #include "string"
 #include "symbolic_integers.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/dist_sink.h"
+#include "boost/config.hpp"
+#include "boost/filesystem.hpp"
+#include "dlfcn.h"
 
 namespace md{
     template<class...> struct disjunction : std::false_type { };
@@ -40,6 +42,6 @@ namespace md{
 #include "graph.h"
 #include "api.h"
 #include "operators.h"
-//#include "optimization.h"
+#include "backend.h"
 
 #endif //METADIFF_GRAPH_IR_H

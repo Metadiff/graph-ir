@@ -5,8 +5,7 @@ project(GraphIR)
 set(GRAPH_IR_MAJOR_VERSION 0)
 set(GRAPH_IR_INTEGERS_VERSION 0)
 set(GRAPH_IR_INTEGERS_VERSION 1)
-set(GRAPH_IR__VERSION
-        ${GRAPH_IR_MAJOR_VERSION}.${GRAPH_IR_MINOR_VERSION}.${GRAPH_IR_PATCH_VERSION})
+set(GRAPH_IR__VERSION ${GRAPH_IR_MAJOR_VERSION}.${GRAPH_IR_MINOR_VERSION}.${GRAPH_IR_PATCH_VERSION})
 
 # *** DEBUG ***
 set(GRAPH_IR_SHARED 1)
@@ -39,14 +38,32 @@ include_directories(external/symbolic-integers/include)
 include_directories(external/spdlog/include)
 # Add rapidjson
 include_directories(external/rapidjson/include)
-# Add my include directories
+# Add boost
+add_definitions(-DBOOST_SYSTEM_SOURCE=1)
+add_definitions(-DBOOST_FILESYSTEM_SOURCE=1)
+add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED=1)
+include_directories(external/system/include external/filesystem/include)
+add_definitions(-DGRAPH_IR_BUILD_MOCK=1)
+# Finally include this project directories
 include_directories(include)
 # Link with symints, we use static libs
 #link_libraries(symints_s)
 # Link with dl, for dynamic loading of the shared library generated
-#link_libraries(dl)
+link_libraries(dl)
 ## curl is needed for downloading of files, used in utils
 #link_libraries(curl)
+
+
+set(BOOST_SOURCES
+        ${PROJECT_SOURCE_DIR}/external/system/src/error_code.cpp
+        ${PROJECT_SOURCE_DIR}/external/filesystem/src/codecvt_error_category.cpp
+        ${PROJECT_SOURCE_DIR}/external/filesystem/src/operations.cpp
+        ${PROJECT_SOURCE_DIR}/external/filesystem/src/path.cpp
+        ${PROJECT_SOURCE_DIR}/external/filesystem/src/path_traits.cpp
+        ${PROJECT_SOURCE_DIR}/external/filesystem/src/portability.cpp
+        ${PROJECT_SOURCE_DIR}/external/filesystem/src/unique_path.cpp
+        ${PROJECT_SOURCE_DIR}/external/filesystem/src/utf8_codecvt_facet.cpp
+        ${PROJECT_SOURCE_DIR}/external/filesystem/src/windows_file_codecvt.cpp)
 
 # All of the project source files
 set(API_SOURCES
@@ -76,7 +93,12 @@ set(GRAPH_IR_SOURCES
         ${PROJECT_SOURCE_DIR}/src/export/json.cpp
         )
 
+set(MOCK_SOURCES ${PROJECT_SOURCE_DIR}/src/backend/mock.cpp)
+
+# Add All extra sources
 list(APPEND GRAPH_IR_SOURCES ${API_SOURCES})
+list(APPEND GRAPH_IR_SOURCES ${BOOST_SOURCES})
+list(APPEND GRAPH_IR_SOURCES ${MOCK_SOURCES})
 
 # Append them to all of the source fiels
 list(APPEND ALL_SOURCES ${GRAPH_IR_SOURCES})

@@ -42,7 +42,7 @@ namespace md{
          * @param level
          * @return
          */
-       Logger logger(std::string const name, LogLevel const level = LogLevel::trace);
+       Logger logger(std::string const name, LogLevel const level = LogLevel::trace, std::string const prefix = "");
 
         /** @brief Returns a logger registered to the GIR sink, with a prefix graph::
          *
@@ -59,6 +59,14 @@ namespace md{
          * @return
          */
         Logger op_logger(std::string const name, LogLevel const level = LogLevel::trace);
+
+        /** @brief Returns a logger registered to the GIR sink, with a prefix backend::
+         *
+         * @param name
+         * @param level
+         * @return
+         */
+        Logger backend_logger(std::string const name, LogLevel const level = LogLevel::trace);
 
         /** @brief Calculates the number total number of elements in a Shape
          *

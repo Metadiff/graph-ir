@@ -6,37 +6,27 @@
 
 namespace md{
     namespace gir{
-        Logger logger(std::string const name, LogLevel const level){
+        Logger logger(std::string const name, LogLevel const level, std::string prefix){
             Logger ptr = spdlog::get(name);
             if (not ptr) {
                 ptr = std::make_shared<spdlog::logger>(name, gir_sink());
                 spdlog::register_logger(ptr);
                 ptr->set_level(level);
-                ptr->set_pattern("[%Y-%m-%d %H:%M:%S][%l][%n] %v");
+                ptr->set_pattern("[%Y-%m-%d %H:%M:%S][%l][" + prefix + "%n] %v");
             }
             return ptr;
         }
 
         Logger g_logger(std::string const name, LogLevel const level){
-            Logger ptr = spdlog::get(name);
-            if (not ptr) {
-                ptr = std::make_shared<spdlog::logger>(name, gir_sink());
-                spdlog::register_logger(ptr);
-                ptr->set_level(level);
-                ptr->set_pattern("[%Y-%m-%d %H:%M:%S][%l][graph::%n] %v");
-            }
-            return ptr;
+            return logger(name, level, "graph::");
         }
 
         Logger op_logger(std::string const name, LogLevel const level){
-            Logger ptr = spdlog::get(name);
-            if (not ptr) {
-                ptr = std::make_shared<spdlog::logger>(name, gir_sink());
-                spdlog::register_logger(ptr);
-                ptr->set_level(level);
-                ptr->set_pattern("[%Y-%m-%d %H:%M:%S][%l][op::%n] %v");
-            }
-            return ptr;
+            return logger(name, level, "op::");
+        }
+
+        Logger backend_logger(std::string const name, LogLevel const level){
+            return logger(name, level, "backend::");
         }
 
         SymInt number_of_elements(Shape const shape){
