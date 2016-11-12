@@ -163,7 +163,7 @@ namespace md{
                     if(index == 0){
                         return parent->data_type;
                     } else {
-                        return graph->props.max_int;
+                        return DataType(SIGNED_INT, graph->props.max_int);
                     }
                 };
 
@@ -215,7 +215,7 @@ namespace md{
                     if(index == 0){
                         return parent->data_type;
                     } else {
-                        return graph->props.max_int;
+                        return DataType(SIGNED_INT, graph->props.max_int);
                     }
                 };
 

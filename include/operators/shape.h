@@ -42,8 +42,8 @@ namespace md{
             /** Takes the lower triangular part of a matrix */
             class LowerTriangular : public MorphOperator {
             public:
-                int k;
-                LowerTriangular(GraphInPtr graph, Node parent, int k) :
+                double k;
+                LowerTriangular(GraphInPtr graph, Node parent, double k) :
                         AbstractOperator(graph, "LowerTriangular"), UnaryOperator(parent),
                         k(k) {};
 
@@ -67,8 +67,8 @@ namespace md{
             /** Takes the upper triangular part of a matrix */
             class UpperTriangular : public MorphOperator {
             public:
-                int k;
-                UpperTriangular(GraphInPtr graph, Node parent, int k) :
+                double k;
+                UpperTriangular(GraphInPtr graph, Node parent, double k) :
                         AbstractOperator(graph, "UpperTriangular"), UnaryOperator(parent),
                         k(k){};
 

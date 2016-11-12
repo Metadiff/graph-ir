@@ -58,24 +58,17 @@ namespace md{
 
 
         DataType GraphInternal::limit_type(DataType data_type) const {
-            if(data_type > i64) {
-                return data_type <= props.max_float ? data_type : props.max_float;
-            } else if(data_type > u64){
-                // It is an int
-                return data_type <= props.max_int ? data_type : props.max_int;
-            } else{
-                // It is an uint
-                switch (props.max_int){
-                    case i64:
-                        return data_type <= i64 ? data_type : u64;
-                    case i32:
-                        return data_type <= u32 ? data_type : u32;
-                    case i16:
-                        return data_type <= u16 ? data_type : u16;
-                    case i8:
-                        return data_type <= u8 ? data_type : u8;
-                    default:
-                        return b8;
+            if(data_type.type < FLOAT){
+                if(data_type.precision > props.max_int){
+                    return DataType(data_type.type, props.max_int);
+                } else {
+                    return data_type;
+                }
+            } else {
+                if(data_type.precision > props.max_float){
+                    return DataType(data_type.type, props.max_float);
+                } else {
+                    return data_type;
                 }
             }
         }

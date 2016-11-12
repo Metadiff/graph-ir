@@ -16,13 +16,13 @@ namespace md{
             /** The default device */
             Device default_device;
             /** The maixmum allowed floating numbers precision */
-            DataType max_float;
+            Precision max_float;
             /** The maixmum allowed integer numbers precision */
-            DataType max_int;
+            Precision max_int;
             /** The collection of policies for reaction to errors */
             GraphPolicies policies;
             /** Currently not used */
-            DataType promotion_table[13][13];
+//            DataType promotion_table[13][13];
             /** Default working directory */
             std::string default_work_dir;
 
@@ -30,15 +30,15 @@ namespace md{
                     http_proxy("HTTP_PROXY"),
                     group_delimiter('.'),
                     default_device(HOST),
-                    max_float(f32),
-                    max_int(i32),
+                    max_float(p32),
+                    max_int(p32),
                     policies(WARN, WARN, WARN),
                     default_work_dir("."){
-                for(auto i=0; i<13; ++i){
-                    for(auto j=0; j<13; ++j){
-                        promotion_table[i][j] = default_promotion_table[i][j];
-                    }
-                }
+//                for(auto i=0; i<13; ++i){
+//                    for(auto j=0; j<13; ++j){
+//                        promotion_table[i][j] = default_promotion_table[i][j];
+//                    }
+//                }
             };
 
             Properties(std::shared_ptr<Properties> ptr):
@@ -48,11 +48,11 @@ namespace md{
                     max_float(ptr->max_float),
                     max_int(ptr->max_int),
                     policies(ptr->policies) {
-                for(auto i=0; i<13; ++i){
-                    for(auto j=0; j<13; ++j){
-                        promotion_table[i][j] = ptr->promotion_table[i][j];
-                    }
-                }
+//                for(auto i=0; i<13; ++i){
+//                    for(auto j=0; j<13; ++j){
+//                        promotion_table[i][j] = ptr->promotion_table[i][j];
+//                    }
+//                }
             }
         };
 

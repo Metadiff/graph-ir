@@ -67,7 +67,7 @@ namespace md{
             return matrix_mul(NodeVec{left, right}, std::vector<bool>{transpose_left, transpose_right});
         }
 
-        Node matrix_inverse(Node node){
+        Node matrix_inverse(Node node, bool transpose){
             Graph g = node.g();
             if(node.order() != 2){
                 op_logger("MatrixInverse")->error("Node is not a matrix.");
@@ -84,11 +84,11 @@ namespace md{
                 return alias(base->op->get_parents()[0]);
             }
             // Standard
-            Operator op = std::make_shared<op::MatrixInverse>(g.get(), node);
+            Operator op = std::make_shared<op::MatrixInverse>(g.get(), node, transpose);
             return g->derived_node(op);
         }
 
-        Node matrix_inverse_mul(Node node1, Node node2, bool transpose){
+        Node matrix_inverse_mul(Node node1, Node node2, bool transpose_inv, bool transpose_mul){
             Graph g = node1.g();
             if(g != node2.g()){
                 op_logger("MatrixInverseMul")->error("The input variables are not from the same graph.");
@@ -103,25 +103,25 @@ namespace md{
                 op_logger("MatrixInverseMul")->error("Node 0 is not a square matrix.");
                 throw InvalidOperatorArgument(NodeVec{node1, node2}, "MatrixInverseMul",
                                               "Node 0 is not a square matrix.");
-            } else if(node1->shape[not transpose] != node2->shape[0]){
+            } else if(node1->shape[not transpose_inv] != node2->shape[not transpose_mul]){
                 op_logger("MatrixInverseMul")->error("Incorrect shapes - {} not equal to {}.",
-                                                     node1->shape[not transpose].to_string(),
-                                                     node2->shape[0].to_string());
+                                                     node1->shape[not transpose_inv].to_string(),
+                                                     node2->shape[not transpose_mul].to_string());
                 throw InvalidOperatorArgument(NodeVec{node1, node2}, "MatrixInverseMul",
-                                              "Incorrect shapes - " + node1->shape[not transpose].to_string()
-                                              + " not equal to " + node2->shape[0].to_string() + ".");
+                                              "Incorrect shapes - " + node1->shape[not transpose_inv].to_string()
+                                              + " not equal to " + node2->shape[not transpose_mul].to_string() + ".");
             }
             // TODO check any two consecutive are inverse of each other
             // matrix_inv(matrix_inv(x)) = x
             auto base = get_base_node(node1);
             if(base->op->name == "MatrixInv"){
-                return dot(base->op->get_parents()[0], node2, transpose, false);
+                return dot(base->op->get_parents()[0], node2, transpose_inv, transpose_mul);
             }
             // matrix_inv(x) * x = I
             if(symbolic_equals(node1, node2)){
                 return g->eye(node1->shape[0]);
             }
-            Operator op = std::make_shared<op::MatrixInverseMul>(g.get(), node1, node2, transpose);
+            Operator op = std::make_shared<op::MatrixInverseMul>(g.get(), node1, node2, transpose_inv, transpose_mul);
             return g->derived_node(op);
         }
 
@@ -181,6 +181,42 @@ namespace md{
             // Standard
             Operator op = std::make_shared<op::Trace>(g.get(), node);
             return g->derived_node(op);
+        }
+
+        Node cholesky_forward_diff_blas(Node cholesky, Node parent_derivative, bool lower){
+            if(lower){
+                // ls = L^-1 Sigma_dot
+                auto ls = matrix_inverse_mul(cholesky, parent_derivative);
+                // lsl = L^-1 ls^T = L^-1 Sigma_dot L^-T
+                auto lsl = matrix_inverse_mul(cholesky, ls, false, true);
+                auto phi = lower_tri(lsl, 0.5);
+                return dot(cholesky, phi);
+            } else {
+                // rs = R^-T Sigma_dot
+                auto rs = matrix_inverse_mul(cholesky, parent_derivative, true);
+                // rsr = R^-T rs^T = R^-T Sigma_dot R^-1
+                auto rsr = matrix_inverse_mul(cholesky, rs, true, true);
+                auto phi = upper_tri(rsr, 0.5);
+                return dot(phi, cholesky);
+            }
+        }
+
+        Node cholesky_backward_diff_blas(Node cholesky, Node my_derivative, bool lower){
+            if(lower){
+                auto phi = lower_tri(dot(cholesky, my_derivative, true, false), 0.5);
+                // s1 = L^-T Phi
+                auto s1 = matrix_inverse_mul(cholesky, phi, true, false);
+                // s2 = L^-T s1^T = L^-T Phi^T L^-1
+                auto s2 = matrix_inverse_mul(cholesky, s1, true, true);
+                return lower_tri(s2, 0.5) + upper_tri(s2, 0.5);
+            } else {
+                auto phi = upper_tri(dot(my_derivative, cholesky, false, true), 0.5);
+                // s1 = R^-1 Phi
+                auto s1 = matrix_inverse_mul(cholesky, phi);
+                // s2 = R^-1 s1^T = R^-1 Phi^T R^-T
+                auto s2 = matrix_inverse_mul(cholesky, s1, false, true);
+                return lower_tri(s2, 0.5) + upper_tri(s2, 0.5);
+            }
         }
     }
 }

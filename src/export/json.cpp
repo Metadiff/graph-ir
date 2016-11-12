@@ -257,10 +257,10 @@ namespace md{
                 // MatrixMul
                 auto cast_op = std::dynamic_pointer_cast<op::MatrixMul>(op);
                 if (cast_op) {
-                    writer.String("transpositions");
+                    writer.String("t");
                     writer.StartArray();
-                    for(auto i=0; i<cast_op->transpositions.size(); ++i){
-                        writer.Bool(cast_op->transpositions[i]);
+                    for(auto i=0; i<cast_op->t.size(); ++i){
+                        writer.Bool(cast_op->t[i]);
                     }
                     writer.EndArray();
                 }

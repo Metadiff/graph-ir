@@ -9,26 +9,46 @@
 
 namespace md{
     namespace gir{
-        std::string to_string(DataType data_type) {
-            switch (data_type){
-                case b8: return "b8";
-                case u8: return "u8";
-                case u16: return "u16";
-                case u32: return "u32";
-                case u64: return "u64";
-                case i8: return "i8";
-                case i16: return "i16";
-                case i32: return "i32";
-                case i64: return "i64";
-                case f8: return "f8";
-                case f16: return "f16";
-                case f32: return "f32";
-                default: return "f64";
-//                default: return "f64";
+        std::string to_string(Precision const precision) {
+            switch (precision){
+                case p8: return "p8";
+                case p16: return "p16";
+                case p32: return "p32";
+                default: return "p64";
             }
         }
 
-        std::string to_string(DeviceType device_type) {
+        std::string to_string(DataType const data_type) {
+            switch (data_type.type){
+                case BOOLEAN: return "b8";
+                case UNSIGNED_INT: switch (data_type.precision){
+                        case p8 : return "u8";
+                        case p16 : return "u16";
+                        case p32 : return "u32";
+                        default: return "u64";
+                    };
+                case SIGNED_INT: switch (data_type.precision){
+                        case p8 : return "i8";
+                        case p16 : return "i16";
+                        case p32 : return "i32";
+                        default: return "i64";
+                    }
+                case FLOAT: switch (data_type.precision){
+                        case p8 : return "f8";
+                        case p16 : return "f16";
+                        case p32 : return "f32";
+                        default: return "f64";
+                    }
+                default: switch (data_type.precision){
+                        case p8 : return "c8";
+                        case p16 : return "c16";
+                        case p32 : return "c32";
+                        default: return "c64";
+                    }
+            }
+        }
+
+        std::string to_string(DeviceType const device_type) {
             switch (device_type){
                 case CPU: return "CPU";
                 default: return "GPU";
@@ -36,7 +56,7 @@ namespace md{
             }
         }
 
-        std::string to_string(Policy policy) {
+        std::string to_string(Policy const policy) {
             switch (policy){
                 case QUIET: return "Quiet";
                 case WARN: return "Warn";
@@ -45,7 +65,7 @@ namespace md{
             }
         }
 
-        std::string to_string(Device device){
+        std::string to_string(Device const device){
 //            if(device == host()){
 //                return "Host";
 //            }
@@ -56,14 +76,14 @@ namespace md{
             }
         }
 
-        std::string to_string(Shape shape){
+        std::string to_string(Shape const shape){
             return "(" + shape[0].to_string() + "," +
                    shape[1].to_string() + "," +
                    shape[2].to_string() + "," +
                    shape[3].to_string() + ")";
         }
 
-        std::string to_string(Node node){
+        std::string to_string(Node const node){
             std::stringstream ss;
             ss << "|"  << std::setw(4) << node->id << "|"
                << int(node->is_input_dependent) << int(node->is_differentiable) << "|"
@@ -71,7 +91,7 @@ namespace md{
             return ss.str();
         }
 
-        std::string to_string(NodeVec nodes){
+        std::string to_string(NodeVec const & nodes){
             std::stringstream ss;
             for (size_t i = 0; i < nodes.size(); i++) {
                 ss << nodes[i];

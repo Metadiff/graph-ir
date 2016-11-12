@@ -13,8 +13,7 @@ namespace metadiff{
         /**
          * A common super class for special operators with more than 1 output
          * Because of how the gradients are set up only one node can be differentiable
-         * TODO any use cases where this is not the case, or can we change it?
-         * See: MaxAndArgMax, SortAndArgSort
+         * See: MaxAndArgMax, SortAndArgSort, Cholesky, QR, SVD, Eigen
          */
         class MultiNode : public UnaryOperator {
         public:

@@ -33,7 +33,7 @@ namespace md{
             return g->derived_node(op);
         }
 
-        Node lower_tri(Node node, int k){
+        Node lower_tri(Node node, double k){
             Graph g = node.g();
             if(node.order() == 0){
                 // If it is a scalar nothing to do
@@ -64,7 +64,7 @@ namespace md{
             return g->derived_node(op);
         }
 
-        Node upper_tri(Node node, int k){
+        Node upper_tri(Node node, double k){
             Graph g = node.g();
             if(node.order() == 0){
                 // If it is a scalar nothing to do

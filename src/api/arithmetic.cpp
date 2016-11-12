@@ -148,11 +148,11 @@ namespace md{
                                               "IntDiv", "The input variables are not from the same graph.");
             }
             // Make sure all operands are integers
-            if(node1->data_type > i64){
-                node1 = implicit_cast(node1, g->props.max_int, "IntDiv");
+            if(node1->data_type.type != SIGNED_INT or node1->data_type.type != UNSIGNED_INT){
+                node1 = implicit_cast(node1, DataType(SIGNED_INT, g->props.max_int), "IntDiv");
             }
-            if(node2->data_type > i64){
-                node2 = implicit_cast(node2, g->props.max_int, "IntDiv");
+            if(node2->data_type.type != SIGNED_INT or node2->data_type.type != UNSIGNED_INT){
+                node2 = implicit_cast(node2, DataType(SIGNED_INT, g->props.max_int), "IntDiv");
             }
             // Standard
             Operator op = std::make_shared<op::IntDiv>(g.get(), node1, node2);
@@ -167,11 +167,11 @@ namespace md{
                                               "IntMod", "The input variables are not from the same graph.");
             }
             // Make sure all operands are integers
-            if(node1->data_type > i64){
-                node1 = implicit_cast(node1, g->props.max_int, "IntMod");
+            if(node1->data_type.type != SIGNED_INT or node1->data_type.type != UNSIGNED_INT){
+                node1 = implicit_cast(node1, DataType(SIGNED_INT, g->props.max_int), "IntDiv");
             }
-            if(node2->data_type > i64){
-                node2 = implicit_cast(node2, g->props.max_int, "IntMod");
+            if(node2->data_type.type != SIGNED_INT or node2->data_type.type != UNSIGNED_INT){
+                node2 = implicit_cast(node2, DataType(SIGNED_INT, g->props.max_int), "IntDiv");
             }
             // Standard
             Operator op = std::make_shared<op::IntMod>(g.get(), node1, node2);

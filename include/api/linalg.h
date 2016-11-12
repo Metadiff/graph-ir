@@ -30,7 +30,7 @@ namespace md{
          * @param node
          * @return
          */
-        Node matrix_inverse(Node node);
+        Node matrix_inverse(Node node, bool transpose = false);
 
         /** @brief Takes the matrix inverse of the first matrix and mutyplies with the second
          *
@@ -39,7 +39,7 @@ namespace md{
          * @param transpose
          * @return
          */
-        Node matrix_inverse_mul(Node node1, Node node2, bool transpose = false);
+        Node matrix_inverse_mul(Node node1, Node node2, bool transpose_inv = false, bool transpose_mul = false);
 
         /** @brief Takes the determinant of the matrix
          *
@@ -61,6 +61,34 @@ namespace md{
          * @return
          */
         Node trace(Node node);
+
+        /** @brief Takes the Kronecker product between the two
+         *
+         * @param node1
+         * @param node2
+         * @return
+         */
+        Node kron(Node node1, Node node2);
+
+        /** @brief Calculates forward diff for Cholesky decomposition using blas routines
+         * See https://arxiv.org/pdf/1602.07527v1.pdf
+         *
+         * @param cholesky
+         * @param parent_derivative
+         * @param lower
+         * @return
+         */
+        Node cholesky_forward_diff_blas(Node cholesky, Node parent_derivative, bool lower = true);
+
+        /** @brief Calculates backward diff for Cholesky decomposition using blas routines
+         * See https://arxiv.org/pdf/1602.07527v1.pdf
+         *
+         * @param cholesky
+         * @param my_derivative
+         * @param lower
+         * @return
+         */
+        Node cholesky_backward_diff_blas(Node cholesky, Node my_derivative, bool lower = true);
     }
 
     namespace gir {
@@ -68,21 +96,6 @@ namespace md{
         inline Node operator~(Node node) {
             return api::matrix_inverse(node);
         }
-
-//        // Matrix multiplication
-//        inline Node operator&(Node node1, Node node2){
-//            return api::dot(node1, node2);
-//        }
-//
-//        template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
-//        inline Node operator&(Node node1, T node2) {
-//            return api::dot(node1, wrap(node2, node1.g()));
-//        };
-//
-//        template<typename T, typename = std::enable_if<!std::is_same<T, Node>::value>>
-//        inline Node operator&(T node1, Node node2) {
-//            return api::dot(wrap(node1, node2.g()), node2);
-//        };
     }
 }
 

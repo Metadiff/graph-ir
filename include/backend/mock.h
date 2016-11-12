@@ -15,14 +15,7 @@ namespace md{
             void * data;
             MockVariable(DataType data_type, std::array<long, 4> shape):
                     data_type(data_type), shape(shape), managed(false){
-                int bytes;
-                if(data_type == b8){
-                    bytes = 1;
-                } else {
-                    bytes = (data_type % 4);
-                    bytes = bytes == 0 ? 4 : bytes;
-                }
-                data = std::malloc(total_size() * bytes);
+                data = std::malloc(total_size() * (data_type.precision + 1));
             }
 
             MockVariable(DataType data_type, std::array<long, 4> shape, void * data):

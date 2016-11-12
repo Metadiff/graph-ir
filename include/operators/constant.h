@@ -44,7 +44,7 @@ namespace md {
                 SymInt value;
 
                 SymIntWrapper(GraphInPtr graph, SymInt value) :
-                        AbstractOperator(graph, "SymInt"), ConstantOperator(graph->props.max_int),
+                        AbstractOperator(graph, "SymInt"), ConstantOperator(DataType(UNSIGNED_INT, graph->props.max_int)),
                         value(value) {}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {

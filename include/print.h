@@ -7,46 +7,51 @@
 
 namespace md{
     namespace gir{
+        std::string to_string(Precision const precision);
 
-        std::string to_string(DataType data_type);
+        inline std::ostream &operator<<(std::ostream &f, Precision const precision) {
+            return f << to_string(precision);
+        }
 
-        inline std::ostream &operator<<(std::ostream &f, const DataType data_type) {
+        std::string to_string(DataType const data_type);
+
+        inline std::ostream &operator<<(std::ostream &f, DataType const data_type) {
             return f << to_string(data_type);
         }
 
-        std::string to_string(DeviceType device_type);
+        std::string to_string(DeviceType const device_type);
 
-        inline std::ostream &operator<<(std::ostream &f, const DeviceType device_type) {
+        inline std::ostream &operator<<(std::ostream &f, DeviceType const device_type) {
             return f << to_string(device_type);
         }
 
-        std::string to_string(Policy policy);
+        std::string to_string(Policy const policy);
 
-        inline std::ostream &operator<<(std::ostream &f, const Policy policy) {
+        inline std::ostream &operator<<(std::ostream &f, Policy const policy) {
             return f << to_string(policy);
         }
 
-        std::string to_string(Shape shape);
+        std::string to_string(Shape const shape);
 
-        inline std::ostream &operator<<(std::ostream &f, const Shape shape) {
+        inline std::ostream &operator<<(std::ostream &f, Shape const shape) {
             return f << to_string(shape);
         }
 
-        std::string to_string(Device device);
+        std::string to_string(Device const device);
 
-        inline std::ostream &operator<<(std::ostream &f, const Device device) {
+        inline std::ostream &operator<<(std::ostream &f, Device const device) {
             return f << to_string(device);
         }
 
-        std::string to_string(Node node);
+        std::string to_string(Node const node);
 
-        inline std::ostream &operator<<(std::ostream &f, const Node node) {
+        inline std::ostream &operator<<(std::ostream &f, Node const node) {
             return f << to_string(node);
         }
 
-        std::string to_string(NodeVec nodes);
+        std::string to_string(NodeVec const & nodes);
 
-        inline std::ostream &operator<<(std::ostream &f, const NodeVec nodes) {
+        inline std::ostream &operator<<(std::ostream &f, NodeVec const & nodes) {
             return f << to_string(nodes);
         }
     }

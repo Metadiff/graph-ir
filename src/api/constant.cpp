@@ -26,18 +26,18 @@ namespace md{
         }
 
         Node GraphInternal::PI() {
-            return constant(M_PI, props.max_float, {1, 1, 1, 1});
+            return constant(M_PI, DataType(FLOAT, props.max_float), {1, 1, 1, 1});
         }
         Node GraphInternal::E(){
-            return constant(M_E, props.max_float, {1, 1, 1, 1});
+            return constant(M_E, DataType(FLOAT, props.max_float), {1, 1, 1, 1});
         }
 
         Node GraphInternal::LN_2(){
-            return constant(M_LN2, props.max_float, {1, 1, 1, 1});
+            return constant(M_LN2, DataType(FLOAT, props.max_float), {1, 1, 1, 1});
         }
 
         Node GraphInternal::LN_10(){
-            return constant(M_LN10, props.max_float, {1, 1, 1, 1});
+            return constant(M_LN10, DataType(FLOAT, props.max_float), {1, 1, 1, 1});
         }
 
         Node GraphInternal::zeros(Shape shape, DataType data_type){
@@ -45,7 +45,7 @@ namespace md{
         }
 
         Node GraphInternal::zeros(Shape shape){
-            return constant(0.0, props.max_float, shape);
+            return constant(0.0, DataType(FLOAT, props.max_float), shape);
         }
 
         Node GraphInternal::ones(Shape shape, DataType data_type){
@@ -53,7 +53,7 @@ namespace md{
         }
 
         Node GraphInternal::ones(Shape shape){
-            return constant(1.0, props.max_float, shape);
+            return constant(1.0, DataType(FLOAT, props.max_float), shape);
         }
 
         Node GraphInternal::range(SymInt start, SymInt end, DataType data_type){
@@ -62,7 +62,7 @@ namespace md{
         }
 
         Node GraphInternal::range(SymInt start, SymInt end){
-            return range(start, end, props.max_int);
+            return range(start, end, DataType(SIGNED_INT, props.max_int));
         }
 
         Node GraphInternal::eye(SymInt size, DataType data_type){
@@ -71,7 +71,7 @@ namespace md{
         }
 
         Node GraphInternal::eye(SymInt size){
-            return eye(size, props.max_float);
+            return eye(size, DataType(FLOAT, props.max_float));
         }
 
         Node GraphInternal::constant(bool value, Shape shape) {

@@ -11,44 +11,44 @@ namespace md{
             /** General Matrix-Matrix Multiplication (GEMM) */
             class MatrixMul : public AssociativeOperator {
             public:
-                std::vector<bool> transpositions;
+                std::vector<bool> t;
                 MatrixMul(GraphInPtr graph,
                           NodeVec parents,
-                          std::vector<bool> transpositions) :
+                          std::vector<bool> t) :
                         AbstractOperator(graph, "MatrixMul"), AssociativeOperator(parents),
-                        transpositions(transpositions){}
+                        t(t){}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<MatrixMul>(graph, ancestors, transpositions);
+                    return std::make_shared<MatrixMul>(graph, ancestors, t);
                 }
 
                 Shape get_shape() const{
-                    return {parents[0]->shape[transpositions[0]], parents.back()->shape[not transpositions.back()], 1, 1};
+                    return {parents[0]->shape[t[0]], parents.back()->shape[not t.back()], 1, 1};
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
                     NodeVec left_mats, right_mats;
                     std::vector<bool> left_trans, right_trans;
                     for (auto i = 0; i < index; ++i) {
-                        if(transpositions[i]){
+                        if(t[index]){
                             right_mats.push_back(parents[i]);
-                            right_trans.push_back(transpositions[i]);
+                            right_trans.push_back(t[i]);
                         } else {
                             left_mats.push_back(parents[i]);
-                            left_trans.push_back(not transpositions[i]);
+                            left_trans.push_back(not t[i]);
                         }
                     }
                     for (auto i = index + 1; i < parents.size(); ++i) {
-                        if(transpositions[i]){
+                        if(t[index]){
                             left_mats.push_back(parents[i]);
-                            left_trans.push_back(transpositions[i]);
+                            left_trans.push_back(t[i]);
                         } else {
                             right_mats.push_back(parents[i]);
-                            right_trans.push_back(not transpositions[i]);
+                            right_trans.push_back(not t[i]);
                         }
                     }
                     // Have to reverse these
-                    if(not transpositions[index]){
+                    if(not t[index]){
                         std::reverse(left_mats.begin(), left_mats.end());
                         std::reverse(left_trans.begin(), left_trans.end());
                         std::reverse(right_mats.begin(), right_mats.end());
@@ -56,7 +56,7 @@ namespace md{
                     }
                     left_mats.push_back(my_derivative);
                     left_mats.insert(left_mats.end(), right_mats.begin(), right_mats.end());
-                    left_trans.push_back(transpositions[index]);
+                    left_trans.push_back(t[index]);
                     left_trans.insert(left_trans.end(), right_trans.begin(), right_trans.end());
                     return matrix_mul(left_mats, left_trans);
                 }
@@ -71,7 +71,7 @@ namespace md{
                             product.push_back(parents[i]);
                         }
                     }
-                    return matrix_mul(product, transpositions);
+                    return matrix_mul(product, t);
                 }
 
 //                bool equals(Operator const op) const {
@@ -91,46 +91,57 @@ namespace md{
             };
 
             /** MatrixInverse */
-            class MatrixInverse : public FloatUnaryElementwiseOperator {
+            class MatrixInverse : public FloatUnaryOperator {
             public:
-                MatrixInverse(GraphInPtr graph, Node parent) :
-                        AbstractOperator(graph, "MatrixInverse"), UnaryOperator(parent) {}
+                bool t;
+                MatrixInverse(GraphInPtr graph, Node parent, bool t) :
+                        AbstractOperator(graph, "MatrixInverse"), UnaryOperator(parent),
+                        t(t){}
+
+                Shape get_shape() const {
+                    return parent->shape;
+                }
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<MatrixInverse>(graph, ancestors[0]);
+                    return std::make_shared<MatrixInverse>(graph, ancestors[0], t);
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
-                    return neg(matrix_mul({result, my_derivative, result}, {true, false, true}));
+                    return - matrix_mul({result, my_derivative, result}, {not t, t, not t});
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
-                    return neg(matrix_mul({result, parent_derivatives[index], result}, {false, false, false}));
+                    return - matrix_mul({result, parent_derivatives[index], result}, {false, t, false});
                 }
             };
 
             /** MatrixInverse times a second matrix - the same as solving the linear system */
             class MatrixInverseMul : public BinaryFloatElementwiseOperator {
             public:
-                bool transpose;
-                MatrixInverseMul(GraphInPtr graph, Node parent1, Node parent2, bool tranpose = false) :
+                bool t_inv;
+                bool t_mul;
+                MatrixInverseMul(GraphInPtr graph, Node parent1, Node parent2, bool t_inv, bool t_mul) :
                         AbstractOperator(graph, "MatrixInverseMul"), BinaryOperator(parent1, parent2),
-                        transpose(tranpose){}
+                        t_inv(t_inv), t_mul(t_mul){}
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
-                    return std::make_shared<MatrixInverseMul>(graph, ancestors[0], ancestors[1], transpose);
+                    return std::make_shared<MatrixInverseMul>(graph, ancestors[0], ancestors[1], t_inv, t_mul);
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
                     if(index == 0){
-                        auto solve1 = matrix_inverse_mul(parent1, my_derivative, true);
-                        if(transpose){
+                        auto solve1 = matrix_inverse_mul(parent1, my_derivative, not t_inv);
+                        if(t_inv){
                             return - dot(result, solve1, false, true);
                         } else {
                             return - dot(solve1, result, false, true);
                         }
                     } else {
-                        return matrix_inverse_mul(parent1, my_derivative, not transpose);
+                        if(t_mul) {
+                            return matrix_inverse_mul(my_derivative, parent1, true, t_inv);
+                        } else {
+                            return matrix_inverse_mul(parent1, my_derivative, not t_inv);
+                        }
                     }
                 }
 
@@ -138,20 +149,52 @@ namespace md{
                     if(not parent_derivatives[0].ptr.expired() and
                        not parent_derivatives[1].ptr.expired()){
                         if(index == 0){
-                            auto d = dot(parent_derivatives[0], result, transpose);
-                            auto diff = neg(parent_derivatives[1], d);
-                            return matrix_inverse_mul(parent1, diff, transpose);
+                            Node p1;
+                            if(t_mul){
+                                p1 = dot(result, parent_derivatives[0], true, not t_inv);
+                            } else {
+                                p1 = dot(parent_derivatives[0], result, t_inv);
+                            }
+                            return matrix_inverse_mul(parent1, parent_derivatives[1] - p1, t_inv, t_mul);
                         } else {
                             return Node();
                         }
                     } else if(index == 0){
-                        auto d = dot(parent_derivatives[index], result, transpose);
-                        auto solve = matrix_inverse_mul(parent1, d, transpose);
-                        return neg(solve);
+                        auto p1 = dot(parent_derivatives[index], result, t_inv);
+                        return - matrix_inverse_mul(parent1, p1, t_inv);
                     } else {
-                        return matrix_inverse_mul(parent1, parent_derivatives[index], transpose);
+                        return matrix_inverse_mul(parent1, parent_derivatives[index], t_inv, t_mul);
                     }
                 }
+            };
+
+            /** Kronecker product */
+            class Kronecker: public BinaryOperator, public FloatOperator {
+            public:
+                Kronecker(GraphInPtr graph, Node parent1, Node parent2) :
+                        AbstractOperator(graph, "Kronecker"), BinaryOperator(parent1, parent2) {}
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<Kronecker>(graph, ancestors[0], ancestors[1]);
+                }
+
+                Shape get_shape() const {
+                    return {parent1->shape[0] * parent2->shape[0], parent1->shape[1] * parent2->shape[1], 1, 1};
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    // TODO
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    if(index == 0){
+                        return kron(parent_derivatives[index], parent2);
+                    } else {
+                        return kron(parent1, parent_derivatives[index]);
+                    }
+                }
+
             };
 
             /** Determinant of a square matrix */
@@ -169,12 +212,12 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
-                    return mul(my_derivative, result, transpose(matrix_inverse(parent)));
+                    return mul(my_derivative, result, matrix_inverse(parent, true));
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     auto tr = trace(matrix_inverse_mul(parent, parent_derivatives[index]));
-                    return mul(result, tr);
+                    return result * tr;
                 }
 
             };
@@ -194,7 +237,7 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
-                    return mul(my_derivative, transpose(matrix_inverse(parent)));
+                    return my_derivative * matrix_inverse(parent, true);
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
@@ -218,7 +261,7 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
-                    return mul(my_derivative, graph->eye(parent->shape[0]));
+                    return my_derivative * graph->eye(parent->shape[0]);
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
@@ -226,6 +269,56 @@ namespace md{
                 }
             };
 
+
+            /** A special operator for the cholesky forward diff */
+            class CholeskyForwardDiff : public BinaryOperator, public FloatOperator {
+            public:
+                bool lower;
+                CholeskyForwardDiff(GraphInPtr graph, Node cholesky, Node parent_derivative, bool lower) :
+                        AbstractOperator(graph, "CholeskyForwardDiff"), BinaryOperator(cholesky, parent_derivative),
+                        lower(lower) {}
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<CholeskyForwardDiff>(graph, ancestors[0], ancestors[1], lower);
+                }
+
+                Shape get_shape() const {
+                    return parent1->shape;
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+            };
+
+            /** A special operator for the cholesky forward diff */
+            class CholeskyBackwardDiff : public BinaryOperator, public FloatOperator {
+            public:
+                bool lower;
+                CholeskyBackwardDiff(GraphInPtr graph, Node cholesky, Node parent_derivative, bool lower) :
+                        AbstractOperator(graph, "CholeskyBackwardDiff"), BinaryOperator(cholesky, parent_derivative),
+                        lower(lower) {}
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<CholeskyBackwardDiff>(graph, ancestors[0], ancestors[1], lower);
+                }
+
+                Shape get_shape() const {
+                    return parent1->shape;
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index) {
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+            };
 
             /** Returns the Cholesky decomposition of the input */
             class Cholesky : public FloatUnaryOperator {
@@ -244,13 +337,13 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index) {
-                    // TODO
-                    throw NotImplementedError(__LINE__, __FILE__);
+                    auto op = std::make_shared<CholeskyBackwardDiff>(graph, result, my_derivative, lower);
+                    return graph->derived_node(op);
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
-                    // TODO
-                    throw NotImplementedError(__LINE__, __FILE__);
+                    auto op = std::make_shared<CholeskyForwardDiff>(graph, result, parent_derivatives[index], lower);
+                    return graph->derived_node(op);
                 }
             };
 
@@ -296,7 +389,7 @@ namespace md{
                 Shape get_shape_at(int index) const {
                     if(index == 0){
                         if(parent->shape[0] != parent->shape[1]){
-                            //TODO this should be
+                            //TODO
                             throw NotImplementedError(__LINE__, __FILE__);
                         }
                         return parent->shape;
@@ -324,7 +417,7 @@ namespace md{
                 }
             };
 
-            /** Returns the packed QR decomposition */
+            /** Returns the SVD decomposition */
             class SVD : public MultiOutputOperator {
             public:
                 SVD(GraphInPtr graph, Node parent) :

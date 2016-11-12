@@ -14,7 +14,8 @@ namespace md{
                 Shape shape;
 
                 RandomUniform(GraphInPtr graph, Shape shape) :
-                        AbstractOperator(graph, "RandomUniform"), ConstantOperator(graph->props.max_float),
+                        AbstractOperator(graph, "RandomUniform"),
+                        ConstantOperator(DataType(FLOAT, graph->props.max_float)),
                         shape(shape) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
@@ -33,7 +34,7 @@ namespace md{
                 Shape shape;
 
                 RandomNormal(GraphInPtr graph, Shape shape) :
-                        AbstractOperator(graph, "RandomNormal"), ConstantOperator(graph->props.max_float),
+                        AbstractOperator(graph, "RandomNormal"), ConstantOperator(DataType(FLOAT, graph->props.max_float)),
                         shape(shape) {};
 
                 Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {

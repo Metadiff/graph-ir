@@ -213,7 +213,7 @@ namespace md {
             class IntegerOperator: public virtual AbstractOperator{
             public:
                 DataType get_data_type() const{
-                    return graph->props.max_int;
+                    return DataType(SIGNED_INT, graph->props.max_int);
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
@@ -229,7 +229,7 @@ namespace md {
             class FloatOperator: public virtual AbstractOperator{
             public:
                 DataType get_data_type() const{
-                    return graph->props.max_float;
+                    return DataType(FLOAT, graph->props.max_float);
                 }
             };
 
@@ -385,7 +385,7 @@ namespace md {
                 MultiOutputOperator(int const outputs_number): outputs_number(outputs_number) {};
 
                 DataType get_data_type() const {
-                    return graph->props.max_float;
+                    return DataType(FLOAT, graph->props.max_float);
                 }
 
                 Shape get_shape() const {

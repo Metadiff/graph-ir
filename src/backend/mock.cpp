@@ -11,7 +11,6 @@ namespace md{
         void write_api(std::ostream & f);
 
         void MockBackend::link(){
-            load_dll()
             eval_func = std::make_shared<symbol>(dll_path, RTLD_LAZY, "eval");
         }
 

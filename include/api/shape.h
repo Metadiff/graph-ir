@@ -17,20 +17,25 @@ namespace md{
         Node diag(Node node);
 
         /** @brief Takes the lower triangular part of a matrix
+         * if k is an integer takes the lower traingular bit excluding the k major diagonals
+         * if k < 1 multiplies the diagonal with k
+         * k can not be less then 0
          *
          * @param node
          * @param k
          * @return
          */
-        Node lower_tri(Node node, int k = 0);
+        Node lower_tri(Node node, double k = 0);
 
         /** @brief Takes the upper triangular part of a matrix
-         *
+         * if k > 1 it must be an integer takes the upper traingular bit excluding the k major diagonals
+         * if k < 1 multiplies the diagonal with k
+         * k can not be less then 0
          * @param node
          * @param k
          * @return
          */
-        Node upper_tri(Node node, int k = 0);
+        Node upper_tri(Node node, double k = 0);
 
         /** @brief Reshapes the tensor to a specified shape
          *
