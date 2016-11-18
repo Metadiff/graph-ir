@@ -124,9 +124,7 @@ namespace md{
             };
 
 
-            /**
-             * Reorders the axes of tensor
-             */
+            /** Reorders the axes of tensor */
             class Reorder : public MorphOperator {
             public:
                 Axes order;
@@ -167,6 +165,42 @@ namespace md{
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
                     return reorder(parent_derivatives[index], order);
+                }
+
+//                bool equals(Operator const op) const {
+//                    if (name == op->name) {
+//                        auto cast_op = std::static_pointer_cast<const Reorder>(op);
+//                        return symbolic_equals(parent, cast_op->parent) and order == cast_op->order;
+//                    }
+//                    return false;
+//                }
+            };
+
+            /** Filps the elements along the axes of tensor */
+            class Flip : public MorphOperator {
+            public:
+                Axes axes;
+
+                Flip(GraphInPtr graph,
+                        Node parent,
+                        Axes axes) :
+                        AbstractOperator(graph, "Flip"), UnaryOperator(parent),
+                        axes(axes) {};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<Flip>(graph, ancestors[0], axes);
+                }
+
+                Shape get_shape() const {
+                    return parent->shape;
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return flip(my_derivative, axes);
+                }
+
+                Node forward_diff_parent(NodeVec & parent_derivatives, int index){
+                    return flip(parent_derivatives[index], axes);
                 }
 
 //                bool equals(Operator const op) const {

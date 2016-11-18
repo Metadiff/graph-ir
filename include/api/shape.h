@@ -71,6 +71,22 @@ namespace md{
          * @return
          */
         Node transpose(Node node);
+
+        /** @brief Flips the elements of the tensor along every of the specified axes
+         *
+         * @param node
+         * @param axes
+         * @return
+         */
+        Node flip(Node node, Axes axes);
+
+        /** @brief Flips the elements of the tensor along the specified axis
+         *
+         * @param node
+         * @param axis
+         * @return
+         */
+        Node flip(Node node, int axis);
     }
 }
 #endif //GRAPH_IR_API_SHAPE_H

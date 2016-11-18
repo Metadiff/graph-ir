@@ -132,25 +132,25 @@ namespace md{
                                               "Reorder", "Invalid number of axis for reordering given - "
                                                           + std::to_string(order.size()));
             } else {
-                // Fill them in
-                for(auto i=order.size(); i < 4; ++i){
-                    order.push_back(i);
-                }
                 // Check they are distinct
-                bool checks[4] = {false, false, false, false};
-                for(auto i = 0; i < 4; ++i){
-                    checks[order[i]] = true;
-                }
-                for(auto i = 0; i < 4; ++i){
-                    if(not checks[i]){
-                        op_logger("Reorder")->error("Duplicate axis - {}", i);
+                std::vector<bool> checks(order.size(), false);
+                for(auto i = 0; i < order.size(); ++i){
+                    if(order[i] < 0 or order[i] >= order.size()){
+                        op_logger("Reorder")->error("Invalid axis - {}", order[i]);
                         throw InvalidOperatorArgument(NodeVec{node},
-                                                      "Reorder", "Duplicate axis - " + std::to_string(i));
+                                                      "Reorder", "Invalid axis - " + std::to_string(order[i]));
                     }
+                    if(checks[order[i]]){
+                        // Repeated axis
+                        op_logger("Reorder")->error("Duplicate axis - {}", order[i]);
+                        throw InvalidOperatorArgument(NodeVec{node},
+                                                      "Reorder", "Duplicate axis - " + std::to_string(order[i]));
+                    }
+                    checks[order[i]] = true;
                 }
             }
             bool ordered = true;
-            for(auto i=0; i<4; ++i){
+            for(auto i=0; i<order.size(); ++i){
                 if(order[i] != i){
                     ordered = false;
                     break;
@@ -207,6 +207,34 @@ namespace md{
             order.push_back(dims-1);
             order.push_back(dims-2);
             return reorder(node, order);
+        }
+
+        Node flip(Node node, Axes axes){
+            if(axes.size() == 0 or axes.size() > 4){
+                op_logger("Flip")->error("Invalid number of axis given - {}", axes.size());
+                throw InvalidOperatorArgument(NodeVec{node},
+                                              "Flip", "Invalid number of axis given - "
+                                                         + std::to_string(axes.size()));
+            }
+            std::sort(axes.begin(), axes.end());
+            // Check they are distinct
+            bool checks[4] = {false, false, false, false};
+            for(auto i = 0; i < 4; ++i){
+                if(checks[axes[i]]){
+                    op_logger("Flip")->error("Duplicate axis - {}", i);
+                    throw InvalidOperatorArgument(NodeVec{node},
+                                                  "Flip", "Duplicate axis - " + std::to_string(i));
+                }
+                checks[axes[i]] = true;
+            }
+            Graph g = node.g();
+            // TODO check if parent is flip as well
+            Operator op = std::make_shared<op::Flip>(g.get(), node, axes);
+            return g->derived_node(op);
+        }
+
+        Node flip(Node node, int axis){
+            return flip(node, Axes{axis});
         }
     }
 }

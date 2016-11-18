@@ -317,14 +317,20 @@ namespace md{
                     result += std::to_string(monomial.coefficient);
                 }
             }
-            std::pair <I, std::pair<sym::Polynomial, sym::Polynomial>> floor_var, ceil_var;
+            std::pair <sym::I, std::pair<sym::Polynomial, sym::Polynomial>> var;
             for (auto i = 0; i < monomial.powers.size(); ++i) {
-                if ((floor_var = sym::registry()->get_floor(monomial.powers[i].first)).first != 0) {
-                    result += "floor(" + polynomial_js(floor_var.second.first) + " / " +
-                              polynomial_js(floor_var.second.second) + ")";
-                } else if ((ceil_var = sym::registry()->get_ceil(monomial.powers[i].first)).first != 0) {
-                    result += "ceil(" + polynomial_js(ceil_var.second.first) + " / " +
-                              polynomial_js(ceil_var.second.second) + ")";
+                if ((var = sym::registry()->get_floor(monomial.powers[i].first)).first != 0) {
+                    result += "floor(" + polynomial_js(var.second.first) + " / " +
+                              polynomial_js(var.second.second) + ")";
+                } else if ((var = sym::registry()->get_ceil(monomial.powers[i].first)).first != 0) {
+                    result += "ceil(" + polynomial_js(var.second.first) + " / " +
+                              polynomial_js(var.second.second) + ")";
+                } else if ((var = sym::registry()->get_min(monomial.powers[i].first)).first != 0) {
+                    result += "min(" + polynomial_js(var.second.first) + " / " +
+                              polynomial_js(var.second.second) + ")";
+                } else if ((var = sym::registry()->get_max(monomial.powers[i].first)).first != 0) {
+                    result += "max(" + polynomial_js(var.second.first) + " / " +
+                              polynomial_js(var.second.second) + ")";
                 } else {
                     result += ('a' + monomial.powers[i].first);
                     auto n = monomial.powers[i].second;
