@@ -60,8 +60,8 @@ namespace md{
                 op_logger(name)->debug("Generating backward diff messages from node {}", result->id);
 
                 // Sets the current group to the group of the operator
-                auto old_group = graph->current_group;
-                graph->current_group = result->group;
+                auto old_scope = graph->scope;
+                graph->scope = result->scope;
 
                 // Update the gradient message name
                 if (my_grad->name == "Derived Node" or my_grad->name == "") {
@@ -94,7 +94,7 @@ namespace md{
                     }
                 }
                 // Restore group
-                graph->current_group = old_group;
+                graph->scope = old_scope;
             }
 
             Node AbstractOperator::backward_diff_combine(NodeVec & incoming_derivatives) const {
@@ -122,8 +122,8 @@ namespace md{
                 op_logger(name)->debug("Generating derivative for {}", result->id);
 
                 // Sets the current group to the group of the operator
-                auto old_group = graph->current_group;
-                graph->current_group = result->group;
+                auto old_scope = graph->scope;
+                graph->scope = result->scope;
 
                 NodeVec messages;
                 for (int i = 0; i < parents.size(); ++i) {
@@ -150,7 +150,7 @@ namespace md{
                 }
 
                 // Restore group
-                graph->current_group = old_group;
+                graph->scope = old_scope;
             }
 
             Node AbstractOperator::forward_diff_combine(NodeVec & incoming_derivatives) const {

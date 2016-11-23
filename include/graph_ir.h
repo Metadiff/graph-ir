@@ -33,7 +33,7 @@ namespace md{
 #include "enums.h"
 #include "definitions.h"
 #include "props.h"
-#include "shared.h"
+//#include "shared.h"
 #include "exceptions.h"
 #include "export.h"
 #include "node.h"

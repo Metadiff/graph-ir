@@ -35,7 +35,7 @@ md::GraphFunction build_model(){
     int const N = 8;
     int d[N + 1] = {784, 1000, 500, 250, 30, 250, 500, 1000, 784};
     // Input data
-    g->set_group("Inputs");
+    g->set_scope("Inputs");
     md::Node input = g->matrix(md::f32, {d[0], batch_size}, "Input");
     // Parameters
     md::NodeVec params;
@@ -44,23 +44,23 @@ md::GraphFunction build_model(){
     h = input;
     for(int i=1;i<N;i++){
 
-        g->set_group("Layer" + std::to_string(i));
-        W = g->shared_var(md::make_shared(md::f32, {d[i], d[i-1], 1, 1}, "W_" + std::to_string(i)));
-        b = g->shared_var(md::make_shared(md::f32, {d[i], 1, 1, 1}, "b_" + std::to_string(i)));
+        g->set_scope("Layer" + std::to_string(i));
+        W = g->parameter("W", md::f32, {d[i], d[i-1], 1, 1});
+        b = g->parameter("b", md::f32, {d[i], 1, 1, 1});
         params.push_back(W);
         params.push_back(b);
         h = tanh(dot(W, h) + b);
 //        debug(h = dot(W, h);)
     }
     // Calculate only logits here
-    g->set_group("Layer" + std::to_string(N));
-    W = g->shared_var(md::make_shared(md::f32, {d[N], d[N - 1], 1, 1}, "W_" + std::to_string(N)));
-    b = g->shared_var(md::make_shared(md::f32, {d[N], 1, 1, 1}, "b_" + std::to_string(N)));
+    g->set_scope("Layer" + std::to_string(N));
+    W = g->parameter("W", md::f32, {d[N], d[N - 1], 1, 1});
+    b = g->parameter("b", md::f32, {d[N], 1, 1, 1});
     params.push_back(W);
     params.push_back(b);
     h = dot(W, h) + b;
     // Loss
-    g->set_group("Objective");
+    g->set_scope("Objective");
     Node loss = sum(square(h - input));
     auto grads = gradient(loss, params);
     // Some test nodes

@@ -12,7 +12,7 @@ namespace md{
                            Device device,
                            Operator op,
                            unsigned int grad_level,
-                           std::string group):
+                           std::string scope):
                 graph(graph),
                 id(id),
                 name(name),
@@ -23,7 +23,7 @@ namespace md{
                 is_differentiable(op->is_differentiable()),
                 grad_level(grad_level),
                 device(device),
-                group(group) { }
+                scope(scope) { }
 
         Graph  Node::g() const {
             auto ptr = unwrap();

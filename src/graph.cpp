@@ -163,7 +163,7 @@ namespace md{
             new_graph->name = name + "_clone";
             new_graph->props = props;
             copy_into(new_graph, mask, Updates{} ,true, true, copy_updates);
-            new_graph->current_group = current_group;
+            new_graph->scope = scope;
             new_graph->grad_level = grad_level;
             return new_graph;
         }
@@ -463,7 +463,7 @@ namespace md{
                         props.default_device,
                         op,
                         grad_level > op->get_grad_level() ? grad_level : op->get_grad_level(),
-                        current_group
+                        scope
                 );
                 nodes.push_back(result);
                 op->result = result;
@@ -472,10 +472,10 @@ namespace md{
                     ancestors[i]->children.push_back(result);
                 }
                 // Add the node to the group map
-                if(group_map.find(current_group) == group_map.end()){
-                    group_map[current_group] = NodeVec{result};
+                if(group_map.find(scope) == group_map.end()){
+                    group_map[scope] = NodeVec{result};
                 } else {
-                    group_map[current_group].push_back(result);
+                    group_map[scope].push_back(result);
                 }
                 // Add the node to the op map
                 if(op->name != "Alias"){
@@ -491,30 +491,30 @@ namespace md{
             }
         }
 
-        void GraphInternal::set_group(std::string full_name){
-            current_group = full_name;
+        void GraphInternal::set_scope(std::string full_name){
+            scope = full_name;
         };
 
-        void GraphInternal::push_group(std::string name){
-            current_group += props.group_delimiter;
-            current_group += name;
+        void GraphInternal::push_scope(std::string name){
+            scope += props.scope_delimiter;
+            scope += name;
         }
 
-        void GraphInternal::pop_group() {
-            auto last_delimiter = current_group.find_last_of(props.group_delimiter);
+        void GraphInternal::pop_scope() {
+            auto last_delimiter = scope.find_last_of(props.scope_delimiter);
             if(last_delimiter == std::string::npos){
-                current_group = "";
+                scope = "";
             } else {
-                current_group = current_group.substr(0, last_delimiter);
+                scope = scope.substr(0, last_delimiter);
             }
         }
 
-        void GraphInternal::reset_group(){
-            current_group = "";
+        void GraphInternal::reset_scope(){
+            scope = "";
         }
 
         std::string GraphInternal::get_parent_group_name(std::string full_name){
-            auto last_delimiter = full_name.find_last_of(props.group_delimiter);
+            auto last_delimiter = full_name.find_last_of(props.scope_delimiter);
             if(last_delimiter == std::string::npos){
                 return "";
             } else {

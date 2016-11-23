@@ -28,8 +28,8 @@ namespace md{
             writer.StartObject();
             writer.String("http_proxy");
             writer.String(properties.http_proxy);
-            writer.String("group_delimiter");
-            writer.String(std::string(1, properties.group_delimiter));
+            writer.String("scope_delimiter");
+            writer.String(std::string(1, properties.scope_delimiter));
             writer.String("max_float");
             writer.String(to_string(properties.max_float));
             writer.String("max_int");
@@ -70,18 +70,18 @@ namespace md{
             writer.EndObject();
         }
 
-        void export_execution_data(ExecutionData execution, PrettyWriter<StringBuffer>& writer){
-            writer.StartObject();
-            writer.String("inplace_parent_id");
-            writer.Int(execution.inplace_parent_id);
-            writer.String("buffer_id");
-            writer.Int64(execution.buffer_id);
-            writer.String("buffer_offset");
-            export_sym_int(execution.buffer_offset, writer);
-            writer.String("buffer_size");
-            export_sym_int(execution.buffer_size, writer);
-            writer.EndObject();
-        }
+//        void export_execution_data(ExecutionData execution, PrettyWriter<StringBuffer>& writer){
+//            writer.StartObject();
+//            writer.String("inplace_parent_id");
+//            writer.Int(execution.inplace_parent_id);
+//            writer.String("buffer_id");
+//            writer.Int64(execution.buffer_id);
+//            writer.String("buffer_offset");
+//            export_sym_int(execution.buffer_offset, writer);
+//            writer.String("buffer_size");
+//            export_sym_int(execution.buffer_size, writer);
+//            writer.EndObject();
+//        }
 
         void export_nodes(std::vector<std::shared_ptr<NodeData>> const & nodes,
                           PrettyWriter<StringBuffer>& writer){
@@ -96,8 +96,8 @@ namespace md{
                 export_op(nodes[i]->op, writer);
                 writer.String("grad_level");
                 writer.Uint(nodes[i]->grad_level);
-                writer.String("group");
-                writer.String(nodes[i]->group);
+                writer.String("scope");
+                writer.String(nodes[i]->scope);
 //                writer.String("execution_data");
 //                export_execution_data(nodes[i]->execution, writer);
                 writer.EndObject();
@@ -157,20 +157,15 @@ namespace md{
                 }
             }
             {
-                // SharedVar
-                auto cast_op = std::dynamic_pointer_cast<op::SharedInput>(op);
+                // Parameter
+                auto cast_op = std::dynamic_pointer_cast<op::Parameter>(op);
                 if (cast_op) {
-                    writer.String("SharedVar");
-                    writer.StartObject();
-                    writer.String("id");
-                    writer.Uint64(cast_op->var->id);
-                    writer.String("name");
-                    writer.String(cast_op->var->name);
+                    writer.String("full_name");
+                    writer.String(cast_op->full_name);
                     writer.String("data_type");
-                    writer.String(to_string(cast_op->var->data_type));
+                    writer.String(to_string(cast_op->data_type));
                     writer.String("shape");
-                    export_shape(cast_op->var->shape, writer);
-                    writer.EndObject();
+                    export_shape(cast_op->shape, writer);
                 }
             }
             {

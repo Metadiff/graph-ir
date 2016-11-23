@@ -5,47 +5,45 @@
 #ifndef METADIFF_GRAPH_IR_INDEX_H
 #define METADIFF_GRAPH_IR_INDEX_H
 
-namespace metadiff{
-    namespace op {
-        using namespace gir;
-        using namespace exceptions;
+namespace md {
+    namespace gir {
+        namespace op {
+            /** Takes a contigous chunk of array */
+            class Slice : public UnaryOperator {
+            public:
+                Axes axes;
+                std::vector <std::pair<SymInt, SymInt>> slices;
 
-        // TODO Think well how to design the indexing operations
-//        /**
-//         * Takes the slice of the parent on the axis specified
-//         * according to the index argument
-//         */
-//        class Slice : public UnaryOperator {
-//        public:
-//            Node index;
-//            size_t axis;
-//
-//            Slice(GraphInPtr graph, Node parent, Node index, size_t axis) :
-//                    UnaryOperator("Slice", graph, parent),
-//                    index(index),
-//                    axis(axis) {
-//                if (axis > 3) {
-//                    throw InvalidArguments(name, {result}, "Axis should be between [0, 3]");
-//                }
-//                if (not index.is_vector()) {
-//                    throw InvalidArguments(name, {result}, "The indexes should be a column vector");
-//                }
-//            };
-//
-//            std::shared_ptr<Operator> copy_to(GraphInPtr graph, std::vector<Node> ancestors) const {
-//                return std::make_shared<Slice>(graph, ancestors[0], ancestors[1], axis);
-//            }
-//
-//            Shape get_shape() const {
-//                Shape result = parent.unwrap()->shape;
-//                result[axis] = index.unwrap()->shape[0];
-//                return result;
-//            }
-//
-//            NodeVec get_arguments() const {
-//                return NodeVec {index};
-//            }
-//
+                Slice(GraphInPtr graph, Node parent,
+                      Axes axes, std::vector <std::pair<SymInt, SymInt>> slices) :
+                        AbstractOperator(graph, "Slice"), UnaryOperator(parent),
+                        axes(axes), slices(slices) {};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    return std::make_shared<Slice>(graph, ancestors[0], axes, slices);
+                }
+
+                Shape get_shape() const {
+                    Shape result = parent->shape;
+                    for(auto i=0; i<axes.size(); ++i){
+                        result[axes[i]] = slices[i].second - slices[i].first;
+                    }
+                    return result;
+                }
+
+                DataType get_data_type() const {
+                    return parent->data_type;
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index){
+                    return Node();
+                }
+
+                Node forward_diff_parent(NodeVec& parent_derivatives, int index){
+                    return Node();
+                }
+            };
+
 //            bool equals(const std::shared_ptr<Operator> op) const {
 //                if (name == op->name) {
 //                    std::shared_ptr<Slice> cast_op = std::static_pointer_cast<Slice>(op);
@@ -54,7 +52,7 @@ namespace metadiff{
 //                }
 //                return false;
 //            }
-//
+
 //            Node backward_diff(Node my_grad, size_t index);
 //        };
 //
@@ -235,6 +233,7 @@ namespace metadiff{
 //            }
 //            return unwrap()->graph->derived_node(std::make_shared<Slice>(unwrap()->graph, this, index, axis));
 //        }
+        }
     }
 }
 #endif //METADIFF_GRAPH_IR_INDEX_H

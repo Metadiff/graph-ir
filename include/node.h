@@ -30,7 +30,7 @@ namespace md{
             Device device;
 //            ExecutionData execution;
 
-            std::string group;
+            std::string scope;
 
             NodeData(std::weak_ptr<GraphInternal> const graph, Device const device) :
                     graph(graph),

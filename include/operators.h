@@ -16,6 +16,7 @@
 #include "operators/elementwise.h"
 #include "operators/linalg.h"
 #include "operators/random.h"
+#include "operators/index.h"
 #include "operators/debug.h"
 #include "operators/optimized.h"
 

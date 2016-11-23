@@ -43,6 +43,10 @@ namespace md{
          */
         class GraphInternal : public std::enable_shared_from_this<GraphInternal> {
         public:
+            /** The name of the graph */
+            std::string name;
+            /** Properties the user can assign of the graph */
+            Properties props;
             /** Current gradient level */
             unsigned int grad_level = 0;
             /** The list of all of the nodes */
@@ -50,22 +54,16 @@ namespace md{
             /** List of all of the updates */
             Updates updates;
             /** Current group */
-            std::string current_group;
+            std::string scope;
             /** Mapping group name to all Nodes in that group */
             std::unordered_map<std::string, NodeVec> group_map;
             /** Mapping operator name to all Nodes who are results of that op */
             std::unordered_map<std::string, NodeVec> op_map;
-        public:
-            /** The name of the graph */
-            std::string name;
-            /** Properties the user can assign of the graph */
-            Properties props;
 
             GraphInternal(std::string name = "graph"):
                     name(name),
-                    props(default_properties()){
-                current_group = "";
-            }
+                    props(default_properties()),
+                    scope(""){}
 
             /** @brief Copies the computation of this graph into another
              *
@@ -161,23 +159,23 @@ namespace md{
              *
              * @param full_name
              */
-            void set_group(std::string full_name);
+            void set_scope(std::string full_name);
 
             /** @brief Adds the group as a child to the current group and changes the current to it
              *
              * @param name
              */
-            void push_group(std::string name);
+            void push_scope(std::string name);
 
             /** @brief Sets the current group to the parent of the current group
              *
              */
-            void pop_group();
+            void pop_scope();
 
             /** @brief Sets the current group to the null group
              *
              */
-            void reset_group();
+            void reset_scope();
 
             /** @brief Creates a new dervied node from the Operator. This is strictly for internal usage.
              *
@@ -356,13 +354,24 @@ namespace md{
              */
             Node tensor_as(Node node, std::string name = "");
 
-            /** @brief Creates a variable wrapping a SharedVar
+            /** @brief Creates a parameter withing the provided scope
              *
-             * @param var
-             * @param g
+             * @param scope
+             * @param name
+             * @param data_type
+             * @param shape
              * @return
              */
-            Node shared_var(SharedVar var);
+            Node parameter(std::string scope, std::string name, DataType data_type, Shape shape);
+
+            /** @brief Creates a parameter withing the current scope
+             *
+             * @param name
+             * @param data_type
+             * @param shape
+             * @return
+             */
+            Node parameter(std::string name, DataType data_type, Shape shape);
 
             /** Creates a variable wrapping a SymInt
              *
@@ -593,11 +602,6 @@ namespace md{
              */
             Node random_normal(Shape shape);
         };
-
-        // Used for wrapping any outside variables in a unified way
-        inline Node wrap(SharedVar value, Graph g){
-            return g->shared_var(value);
-        }
 
         // Used for wrapping any outside variables in a unified way
         inline Node wrap(SymInt value, Graph g){

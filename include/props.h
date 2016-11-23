@@ -12,7 +12,7 @@ namespace md{
             /** A Http Proxy, if the API would need internet access this can be handy */
             std::string http_proxy;
             /** The delimiter used for combining group names */
-            char group_delimiter;
+            char scope_delimiter;
             /** The default device */
             Device default_device;
             /** The maixmum allowed floating numbers precision */
@@ -28,7 +28,7 @@ namespace md{
 
             Properties():
                     http_proxy("HTTP_PROXY"),
-                    group_delimiter('.'),
+                    scope_delimiter('/'),
                     default_device(HOST),
                     max_float(p32),
                     max_int(p32),
@@ -43,7 +43,7 @@ namespace md{
 
             Properties(std::shared_ptr<Properties> ptr):
                     http_proxy(ptr->http_proxy),
-                    group_delimiter(ptr->group_delimiter),
+                    scope_delimiter(ptr->scope_delimiter),
                     default_device(ptr->default_device),
                     max_float(ptr->max_float),
                     max_int(ptr->max_int),

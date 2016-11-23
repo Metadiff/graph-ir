@@ -49,8 +49,8 @@ namespace md{
             for(auto i=0; i < g->nodes.size(); ++i) {
                 auto node = g->nodes[i];
                 std::string parent_name = "Grads_0";
-                if(node->group != ""){
-                    parent_name = clear_full_name(node->group + "_" + std::to_string(node->grad_level));
+                if(node->scope != ""){
+                    parent_name = clear_full_name(node->scope + "_" + std::to_string(node->grad_level));
                     groups.insert(parent_name);
                 }
                 auto parents = node->op->get_parents();

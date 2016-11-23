@@ -12,14 +12,14 @@ namespace md{
             auto op = std::make_shared<op::Input>(this, data_type, shape);
             auto result = std::make_shared<NodeData>(shared_from_this(), nodes.size(),
                                                      name, props.default_device,
-                                                     op, 0, current_group);
+                                                     op, 0, scope);
             nodes.push_back(result);
             result->op->result = result;
             // Add the node to the group map
-            if(group_map.find(current_group) == group_map.end()){
-                group_map[current_group] = NodeVec{result};
+            if(group_map.find(scope) == group_map.end()){
+                group_map[scope] = NodeVec{result};
             } else {
-                group_map[current_group].push_back(result);
+                group_map[scope].push_back(result);
             }
             // Add the node to the op map
             if(op_map.find(op->name) == op_map.end()){
