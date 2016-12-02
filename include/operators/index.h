@@ -9,7 +9,7 @@ namespace md {
     namespace gir {
         namespace op {
             /** Takes a contigous chunk of array */
-            class Slice : public UnaryOperator {
+            class Slice : public MorphOperator {
             public:
                 Axes axes;
                 std::vector <std::pair<SymInt, SymInt>> slices;
@@ -31,16 +31,66 @@ namespace md {
                     return result;
                 }
 
-                DataType get_data_type() const {
-                    return parent->data_type;
-                }
-
                 Node backward_diff_parent(Node my_derivative, int index){
-                    return Node();
+                    throw NotImplementedError(__LINE__, __FILE__);
                 }
 
                 Node forward_diff_parent(NodeVec& parent_derivatives, int index){
-                    return Node();
+                    return api::slice(parent_derivatives[index], axes, slices);
+                }
+            };
+
+            /** Trying standard indexing */
+            class Index: public MorphOperator {
+            public:
+                Axes axes;
+                NodeVec indexes;
+
+                Index(GraphInPtr graph, Node parent,
+                      Axes axes, NodeVec indexes) :
+                        AbstractOperator(graph, "Index"), UnaryOperator(parent),
+                        axes(axes), indexes(indexes) {};
+
+                Operator copy_to(GraphInPtr graph, NodeVec ancestors) const {
+                    Node parent = ancestors[0];
+                    ancestors.erase(ancestors.begin());
+                    return std::make_shared<Index>(graph, parent, axes, ancestors);
+                }
+
+                NodeVec get_arguments() const {
+                    return indexes;
+                }
+
+                Shape get_shape() const {
+                    if(axes.size() == 1){
+                        Shape result = parent->shape;
+                        result[axes[0]] = indexes[0]->shape[0];
+                        return result;
+                    } else {
+                        Shape result = {indexes[0]->shape[0], 1, 1, 1};
+                        int free = 1;
+                        for(auto i=0;i<4; ++i){
+                            bool removed = false;
+                            for(auto j=0; j<axes.size();++j){
+                                if(axes[j] == i){
+                                    removed = true;
+                                }
+                            }
+                            if(not removed){
+                                result[free] = parent->shape[i];
+                                ++free;
+                            }
+                        }
+                        return result;
+                    }
+                }
+
+                Node backward_diff_parent(Node my_derivative, int index){
+                    throw NotImplementedError(__LINE__, __FILE__);
+                }
+
+                Node forward_diff_parent(NodeVec& parent_derivatives, int index){
+                    return api::index(parent_derivatives[index], axes, indexes);
                 }
             };
 

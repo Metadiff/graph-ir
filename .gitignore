@@ -28,8 +28,12 @@
 *.out
 *.app
 
+# IDE
 .idea/
+# Runtime directory
 build/
+# Docs
 doxygen/
-old_bin/
-
+# External
+external/
+cmake-build-debug/

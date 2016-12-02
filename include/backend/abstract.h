@@ -7,78 +7,14 @@
 
 namespace md{
     namespace backend{
-        using namespace boost;
-        /** An interface for all backends to follow */
-        template<typename T, typename C, typename S>
-        class AbstractFunctionBackend {
-        public:
-            /** Name of the backend */
-            std::string const name;
-
-            /** The GraphFunction to be compiled */
-            GraphFunction const gf;
-
-            /** Path to working directory */
-            filesystem::path work_dir;
-
-            /** Path to the source dicretory */
-            filesystem::path source_dir;
-
-            /** Path to the lib dicretory */
-            filesystem::path lib_dir;
-
-            /** Path to the logging directory */
-            filesystem::path log_dir;
-
-            /** Boolean flag to debug the compilation */
-            bool debug;
-
-            /** Constructs the backedn with the default working directory */
-            AbstractFunctionBackend(std::string const name, GraphFunction const gf, bool debug):
-                    name(name), gf(gf), work_dir(gir::default_properties()->default_work_dir),
-                    source_dir(work_dir / "src"),
-                    lib_dir(work_dir / "lib"),
-                    log_dir(work_dir / "log"),
-                    debug(debug) {};
-
-            AbstractFunctionBackend(std::string const name, GraphFunction const gf,
-                                    std::string work_dir_path, bool debug):
-                    name(name), gf(gf), work_dir(work_dir_path),
-                    source_dir(work_dir / "src"),
-                    lib_dir(work_dir / "lib"),
-                    log_dir(work_dir / "log"),
-                    debug(debug) {};
-
-            /** This should be used to execute the function after it has been compiled */
-            virtual std::pair<std::vector<T>, std::vector<T>> operator()(std::vector<T> & inputs) = 0;
-
-            /** Any form of initialization required should be carried out here
-             * Note that this also intializes all of the Shared variables */
-            virtual void initialize() = 0;
-
-            /** Generates the source code needed for the function */
-            virtual void generate_sources() = 0;
-
-            /** Compiles the source files which were generated to a dynamic library */
-            virtual void compile() = 0;
-
-            /** Links all of the compiled libraries and sets the state of the class such that it is ready to execute */
-            virtual void link() = 0;
-
-            /** This should execute all nessacary steps to prepare the function to be ready to execute */
-            virtual void complete() = 0;
-        };
-
-        template<typename T, typename C, typename S>
-        using Backend = std::shared_ptr<AbstractFunctionBackend<T,C,S>>;
 
         template<typename T>
         struct dll_symbol {
-        private:
+        protected:
             std::shared_ptr<void> handle;
         public:
             T const * f;
-            dll_symbol(const filesystem::path dl_path, int flag, std::string name){
+            dll_symbol(const boost::filesystem::path dl_path, int flag, std::string name){
                 char *error_msg;
                 auto h = dlopen(dl_path.c_str(), flag);
                 if (!h) {
@@ -99,56 +35,154 @@ namespace md{
             }
         };
 
-//        struct dlib {
-//        private:
-//            std::shared_ptr<void> handle;
+        template<typename T>
+        T get_dll_symbol(void * dll_handle, std::string symbol_name){
+            auto handle = (T) dlsym(dll_handle, symbol_name.c_str());
+            char * error_msg;
+            if ((error_msg = dlerror()) != NULL) {
+                md::gir::logger("DLL")->error("Error finding in the DLL the symbol {}, reason: {}",
+                                              symbol_name, error_msg);
+                auto ptr  = (int (*)(void))dlsym(dll_handle, "eval");
+                std::cout << ptr() << std::endl;
+                throw 1;
+            }
+            return handle;
+        }
+
+        inline void * load_dll(std::string path){
+            char *error_msg;
+            auto dll_handle = dlopen((path).c_str(), RTLD_LAZY);
+            if (!dll_handle) {
+                md::gir::logger("DLL")->error("Error when trying to load DLL {}", path);
+                throw 2;
+            }
+
+            return dll_handle;
+        }
+
+        class AbstractMemoryManager {
+        public:
+            virtual float *get(size_t id)  = 0;
+        };
+
+        typedef std::shared_ptr<AbstractMemoryManager> MemoryManager;
+
+        class AbstractBackend {
+        public:
+            /** Name of the backend */
+            std::string const name;
+
+            /** Path to working directory */
+            boost::filesystem::path work_dir;
+
+            /** Path to the source directory */
+            boost::filesystem::path source_dir;
+
+            /** Path to the lib directory */
+            boost::filesystem::path lib_dir;
+
+            /** Path to the logging directory */
+            boost::filesystem::path log_dir;
+
+            /** Boolean flag to debug the compilation */
+            bool debug;
+
+            /** Constructs the backend with the default working directory */
+            AbstractBackend(std::string const name, bool debug):
+                    name(name), work_dir(gir::default_properties()->default_work_dir),
+                    source_dir(work_dir / "src"),
+                    lib_dir(work_dir / "lib"),
+                    log_dir(work_dir / "log"),
+                    debug(debug) {};
+
+            /** Constructs the backend with specified working directory */
+            AbstractBackend(std::string const name, std::string work_dir_path, bool debug):
+                    name(name), work_dir(work_dir_path),
+                    source_dir(work_dir / "src"),
+                    lib_dir(work_dir / "lib"),
+                    log_dir(work_dir / "log"),
+                    debug(debug) {};
+
+            virtual ~AbstractBackend() {};
+        };
+
+
+//        /** An interface for all backends to follow */
+//        template<typename T, typename C, typename P, typename M>
+//        class AbstractBackend: public std::enable_shared_from_this<AbstractBackend<T, C, P, M>> {
 //        public:
-//            template<class T>
-//            template<class Sig>
-//            std::function<Sig> function(const char* name) const {
-//                // shared pointer to a function pointer:
-//                auto pf = pfunc(name);
-//                if (!pf) return {};
-//                return [pf=std::move(pf)](auto&&...args)->decltype(auto){
-//                        return (*pf)(decltype(args)(args)...);
-//                };
-//            }
-//            std::shared_ptr<T> pfunc(std::string name) const {
-//                if (!handle) return {};
-//                void* sym = dlsym(handle.get(), name.c_str());
-//                if (!sym) return {};
-//                T* ret = 0;
-//                // apparently approved hack to convert void* to function pointer
-//                // in some silly compilers:
-////                *reinterpret_cast<void**>(&ret) = sym;
-//                ret = (T*) sym;
-//                return {ret, handle};
-//            }
-//            // returns a smart pointer pointing at a function for name:
-//            dlib() = default;
-//            dlib(dlib const&)=default;
-//            dlib(dlib &&)=default;
-//            dlib& operator=(dlib const&)=default;
-//            dlib& operator=(dlib &&)=default;
+//            /** Name of the backend */
+//            std::string const name;
 //
-//            dlib(const char* name, int flag) {
-//                char *error_msg;
-//                auto h = dlopen(name, flag);
-//                if (!h) {
-//                    md::gir::logger("dlib")->error("Error when trying to load dynamic library {}", name);
-//                    throw 2;
-//                } else {
-//                    // set handle to cleanup the dlopen:
-//                    handle=std::shared_ptr<void>(h, [](void* handle){
-//                        int r = dlclose(handle);
-//                        assert(r==0);
-//                    });
-//                }
-//            }
+//            /** Path to working directory */
+//            filesystem::path work_dir;
 //
-//            dlib(std::string name, int flag): dlib(name.c_str(), flag) {};
-//            dlib(filesystem::path name, int flag): dlib(name.c_str(), flag) {};
-//            explicit operator bool() const { return (bool)handle; }
+//            /** Path to the source directory */
+//            filesystem::path source_dir;
+//
+//            /** Path to the lib directory */
+//            filesystem::path lib_dir;
+//
+//            /** Path to the logging directory */
+//            filesystem::path log_dir;
+//
+//            /** Boolean flag to debug the compilation */
+//            bool debug;
+//
+//            /** Constructs the backend with the default working directory */
+//            AbstractBackend(std::string const name, bool debug):
+//                    name(name), work_dir(gir::default_properties()->default_work_dir),
+//                    source_dir(work_dir / "src"),
+//                    lib_dir(work_dir / "lib"),
+//                    log_dir(work_dir / "log"),
+//                    debug(debug) {};
+//
+//            /** Constructs the backend with specified working directory */
+//            AbstractBackend(std::string const name, std::string work_dir_path, bool debug):
+//                    name(name), work_dir(work_dir_path),
+//                    source_dir(work_dir / "src"),
+//                    lib_dir(work_dir / "lib"),
+//                    log_dir(work_dir / "log"),
+//                    debug(debug) {};
+//
+//            virtual ~AbstractBackend() {};
+//
+//            /** Creates a function from this backend based on the provided Graph Function */
+//            virtual std::shared_ptr<AbstractFunction<T, C, P, M>> make_function(GraphFunction const & gf) = 0;
+//
+//            /** Requests a pointer to the memory where at least size bytes are valid */
+//            virtual void * request(uint64_t size) = 0;
+//
+//            /** Releases any allocate memory (note this does not include the Parameters) */
+//            virtual void release() = 0;
+//
+//            /** Returns the parameter residing under that name */
+//            virtual std::shared_ptr<P> get_param(std::string full_name) = 0;
+//
+//            /** Returns the parameter residing under that name */
+//            virtual std::shared_ptr<P> initialize_param(std::string full_name,
+//                                                        DataType data_type,
+//                                                        std::array<long, 4> shape) = 0;
+//        };
+//
+//        template<typename T, typename C, typename P, typename M>
+//        class AbstractFunction {
+//        public:
+//            typedef std::pair<std::vector<std::shared_ptr<T>>, std::vector<std::shared_ptr<T>>> Outputs;
+//            typedef dll_symbol<Outputs(std::vector<std::shared_ptr<T>> &inputs,
+//                                       std::vector<std::shared_ptr<C>> &constants,
+//                                       std::vector<std::shared_ptr<P>> &params,
+//                                       std::shared_ptr<M> manager)> symbol;
+//            Backend<T, C, P, M> const backend;
+//            GraphFunction const gf;
+//            std::shared_ptr<symbol> const function;
+//
+//            AbstractFunction(Backend<T, C, P, M> const backend, GraphFunction const gf,
+//                             std::shared_ptr<symbol> const function):
+//                    backend(backend), gf(gf), function(function) {};
+//
+//            /** This should be used to execute the function after it has been compiled */
+//            virtual Outputs eval(std::vector<std::shared_ptr<T>> & inputs) = 0;
 //        };
     }
 }

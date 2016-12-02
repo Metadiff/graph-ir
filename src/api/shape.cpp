@@ -100,12 +100,12 @@ namespace md{
             if (number_of_elements(node->shape) != number_of_elements(shape)) {
                 // If the number of elements is different throw an error.
                 op_logger("Reshape")->error("The number of elements can not change from {} to {}",
-                        number_of_elements(node->shape).to_string(),
-                        number_of_elements(shape).to_string());
+                                            sym::to_string(number_of_elements(node->shape)),
+                                            sym::to_string(number_of_elements(shape)));
                 throw InvalidOperatorArgument(NodeVec{node}, "Reshape",
                                               "The number of elements can not change from "
-                                              + number_of_elements(node->shape).to_string() + " to "
-                                              + number_of_elements(shape).to_string());
+                                              + sym::to_string(number_of_elements(node->shape)) + " to "
+                                              + sym::to_string(number_of_elements(shape)));
             } else if(node->shape == shape){
                 // If reshaping to the same shape do nothing
                 return alias(node);
@@ -130,7 +130,7 @@ namespace md{
                 op_logger("Reorder")->error("Invalid number of axis for reordering given - {}", order.size());
                 throw InvalidOperatorArgument(NodeVec{node},
                                               "Reorder", "Invalid number of axis for reordering given - "
-                                                          + std::to_string(order.size()));
+                                                         + std::to_string(order.size()));
             } else {
                 // Check they are distinct
                 std::vector<bool> checks(order.size(), false);
@@ -214,7 +214,7 @@ namespace md{
                 op_logger("Flip")->error("Invalid number of axis given - {}", axes.size());
                 throw InvalidOperatorArgument(NodeVec{node},
                                               "Flip", "Invalid number of axis given - "
-                                                         + std::to_string(axes.size()));
+                                                      + std::to_string(axes.size()));
             }
             std::sort(axes.begin(), axes.end());
             // Check they are distinct

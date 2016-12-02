@@ -6,8 +6,6 @@
 #define METADIFF_GRAPH_IR_BACKEND_H
 
 #include "backend/abstract.h"
-#ifdef GRAPH_IR_BUILD_MOCK
-    #include "backend/mock.h"
-#endif
+#include "backend/mock.h"
 
 #endif //METADIFF_GRAPH_IR_BACKEND_H

@@ -25,7 +25,7 @@ namespace md{
             if(op_map.find(op->name) == op_map.end()){
                 op_map[op->name] = NodeVec{result};
             } else {
-                group_map[op->name].push_back(result);
+                op_map[op->name].push_back(result);
             }
             return result;
         }

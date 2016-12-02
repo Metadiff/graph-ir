@@ -13,6 +13,8 @@ namespace md{
                                      Updates extra_updates,
                                      bool copy_updates) {
             std::vector<Node> leafs = outputs;
+            // Add the inputs to the leafs
+            leafs.insert(leafs.end(), inputs.begin(), inputs.end());
             // Add the updates of the graph
             for(auto it=full_graph->updates.begin(); it != full_graph->updates.end();  ++it){
                 leafs.push_back((*it).second);
@@ -24,11 +26,33 @@ namespace md{
             }
             // Get ancestor mask of all of the outputs
             auto ancestor_mask = full_graph->get_ancestors_mask(leafs);
+            // Check that all of the inputs are provided
+            auto all_inputs = full_graph->op_map["Input"];
+            for(auto i=0; i<all_inputs.size(); ++i){
+                if(ancestor_mask[all_inputs[i]->id]) {
+                    auto r = std::find_if(inputs.begin(), inputs.end(), [=](const Node &n) { return n->id == i;});
+                    if (r == inputs.end()) {
+                        g_logger(full_graph->name)->error(
+                                "The outputs requested require the input {} which has not been provided",
+                                to_string(full_graph->nodes[i]));
+                        throw InvalidOperatorArgument(NodeVec{}, "MakeFunction",
+                                                      "The outputs requested require the input " +
+                                                      to_string(full_graph->nodes[i]) + " which has not been provided.");
+                    }
+                }
+            }
             graph = api::create_graph();
             auto mapping = full_graph->copy_into(graph, ancestor_mask, Updates{}, true, true, copy_updates);
             // Add the extra updates
             for(auto it=extra_updates.begin(); it != extra_updates.end();  ++it){
                 api::update(mapping[it->first], mapping[it->second]);
+            }
+            // Convert outputs and inputs
+            for(auto i=0; i<outputs.size(); ++i){
+                this->outputs.push_back(mapping[outputs[i]]);
+            }
+            for(auto i=0; i<outputs.size(); ++i){
+                this->inputs.push_back(mapping[inputs[i]]);
             }
         }
 
@@ -136,6 +160,8 @@ namespace md{
                     // Copy the node using the new ancestors and put it in the mapping
                     Operator op = nodes[i]->op->copy_to(new_graph.get(), new_ancestors);
                     mapping[nodes[i]] = new_graph->derived_node(op, nodes[i]->name);
+                    mapping[nodes[i]]->scope = nodes[i]->scope;
+                    mapping[nodes[i]]->grad_level = nodes[i]->grad_level;
                 }
             }
             if(copy_updates) {

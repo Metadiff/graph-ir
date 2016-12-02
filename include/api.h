@@ -32,6 +32,7 @@ namespace md {
 #include "api/reduction.h"
 #include "api/elementwise.h"
 #include "api/linalg.h"
+#include "api/index.h"
 #include "api/debug.h"
 #include "api/optimized.h"
 #include "api/grad.h"

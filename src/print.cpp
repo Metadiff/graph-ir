@@ -77,10 +77,10 @@ namespace md{
         }
 
         std::string to_string(Shape const shape){
-            return "(" + shape[0].to_string() + "," +
-                   shape[1].to_string() + "," +
-                   shape[2].to_string() + "," +
-                   shape[3].to_string() + ")";
+            return "(" + sym::to_string(shape[0]) + "," +
+                   sym::to_string(shape[1]) + "," +
+                   sym::to_string(shape[2]) + "," +
+                   sym::to_string(shape[3]) + ")";
         }
 
         std::string to_string(Node const node){

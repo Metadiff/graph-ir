@@ -29,7 +29,7 @@ namespace md{
             writer.String("http_proxy");
             writer.String(properties.http_proxy);
             writer.String("scope_delimiter");
-            writer.String(std::string(1, properties.scope_delimiter));
+            writer.String(properties.scope_delimiter);
             writer.String("max_float");
             writer.String(to_string(properties.max_float));
             writer.String("max_int");
@@ -63,11 +63,7 @@ namespace md{
         }
 
         void export_sym_int(SymInt const sym_int,  PrettyWriter<StringBuffer>& writer){
-            // TODO
-            writer.StartObject();
-            writer.String("SymInt");
-            writer.String("TODO");
-            writer.EndObject();
+            writer.String(sym::to_string(sym_int));
         }
 
 //        void export_execution_data(ExecutionData execution, PrettyWriter<StringBuffer>& writer){

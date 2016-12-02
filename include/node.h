@@ -42,7 +42,7 @@ namespace md{
                      Device device,
                      Operator op,
                      unsigned int grad_level,
-                     std::string group);
+                     std::string scope);
         };
 
         inline bool operator==(NodeData const & data1, NodeData const & data2){
