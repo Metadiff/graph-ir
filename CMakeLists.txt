@@ -44,6 +44,9 @@ add_definitions(-DBOOST_FILESYSTEM_SOURCE=1)
 add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED=1)
 include_directories(external/system/include external/filesystem/include)
 add_definitions(-DGRAPH_IR_BUILD_MOCK=1)
+# Add fmt
+add_subdirectory(external/fmt/fmt)
+include_directories(external/fmt)
 # Finally include this project directories
 include_directories(include)
 # Link with symints, we use static libs
@@ -53,6 +56,11 @@ link_libraries(dl)
 ## curl is needed for downloading of files, used in utils
 #link_libraries(curl)
 
+set(FMT_SOURCES
+        ${PROJECT_SOURCE_DIR}/external/fmt/fmt/format.cc
+        ${PROJECT_SOURCE_DIR}/external/fmt/fmt/ostream.cc
+        ${PROJECT_SOURCE_DIR}/external/fmt/fmt/printf.cc
+        ${PROJECT_SOURCE_DIR}/external/fmt/fmt/posix.cc)
 
 set(BOOST_SOURCES
         ${PROJECT_SOURCE_DIR}/external/system/src/error_code.cpp
@@ -89,16 +97,15 @@ set(GRAPH_IR_SOURCES
         ${PROJECT_SOURCE_DIR}/src/graph.cpp
         ${PROJECT_SOURCE_DIR}/src/print.cpp
         ${PROJECT_SOURCE_DIR}/src/abstract_operator.cpp
+        ${PROJECT_SOURCE_DIR}/src/mock.cpp
         ${PROJECT_SOURCE_DIR}/src/export/cytoscape.cpp
         ${PROJECT_SOURCE_DIR}/src/export/json.cpp
         )
 
-set(MOCK_SOURCES ${PROJECT_SOURCE_DIR}/src/backend/mock.cpp)
-
 # Add All extra sources
 list(APPEND GRAPH_IR_SOURCES ${API_SOURCES})
 list(APPEND GRAPH_IR_SOURCES ${BOOST_SOURCES})
-list(APPEND GRAPH_IR_SOURCES ${MOCK_SOURCES})
+list(APPEND GRAPH_IR_SOURCES ${FMT_SOURCES})
 
 # Append them to all of the source fiels
 list(APPEND ALL_SOURCES ${GRAPH_IR_SOURCES})

@@ -16,7 +16,9 @@ namespace md{
             typedef std::shared_ptr<MockStorage> Var;
             typedef std::vector<Var> VarVec;
             typedef std::pair<VarVec, VarVec> Outputs;
-            typedef dll_symbol<Outputs(VarVec &inputs, VarVec &constants, VarVec &params, MemoryManager manager)> symbol;
+            typedef dll_symbol<Outputs(VarVec &inputs, VarVec &constants, VarVec &params,
+                                       MemoryManager manager,
+                                       std::unordered_map<sym::I, sym::C> & deduced)> symbol;
 
             class MockStorage {
             public:
@@ -50,33 +52,30 @@ namespace md{
             class MockMemoryManager : public AbstractMemoryManager {
             public:
                 void *memory;
-                std::unordered_map<size_t, std::pair<SymInt, SymInt>> memory_map;
+                std::unordered_map<size_t, std::pair<SymInt, SymInt>> abstract_map;
+                std::unordered_map<size_t, std::pair<sym::I, sym::I>> current_map;
+                sym::I current_size;
 
-                MockMemoryManager() {};
+                MockMemoryManager(): current_size(0) {};
 
                 void set_entry(size_t id, SymInt offset, SymInt size) {
-                    memory_map[id] = {offset, size};
+                    abstract_map[id] = {offset, size};
                 }
 
-                std::pair<SymInt, SymInt> get_entry(size_t id) {
-                    return memory_map[id];
-                };
-
                 float *get(size_t id) {
-                    return (float *) (((uint8_t *) memory) + memory_map[id].first.eval());
+                    return (float *) (((uint8_t *) memory) + current_map[id].first);
                 }
 
                 void set_memory(void * memory){
                     this->memory = memory;
                 }
 
-                uint64_t get_size(){
-                    uint64_t size = 0;
-                    for(auto i = memory_map.begin(); i != memory_map.end(); ++i){
-                        // TODO this will not work with non constant shapes
-                        size += i->second.second.eval();
+                void calculate_exact_map(std::unordered_map<sym::I, sym::C> const & provided){
+                    current_size = 0;
+                    for(auto i=abstract_map.begin(); i != abstract_map.end(); ++i){
+                            current_map[i->first] = {i->second.first.eval(provided), i->second.second.eval(provided)};
+                        current_size += current_map[i->first].second;
                     }
-                    return size;
                 }
             };
 
@@ -134,15 +133,22 @@ namespace md{
                 VarVec constants;
                 /** Vector of parameters */
                 VarVec params;
-                /** Initializes all of the parameters */
-                void initialize();
+                /** Deduced symbolic integers from parameters */
+                std::vector<std::pair<SymInt, sym::C>> params_shapes;
+                /** Last invocation shapes */
+                std::vector<std::array<long, 4>> last_shapes;
+                /** Last deduced symbolics including parameter deductions */
+                std::unordered_map<sym::I, sym::C> last_deduced;
             public:
                 MockFunction(std::shared_ptr<MockBackend> const backend,
                              GraphFunction const gf,
                              std::shared_ptr<const symbol> const function,
                              std::shared_ptr<MockMemoryManager> const manager) :
-                backend(backend), gf(gf), function(function), manager(manager), initialized(false) {};
+                        backend(backend), gf(gf), function(function), manager(manager), initialized(false) {};
 
+                /** Initializes all the state of the function */
+                void initialize(std::vector<std::pair<SymInt, sym::C>> const & provided = {});
+                /** Evaluates the function for the inputs provided */
                 Outputs eval(std::vector<std::shared_ptr<MockStorage>> & inputs);
             };
 

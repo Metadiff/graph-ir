@@ -68,6 +68,14 @@ namespace md{
          */
         Logger backend_logger(std::string const name, LogLevel const level = LogLevel::trace);
 
+        /** @brief Returns a logger registered to the GIR sink, with a prefix function::
+         *
+         * @param name
+         * @param level
+         * @return
+         */
+        Logger function_logger(std::string const name, LogLevel const level = LogLevel::trace);
+
         /** @brief Calculates the number total number of elements in a Shape
          *
          * @param shape
@@ -159,6 +167,14 @@ namespace md{
          * @return
          */
         bool is_dependent(Node const anchor, Node const monitored);
+
+        /** @brief Returns the unique single integers that are part of shapes on the graph
+         *
+         * @param anchor
+         * @param monitored
+         * @return
+         */
+        std::vector<sym::I> unique_dimensions(Graph graph);
     }
 }
 

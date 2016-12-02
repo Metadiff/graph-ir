@@ -13,6 +13,7 @@
 #include "spdlog/sinks/dist_sink.h"
 #include "boost/config.hpp"
 #include "boost/filesystem.hpp"
+#include "fmt/format.h"
 #include "dlfcn.h"
 
 namespace md{
@@ -43,5 +44,6 @@ namespace md{
 #include "api.h"
 #include "operators.h"
 #include "backend.h"
+#include "mock.h"
 
 #endif //METADIFF_GRAPH_IR_H

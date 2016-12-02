@@ -17,6 +17,7 @@ namespace md{
             Graph graph;
             std::vector<Node> inputs;
             std::vector<Node> outputs;
+            std::vector<sym::I> unique_symbolics;
 
             GraphFunction(Graph const full_graph,
                           std::vector<Node> inputs,

@@ -13,3 +13,6 @@
 [submodule "external/system"]
 	path = external/system
 	url = git@github.com:boostorg/system.git
+[submodule "external/fmt"]
+	path = external/fmt
+	url = git@github.com:fmtlib/fmt.git

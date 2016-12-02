@@ -8,25 +8,88 @@ namespace md{
     namespace backend{
         namespace mock {
             Outputs MockFunction::eval(VarVec & inputs) {
-                if(not initialized){
-                    initialize();
+                if(inputs.size() != gf.inputs.size()){
+                    std::string const msg = fmt::format("Incorrect number of inputs. Expected {}, but got {}.",
+                                                        gf.inputs.size(), inputs.size());
+                    function_logger(gf.graph->name)->error("{}", msg);
+                    throw std::invalid_argument(std::move(msg));
                 }
-                // TODO infer correct sizes based on input and parameter shapes
-                manager->set_memory(backend->request(manager->get_size()));
-                return function->f(inputs, constants, params, manager);
+                // Check if the shapes have changed since the last call to the function
+                bool changed = false;
+                if(last_shapes.size() == 0){
+                    changed = true;
+                } else {
+                    for(auto i = 0; i < inputs.size(); ++i){
+                        if(last_shapes[i] != inputs[i]->shape){
+                            changed = true;
+                            break;
+                        }
+                    }
+                }
+                std::vector<std::pair<SymInt, sym::C>> implicit_shapes;
+                if(changed) {
+                    // If they have make variable deduction
+                    implicit_shapes = params_shapes;
+                    for (auto i = 0; i < inputs.size(); ++i) {
+                        for (auto j = 0; j < 4; ++j) {
+                            if (not gf.inputs[i]->shape[j].is_constant()) {
+                                implicit_shapes.push_back({gf.inputs[i]->shape[j], inputs[i]->shape[j]});
+                            } else if (gf.inputs[i]->shape[j].eval() != inputs[i]->shape[j]) {
+                                std::string const msg = fmt::format("Incorrect shape of input at index {}. "
+                                                                            "The shape on dimension {} does not match."
+                                                                            "Expected {}, but got {}.",
+                                                                    i, j, gf.inputs[i]->shape[j].eval(),
+                                                                    inputs[i]->shape[j]);
+                                function_logger(gf.graph->name)->error("{}", msg);
+                                throw std::invalid_argument(std::move(msg));
+                            }
+                        }
+                    }
+                    if (implicit_shapes.size() > 0) {
+                        auto deduced_shapes = sym::registry()->deduce_values(implicit_shapes);
+                        fmt::MemoryWriter w;
+                        w.write("Deduced symbolics: ");
+                        for (auto i = deduced_shapes.begin(); i != deduced_shapes.end(); ++i) {
+                            w.write("{}={}, ", ((char)(i->first + 'a')), i->second);
+                        }
+                        function_logger(gf.graph->name)->debug(std::move(std::string(w.c_str())));
+                        last_deduced = deduced_shapes;
+                    }
+                    // Finally make the last shapes represent the current input shapes
+                    last_shapes.clear();
+                    for(auto i = 0; i < inputs.size(); ++i){
+                        last_shapes.push_back(inputs[i]->shape);
+                    }
+                    // Update memory manager
+                    manager->calculate_exact_map(last_deduced);
+                } else {
+                    function_logger(gf.graph->name)->debug("No change in the input dimensions.");
+                }
+                manager->set_memory(backend->request(manager->current_size));
+                return function->f(inputs, constants, params, manager, last_deduced);
             }
 
-            void MockFunction::initialize() {
+            void MockFunction::initialize(std::vector<std::pair<SymInt, sym::C>> const & provided) {
+                auto deduced = sym::registry()->deduce_values(provided);
                 auto ps = gf.graph->op_map["Parameter"];
                 std::array<long, 4> shape;
                 for(auto i=0; i<ps.size(); ++i){
                     auto cast_op = std::dynamic_pointer_cast<op::Parameter>(ps[i]->op);
                     for(auto j=0; j<4; ++j){
-                        // TODO this will not work with non constant shapes
-                        shape[j] = cast_op->shape[j].eval();
+                        try {
+                            shape[j] = cast_op->shape[j].eval(deduced);
+                        } catch (const std::runtime_error& error) {
+                            std::string const msg =
+                                    fmt::format("The provided sizes were not enough to deduce the shape "
+                                                        "of parameter {} with shape {}",
+                                                cast_op->full_name, to_string(cast_op->shape));
+                            function_logger(gf.graph->name)->error(msg);
+                            throw std::invalid_argument(msg);
+                        }
                     }
                     params.push_back(backend->initialize_param(cast_op->full_name, cast_op->data_type, shape));
                 }
+                params_shapes = provided;
                 initialized = true;
             }
 
@@ -64,6 +127,7 @@ namespace md{
                     release();
                     backend_logger(name)->debug("Allocating {} bytes of memory", size);
                     memory = std::malloc(4 * size);
+                    current_size = size;
                 }
                 return memory;
             }
@@ -145,6 +209,11 @@ namespace md{
                 f.open(source_path.string());
                 write_api(f);
                 RepMap repmap;
+                // Generate symbolic expressions
+                f << "\t// Generating symbolic expressions" << std::endl;
+                for(auto i = gf.unique_symbolics.begin(); i != gf.unique_symbolics.end(); ++i){
+                    f << "\tint64_t " << ((char)((*i) + 'a')) << " = deduced[" << (*i) << "];" << std::endl;
+                }
                 // Generate inputs representation
                 f << "\t// Generating input expressions" << std::endl;
                 for (auto i = 0; i < gf.inputs.size(); ++i) {
@@ -280,6 +349,7 @@ namespace md{
                         "#include <array>\n"
                         "#include <vector>\n"
                         "#include <iostream>\n"
+                        "#include <unordered_map>\n"
                         "#include <memory>\n\n"
                         "// ***** API DEFINITIONS *****\n"
                         "/** Data type of the storage */\n"
@@ -345,7 +415,8 @@ namespace md{
                         "extern \"C\" std::pair<VarVec, VarVec> eval(VarVec & inputs, \n"
                         "\t\t\tVarVec & constants,\n"
                         "\t\t\tVarVec & params,\n"
-                        "\t\t\tstd::shared_ptr<AbstractMemoryManager> manager) {\n";
+                        "\t\t\tstd::shared_ptr<AbstractMemoryManager> manager,\n"
+                        "\t\t\tstd::unordered_map<uint16_t, int64_t> & deduced) {\n";
             }
         }
     }

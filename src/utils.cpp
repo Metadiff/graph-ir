@@ -29,6 +29,10 @@ namespace md{
             return logger(name, level, "backend::");
         }
 
+        Logger function_logger(std::string const name, LogLevel const level){
+            return logger(name, level, "function::");
+        }
+
         SymInt number_of_elements(Shape const shape){
             return shape[0] * shape[1] * shape[2] * shape[3];
         }
@@ -165,6 +169,40 @@ namespace md{
         bool is_dependent(Node const anchor, Node const monitored){
             // TODO this should be implemented correctly
             return anchor->id > monitored->id;
+        }
+
+        std::vector<sym::I> unique_dimensions(Graph graph) {
+            std::set<sym::I> unique;
+            for(auto i=0; i < graph->nodes.size(); ++i){
+                if(graph->nodes[i]->op->name == "SymIntWrapper"){
+                    auto cast_op = std::dynamic_pointer_cast<op::SymIntWrapper>(graph->nodes[i]->op);
+                    for (auto m = 0; m < cast_op->value.monomials.size(); ++m) {
+                        for (auto p = 0; p < cast_op->value.monomials[m].powers.size(); ++p) {
+                            auto candidate = cast_op->value.monomials[m].powers[p].first;
+                            // Check that the candidate is not a floor/ceil/min/max
+                            if (not sym::registry()->is_composite(candidate)) {
+                                unique.insert(candidate);
+                            }
+                        }
+                    }
+                } else {
+                    auto shape = graph->nodes[i]->shape;
+                    for (auto j = 0; j < 4; ++j) {
+                        if (not shape[j].is_constant()) {
+                            for (auto m = 0; m < shape[j].monomials.size(); ++m) {
+                                for (auto p = 0; p < shape[j].monomials[m].powers.size(); ++p) {
+                                    auto candidate = shape[j].monomials[m].powers[p].first;
+                                    // Check that the candidate is not a floor/ceil/min/max
+                                    if (not sym::registry()->is_composite(candidate)) {
+                                        unique.insert(candidate);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return std::vector<sym::I>(unique.begin(), unique.end());
         }
     }
 }

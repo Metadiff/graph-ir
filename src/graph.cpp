@@ -54,6 +54,7 @@ namespace md{
             for(auto i=0; i<outputs.size(); ++i){
                 this->inputs.push_back(mapping[inputs[i]]);
             }
+            unique_symbolics = unique_dimensions(graph);
         }
 
         std::vector<Node> GraphFunction::apply(Graph other_graph, std::vector<Node> provided_inputs,

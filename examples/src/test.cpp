@@ -68,11 +68,10 @@ md::GraphFunction build_model(){
     return GraphFunction(g, NodeVec{input}, grads);
 }
 
-md::GraphFunction simple_model(){
+md::GraphFunction simple_model(SymInt a){
     auto g = create_graph();
     g->name = "simple";
-//    auto a = new_sym();
-    auto a = 10;
+//    auto a = 10;
     auto input = g->matrix(md::f32, a, 12);
     auto p = g->parameter("p", md::f32, {a, 12, 1, 1});
     auto s1 = input + p;
@@ -82,8 +81,9 @@ md::GraphFunction simple_model(){
 
 int main(){
     md::gir::console_logging(true);
+    auto n = new_sym();
 //    auto gf = build_model();
-    auto gf = simple_model();
+    auto gf = simple_model(n);
     std::ofstream f;
     f.open("test.html");
     md::cytoscape::export_graph(gf.graph, f);
@@ -97,7 +97,9 @@ int main(){
         in->get<float>()[i] = 3.0;
     }
     auto func = backend->make_function(gf);
+    func->initialize({{n, 10}});
     mock::VarVec ins = {in}, outputs;
+    func->eval(ins);
     std::tie(outputs, std::ignore) = func->eval(ins);
     std::cout << outputs.size() << std::endl;
     auto o0 = outputs[0];

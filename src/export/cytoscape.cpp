@@ -317,20 +317,24 @@ namespace md{
                     result += std::to_string(monomial.coefficient);
                 }
             }
-            std::pair <sym::I, std::pair<sym::Polynomial, sym::Polynomial>> var;
+            sym::RegistryMap::iterator var;
             for (auto i = 0; i < monomial.powers.size(); ++i) {
-                if ((var = sym::registry()->get_floor(monomial.powers[i].first)).first != 0) {
-                    result += "floor(" + polynomial_js(var.second.first) + " / " +
-                              polynomial_js(var.second.second) + ")";
-                } else if ((var = sym::registry()->get_ceil(monomial.powers[i].first)).first != 0) {
-                    result += "ceil(" + polynomial_js(var.second.first) + " / " +
-                              polynomial_js(var.second.second) + ")";
-                } else if ((var = sym::registry()->get_min(monomial.powers[i].first)).first != 0) {
-                    result += "min(" + polynomial_js(var.second.first) + " / " +
-                              polynomial_js(var.second.second) + ")";
-                } else if ((var = sym::registry()->get_max(monomial.powers[i].first)).first != 0) {
-                    result += "max(" + polynomial_js(var.second.first) + " / " +
-                              polynomial_js(var.second.second) + ")";
+                if ((var = sym::registry()->floor_registry.find(monomial.powers[i].first))
+                    != sym::registry()->floor_registry.end()) {
+                    result += "floor(" + polynomial_js(var->second.first) + " / " +
+                              polynomial_js(var->second.second) + ")";
+                } else if ((var = sym::registry()->ceil_registry.find(monomial.powers[i].first))
+                           != sym::registry()->ceil_registry.end()) {
+                    result += "ceil(" + polynomial_js(var->second.first) + " / " +
+                              polynomial_js(var->second.second) + ")";
+                } else if ((var = sym::registry()->min_registry.find(monomial.powers[i].first))
+                           != sym::registry()->min_registry.end()) {
+                    result += "min(" + polynomial_js(var->second.first) + " / " +
+                              polynomial_js(var->second.second) + ")";
+                } else if ((var = sym::registry()->max_registry.find(monomial.powers[i].first))
+                           != sym::registry()->max_registry.end()) {
+                    result += "max(" + polynomial_js(var->second.first) + " / " +
+                              polynomial_js(var->second.second) + ")";
                 } else {
                     result += ('a' + monomial.powers[i].first);
                     auto n = monomial.powers[i].second;
