@@ -45,14 +45,11 @@ namespace md{
                 Graph g = node.g();
                 switch (g->props.policies.implicit_broadcast){
                     case RAISE:
-                        g->logger()->error("[op::{}] Implicit broadcast of node {} with shape {} to shape {}",
-                                           op_name, node->id, to_string(node->shape), to_string(shape));
-                        throw InvalidOperatorArgument(NodeVec{node}, op_name,
-                                                      "Implicit broadcast of node " + std::to_string(node->id)
-                                                      + "with shape " + to_string(node->shape)
-                                                      + "to shape "  + to_string(shape));
+                        throw throw_op_iae(NodeVec{node}, op_name, fmt::format(
+                                "Implicit broadcast of node {} with shape {} to shape {}.",
+                                op_name, node->id, to_string(node->shape), to_string(shape)));
                     case WARN:
-                        g->logger()->warn("[op::{}] Implicit broadcast of node {} with shape {} to shape {}",
+                        op_logger(op_name)->warn("Implicit broadcast of node {} with shape {} to shape {}",
                                           op_name, node->id, to_string(node->shape), to_string(shape));
                     default: ;
                 }
@@ -70,10 +67,7 @@ namespace md{
                         if(shape[j] == 1){
                             shape[j] = nodes[i]->shape[j];
                         } else if (nodes[i]->shape[j] != 1){
-                            nodes[i].g()->logger()->error("[op::{}] Incompatible shapes in nodes: \n"
-                                                                   "{}", op_name, to_string(nodes));
-                            throw InvalidOperatorArgument(nodes, op_name, "Incompatible shapes in nodes: \n"
-                                                                          + to_string(nodes));
+                            throw throw_op_iae(nodes, op_name, "Incompatible shapes in nodes: \n{}", to_string(nodes));
                         }
                     }
                 }

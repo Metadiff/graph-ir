@@ -14,14 +14,23 @@ namespace md{
          */
         class GraphFunction{
         public:
+            std::string const name;
             Graph graph;
             std::vector<Node> inputs;
             std::vector<Node> outputs;
             std::vector<sym::I> unique_symbolics;
 
             GraphFunction(Graph const full_graph,
-                          std::vector<Node> inputs,
-                          std::vector<Node> outputs,
+                          std::vector<Node> const inputs,
+                          std::vector<Node> const outputs,
+                          Updates extra_updates = Updates(),
+                          bool copy_updates = true);
+
+
+            GraphFunction(std::string const name,
+                          Graph const full_graph,
+                          std::vector<Node> const inputs,
+                          std::vector<Node> const outputs,
                           Updates extra_updates = Updates(),
                           bool copy_updates = true);
 

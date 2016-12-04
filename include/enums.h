@@ -43,7 +43,7 @@ namespace md{
             DataType(FundamentalType const type, Precision const precision):
                     type(type), precision(precision) {
                 if(type == BOOLEAN and precision != p8){
-                    throw -1;
+                    throw std::runtime_error("Boolean with higher precision.");
                 }
             };
 

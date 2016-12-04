@@ -65,18 +65,17 @@ md::GraphFunction build_model(){
     // Some test nodes
     auto a = !grads[0];
     auto r = grads[0] > (grads[0] + 1);
-    return GraphFunction(g, NodeVec{input}, grads);
+    return GraphFunction("hinton", g, NodeVec{input}, grads);
 }
 
 md::GraphFunction simple_model(SymInt a){
     auto g = create_graph();
     g->name = "simple";
-//    auto a = 10;
     auto input = g->matrix(md::f32, a, 12);
     auto p = g->parameter("p", md::f32, {a, 12, 1, 1});
     auto s1 = input + p;
     auto s2 = s1 + input;
-    return GraphFunction(g, NodeVec{input}, NodeVec{s2});
+    return GraphFunction("simple", g, NodeVec{input}, NodeVec{s2});
 }
 
 int main(){
@@ -93,7 +92,7 @@ int main(){
     f.close();
     auto backend = std::make_shared<mock::MockBackend>(false);
     auto in = mock::make_var(f32, std::array<long, 4> {10, 12, 1, 1});
-    for(auto i=0; i<120; ++i){
+    for(auto i=0; i<in->shape[0] * in->shape[1]; ++i){
         in->get<float>()[i] = 3.0;
     }
     auto func = backend->make_function(gf);
@@ -101,7 +100,6 @@ int main(){
     mock::VarVec ins = {in}, outputs;
     func->eval(ins);
     std::tie(outputs, std::ignore) = func->eval(ins);
-    std::cout << outputs.size() << std::endl;
     auto o0 = outputs[0];
     std::cout << "Shape: (" << o0->shape[0] << ", "
             << o0->shape[1] << ", "

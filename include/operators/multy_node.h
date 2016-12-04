@@ -9,7 +9,7 @@ namespace metadiff{
     namespace op {
         using namespace gir;
         using namespace exceptions;
-        
+
         /**
          * A common super class for special operators with more than 1 output
          * Because of how the gradients are set up only one node can be differentiable
@@ -23,7 +23,7 @@ namespace metadiff{
                       Node parent,
                       unsigned int size) :
                     UnaryOperator(name, graph, parent),
-                size(size){
+                    size(size){
                 if(size < 1){
                     auto err = InvalidArguments(NodeVec{parent}, name, "The size should be at least 1");
                     logger()->error() << err.msg;
@@ -60,7 +60,7 @@ namespace metadiff{
         public:
             Node parent;
             unsigned int index;
-            
+
             MultiNodeIndex(GraphInPtr graph,
                            Node parent,
                            size_t index) :
@@ -200,7 +200,7 @@ namespace metadiff{
         public:
             int axis;
             SortAndArgSort(GraphInPtr graph,
-                         Node parent, int axis) :
+                           Node parent, int axis) :
                     MultiNode("SortAndArgSort", graph, parent, 2),
                     axis(axis) {
                 if (parent->dtype == dType::b8) {

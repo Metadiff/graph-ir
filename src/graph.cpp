@@ -8,10 +8,23 @@
 namespace md{
     namespace gir{
         GraphFunction::GraphFunction(Graph const full_graph,
-                                     std::vector<Node> inputs,
-                                     std::vector<Node> outputs,
+                                     std::vector<Node> const inputs,
+                                     std::vector<Node> const outputs,
                                      Updates extra_updates,
-                                     bool copy_updates) {
+                                     bool copy_updates):
+                GraphFunction(full_graph->name,
+                              std::move(full_graph),
+                              std::move(inputs),
+                              std::move(outputs),
+                              std::move(extra_updates),
+                              copy_updates) {};
+
+        GraphFunction::GraphFunction(std::string const name,
+                                     Graph const full_graph,
+                                     std::vector<Node> const inputs,
+                                     std::vector<Node> const outputs,
+                                     Updates extra_updates,
+                                     bool copy_updates): name(name) {
             std::vector<Node> leafs = outputs;
             // Add the inputs to the leafs
             leafs.insert(leafs.end(), inputs.begin(), inputs.end());

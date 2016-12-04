@@ -6,31 +6,42 @@
 
 namespace md{
     namespace gir{
-        Logger logger(std::string const name, LogLevel const level, std::string prefix){
+
+        std::logic_error throw_op_ige(std::string name, std::string msg) {
+            op_logger(name)->error(msg);
+            return InternalGraphError(name, msg);
+        }
+
+        std::invalid_argument throw_op_iae(NodeVec nodes, std::string name, std::string msg) {
+            op_logger(name)->error(msg);
+            return InvalidOperatorArgument(nodes, name, msg);
+        }
+
+        Logger logger(std::string const name, LogLevel const level){
             Logger ptr = spdlog::get(name);
             if (not ptr) {
                 ptr = std::make_shared<spdlog::logger>(name, gir_sink());
                 spdlog::register_logger(ptr);
                 ptr->set_level(level);
-                ptr->set_pattern("[%Y-%m-%d %H:%M:%S][%l][" + prefix + "%n] %v");
+                ptr->set_pattern("[%Y-%m-%d %H:%M:%S][%l][%n] %v");
             }
             return ptr;
         }
 
         Logger g_logger(std::string const name, LogLevel const level){
-            return logger(name, level, "graph::");
+            return logger("graph::" + name, level);
         }
 
         Logger op_logger(std::string const name, LogLevel const level){
-            return logger(name, level, "op::");
+            return logger("op::" + name, level);
         }
 
         Logger backend_logger(std::string const name, LogLevel const level){
-            return logger(name, level, "backend::");
+            return logger("backend::" + name, level);
         }
 
         Logger function_logger(std::string const name, LogLevel const level){
-            return logger(name, level, "function::");
+            return logger("function::" + name, level);
         }
 
         SymInt number_of_elements(Shape const shape){
@@ -73,9 +84,7 @@ namespace md{
                         if(shape[j] == 1){
                             shape[j] = nodes[i]->shape[j];
                         } else if (nodes[i]->shape[j] != 1){
-                            op_logger(op_name)->error("Incompatible shapes in nodes: \n{}", to_string(nodes));
-                            throw InvalidOperatorArgument(nodes, op_name, "Incompatible shapes in nodes: \n"
-                                                                          + to_string(nodes));
+                            throw throw_op_iae(nodes, op_name, "Incompatible shapes in nodes: \n" + to_string(nodes));
                         }
                     }
                 }
@@ -88,14 +97,11 @@ namespace md{
                 Graph g = node.g();
                 switch (g->props.policies.implicit_broadcast){
                     case RAISE:
-                        op_logger(op_name)->error("Implicit broadcast of node {} with shape {} to shape {}",
-                                                  node->id, to_string(node->shape), to_string(shape));
-                        throw InvalidOperatorArgument(NodeVec{node}, op_name,
-                                                      "Implicit broadcast of node " + std::to_string(node->id)
-                                                      + " with shape " + to_string(node->shape)
-                                                      + " to shape "  + to_string(shape));
+                        throw throw_op_iae(NodeVec{node}, op_name,
+                                     fmt::format("Implicit broadcast of node {} with shape {} to shape {}.",
+                                                 node->id, to_string(node->shape), to_string(shape)));
                     case WARN:
-                        op_logger(op_name)->warn("Implicit broadcast of node {} with shape {} to shape {}",
+                        op_logger(op_name)->warn("Implicit broadcast of node {} with shape {} to shape {}.",
                                                  node->id, to_string(node->shape), to_string(shape));
                     default: ;
                 }
@@ -117,16 +123,13 @@ namespace md{
                 Graph g = node.g();
                 switch (g->props.policies.implicit_cast){
                     case RAISE: {
-                        op_logger(op_name)->error("Implicit cast from type {} to type {}",
-                                                  to_string(node->data_type),
-                                                  to_string(data_type));
-                        throw InvalidOperatorArgument(NodeVec{node}, op_name,
-                                                      "Attempting implicit cast from type "
-                                                      + to_string(node->data_type)
-                                                      + " to type " + to_string(data_type));
+                        throw throw_op_iae(NodeVec{node}, op_name,
+                                     fmt::format("Implicit cast from type {} to type {}.",
+                                                 to_string(node->data_type),
+                                                 to_string(data_type)));
                     }
                     case WARN: {
-                        op_logger(op_name)->warn("Implicit cast from type {} to type {}",
+                        op_logger(op_name)->warn("Implicit cast from type {} to type {}.",
                                                  to_string(node->data_type),
                                                  to_string(data_type));
                         break;
@@ -143,15 +146,14 @@ namespace md{
             std::sort(axes.begin(), axes.end());
             for(auto i=0; i < axes.size(); ++i){
                 if(shape[axes[i]] == 1){
-                    op_logger(op_name)->error("Reduction on unit axis {} from shape {}", axes[i], to_string(shape));
-                    throw InvalidOperatorArgument(NodeVec{}, op_name, "Reduction on unit axis " + std::to_string(axes[i])
-                                                                      + " from shape " + to_string(shape));
+                    throw throw_op_iae(NodeVec{}, op_name,
+                                 fmt::format("Reduction on unit axis {} from shape {}.", axes[i], to_string(shape)));
                 } else if(i > 0 and axes[i] == axes[i-1]){
-                    op_logger(op_name)->error("Duplicate axis {}", axes[i]);
-                    throw InvalidOperatorArgument(NodeVec{}, op_name, "Duplicate axis " + std::to_string(axes[i]));
+                    throw throw_op_iae(NodeVec{}, op_name,
+                                 fmt::format("Duplicate axis {}.", axes[i]));
                 } else if(axes[i] < 0 or axes[i] > 3){
-                    op_logger(op_name)->error("Axis is not in range [0, 3] - {}", axes[i]);
-                    throw InvalidOperatorArgument(NodeVec{}, op_name, "Axis is not in range [0, 3] -" + std::to_string(axes[i]));
+                    throw throw_op_iae(NodeVec{}, op_name,
+                                 fmt::format("Axis is not in range [0, 3] - {}", axes[i]));
                 }
             }
         }
@@ -203,6 +205,45 @@ namespace md{
                 }
             }
             return std::vector<sym::I>(unique.begin(), unique.end());
+        }
+
+        void verify_shapes(std::vector<std::array<long, 4>> const & input_shapes,
+                           std::vector<std::array<long, 4>> const & last_shapes,
+                           NodeVec const & symbolic_inputs,
+                           std::unordered_map<sym::I, sym::C> & last_verified,
+                           std::vector<std::pair<SymInt, sym::C>> implicit) {
+            // Check if all shapes match
+            bool changed = false;
+            if(last_shapes.size() != input_shapes.size()){
+                changed = true;
+            } else {
+                for(auto i = 0; i < input_shapes.size(); ++i){
+                    if(last_shapes[i] != input_shapes[i]){
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+            if(changed) {
+                // If they have make variable deduction
+                for (auto i = 0; i < symbolic_inputs.size(); ++i) {
+                    for (auto j = 0; j < 4; ++j) {
+                        if (not symbolic_inputs[i]->shape[j].is_constant()) {
+                            implicit.push_back({symbolic_inputs[i]->shape[j], input_shapes[i][j]});
+                        } else if (symbolic_inputs[i]->shape[j].eval() != input_shapes[i][j]) {
+                            throw std::invalid_argument(fmt::format(
+                                    "Incorrect shape of input at index {}. "
+                                            "The shape on dimension {} does not match. "
+                                            "Expected {}, but got {}.",
+                                    i, j, symbolic_inputs[i]->shape[j].eval(),
+                                    input_shapes[i][j]));
+                        }
+                    }
+                }
+                if (implicit.size() > 0) {
+                    last_verified = sym::registry()->deduce_values(implicit);
+                }
+            }
         }
     }
 }

@@ -35,6 +35,13 @@ namespace md{
                     op_name(op_name), msg(msg) {};
         };
 
+        std::logic_error throw_op_ige(std::string name, std::string msg);
+
+        std::invalid_argument throw_op_iae(NodeVec nodes, std::string name, std::string msg);
+
+//#define THROW_OP_IGE(NAME, MSG) {op_logger(NAME)->error(MSG); throw InternalGraphError(NAME, MSG);}
+//#define G_IA_E() {throw std::runtime_error("Attempted division by zero.");}
+
 //        /** Abstract class for graph nodes */
 //        class GraphError : public std::exception {
 //        public:

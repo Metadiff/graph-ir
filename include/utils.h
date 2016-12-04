@@ -42,7 +42,7 @@ namespace md{
          * @param level
          * @return
          */
-       Logger logger(std::string const name, LogLevel const level = LogLevel::trace, std::string const prefix = "");
+       Logger logger(std::string const name, LogLevel const level = LogLevel::trace);
 
         /** @brief Returns a logger registered to the GIR sink, with a prefix graph::
          *
@@ -175,6 +175,23 @@ namespace md{
          * @return
          */
         std::vector<sym::I> unique_dimensions(Graph graph);
+
+        /** @brief Verifies that the input_shapes have consistent shapes.
+         * If they are the same as last_shapes directly return.
+         * If not using the corresponding symbolic_inputs and the other implicit values provided
+         * it infers the correct shapes and sets last_verified to them.
+         *
+         * @param input_shapes
+         * @param last_shapes
+         * @param symbolic_inputs
+         * @param last_verified
+         * @param implicit
+         */
+        void verify_shapes(std::vector<std::array<long, 4>> const &  input_shapes,
+                           std::vector<std::array<long, 4>> const & last_shapes,
+                           NodeVec const & symbolic_inputs,
+                           std::unordered_map<sym::I, sym::C> & last_verified,
+                           std::vector<std::pair<SymInt, sym::C>> implicit);
     }
 }
 

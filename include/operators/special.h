@@ -17,13 +17,11 @@ namespace md{
                         index(index) {
                     auto parent_op = std::dynamic_pointer_cast<MultiOutputOperator>(parent->op);
                     if(not parent_op){
-                        op_logger(name)->error("Can not index operator {}.", parent->op->name);
-                        throw InternalGraphError(name, "Can not index operator " + parent->op->name + ".");
+                        throw throw_op_ige(name, "Can not index operator " + parent->op->name);
                     }
                     if(index < 0 or index >= parent_op->outputs_number){
-                        op_logger(name)->error("Index out of bounds for parent operator {}.", parent->op->name);
-                        throw InvalidOperatorArgument(NodeVec{parent}, name,
-                                                      "Index out of bounds for parent operator " + parent->op->name + ".");
+                        throw throw_op_iae(NodeVec{parent}, name,
+                                           fmt::format("Index {} out of bounds for operator {}.", index, parent->op->name));
                     }
                 }
 
@@ -174,8 +172,7 @@ namespace md{
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    op_logger(name)->error("Calling backward_diff unexpectedly.");
-                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
+                    throw throw_op_ige(name, "Calling backward_diff unexpectedly.");
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){

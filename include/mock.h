@@ -134,7 +134,7 @@ namespace md{
                 /** Vector of parameters */
                 VarVec params;
                 /** Deduced symbolic integers from parameters */
-                std::vector<std::pair<SymInt, sym::C>> params_shapes;
+                std::vector<std::pair<SymInt, sym::C>> implicit;
                 /** Last invocation shapes */
                 std::vector<std::array<long, 4>> last_shapes;
                 /** Last deduced symbolics including parameter deductions */

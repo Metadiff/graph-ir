@@ -8,64 +8,32 @@ namespace md{
     namespace backend{
         namespace mock {
             Outputs MockFunction::eval(VarVec & inputs) {
+                // Check correct number of arguments
                 if(inputs.size() != gf.inputs.size()){
                     std::string const msg = fmt::format("Incorrect number of inputs. Expected {}, but got {}.",
                                                         gf.inputs.size(), inputs.size());
-                    function_logger(gf.graph->name)->error("{}", msg);
+                    function_logger(gf.name)->error("{}", msg);
                     throw std::invalid_argument(std::move(msg));
                 }
-                // Check if the shapes have changed since the last call to the function
-                bool changed = false;
-                if(last_shapes.size() == 0){
-                    changed = true;
-                } else {
-                    for(auto i = 0; i < inputs.size(); ++i){
-                        if(last_shapes[i] != inputs[i]->shape){
-                            changed = true;
-                            break;
-                        }
-                    }
+                std::vector<std::array<long, 4>> input_shapes(inputs.size());
+                std::transform(inputs.begin(), inputs.end(), input_shapes.begin(), [](Var x){return x->shape;});
+                // Verify arguments
+                try {
+                    verify_shapes(input_shapes, last_shapes, gf.inputs, last_deduced, implicit);
+                } catch (std::exception & e){
+                    function_logger(gf.name)->error(
+                            "{} Please verify the shape of the inputs, "
+                                    "the shapes of the parameters as well as that the graph "
+                                    "the constraints on these shapes are met.", e.what());
+                    throw e;
                 }
-                std::vector<std::pair<SymInt, sym::C>> implicit_shapes;
-                if(changed) {
-                    // If they have make variable deduction
-                    implicit_shapes = params_shapes;
-                    for (auto i = 0; i < inputs.size(); ++i) {
-                        for (auto j = 0; j < 4; ++j) {
-                            if (not gf.inputs[i]->shape[j].is_constant()) {
-                                implicit_shapes.push_back({gf.inputs[i]->shape[j], inputs[i]->shape[j]});
-                            } else if (gf.inputs[i]->shape[j].eval() != inputs[i]->shape[j]) {
-                                std::string const msg = fmt::format("Incorrect shape of input at index {}. "
-                                                                            "The shape on dimension {} does not match."
-                                                                            "Expected {}, but got {}.",
-                                                                    i, j, gf.inputs[i]->shape[j].eval(),
-                                                                    inputs[i]->shape[j]);
-                                function_logger(gf.graph->name)->error("{}", msg);
-                                throw std::invalid_argument(std::move(msg));
-                            }
-                        }
-                    }
-                    if (implicit_shapes.size() > 0) {
-                        auto deduced_shapes = sym::registry()->deduce_values(implicit_shapes);
-                        fmt::MemoryWriter w;
-                        w.write("Deduced symbolics: ");
-                        for (auto i = deduced_shapes.begin(); i != deduced_shapes.end(); ++i) {
-                            w.write("{}={}, ", ((char)(i->first + 'a')), i->second);
-                        }
-                        function_logger(gf.graph->name)->debug(std::move(std::string(w.c_str())));
-                        last_deduced = deduced_shapes;
-                    }
-                    // Finally make the last shapes represent the current input shapes
-                    last_shapes.clear();
-                    for(auto i = 0; i < inputs.size(); ++i){
-                        last_shapes.push_back(inputs[i]->shape);
-                    }
-                    // Update memory manager
-                    manager->calculate_exact_map(last_deduced);
-                } else {
-                    function_logger(gf.graph->name)->debug("No change in the input dimensions.");
-                }
+                // Update last shapes
+                last_shapes = std::move(input_shapes);
+                // Calculate memory
+                manager->calculate_exact_map(last_deduced);
+                // Set memory
                 manager->set_memory(backend->request(manager->current_size));
+                // Execute function
                 return function->f(inputs, constants, params, manager, last_deduced);
             }
 
@@ -83,13 +51,13 @@ namespace md{
                                     fmt::format("The provided sizes were not enough to deduce the shape "
                                                         "of parameter {} with shape {}",
                                                 cast_op->full_name, to_string(cast_op->shape));
-                            function_logger(gf.graph->name)->error(msg);
+                            function_logger(gf.name)->error(msg);
                             throw std::invalid_argument(msg);
                         }
                     }
                     params.push_back(backend->initialize_param(cast_op->full_name, cast_op->data_type, shape));
                 }
-                params_shapes = provided;
+                implicit = provided;
                 initialized = true;
             }
 
@@ -193,8 +161,8 @@ namespace md{
                     std::ifstream log_file(log_path.string());
                     std::string err_msg((std::istreambuf_iterator<char>(log_file)),
                                         std::istreambuf_iterator<char>());
-                    backend_logger(name)->debug("Bad compilation response {} - {}", response, err_msg);
-                    throw 3;
+                    backend_logger(name)->error("Bad compilation response {} - {}", response, err_msg);
+                    throw std::runtime_error(std::move(err_msg));
                 }
             }
 

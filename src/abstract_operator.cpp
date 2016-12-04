@@ -72,8 +72,7 @@ namespace md{
 
                 // This should not happen, but is here for a sanity check
                 if (not is_differentiable() or not flow_tree[result->id]) {
-                    op_logger(name)->error("Calling backward_diff unexpectedly.", name);
-                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
+                    throw throw_op_ige(name, "Calling backward_diff unexpectedly.");
                 }
 
                 NodeVec parents = get_parents();
@@ -99,8 +98,7 @@ namespace md{
 
             Node AbstractOperator::backward_diff_combine(NodeVec & incoming_derivatives) const {
                 if(incoming_derivatives.size() == 0){
-                    op_logger(name)->error("backward_diff_combine got zero messages.");
-                    throw InternalGraphError(name, "backward_diff_combine got zero messages.");
+                    throw throw_op_ige(name, "backward_diff_combine got zero messages.");
                 } else if(incoming_derivatives.size() == 1){
                     return incoming_derivatives[0];
                 } else {
@@ -155,8 +153,7 @@ namespace md{
 
             Node AbstractOperator::forward_diff_combine(NodeVec & incoming_derivatives) const {
                 if(incoming_derivatives.size() == 0){
-                    op_logger(name)->error("forward_diff_combine got zero messages.");
-                    throw InternalGraphError(name, "forward_diff_combine got zero messages.");
+                    throw throw_op_ige(name, "backward_diff_combine got zero messages.");
                 } else if(incoming_derivatives.size() == 1){
                     return incoming_derivatives[0];
                 } else {

@@ -161,8 +161,7 @@ namespace md {
                 }
 
                 Node backward_diff_parent(Node my_grad, int index) {
-                    op_logger(name)->error("Calling backward_diff unexpectedly.");
-                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
+                    throw throw_op_ige(name, "Calling backward_diff unexpectedly.");
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivative, int index){
@@ -201,8 +200,7 @@ namespace md {
                 };
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    op_logger(name)->error("Calling backward_diff unexpectedly.");
-                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
+                    throw throw_op_ige(name, "Calling backward_diff unexpectedly.");
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){
@@ -217,8 +215,7 @@ namespace md {
                 }
 
                 Node backward_diff_parent(Node my_derivative, int index){
-                    op_logger(name)->error("Calling backward_diff unexpectedly.");
-                    throw InternalGraphError(name, "Calling backward_diff unexpectedly.");
+                    throw throw_op_ige(name, "Calling backward_diff unexpectedly.");
                 }
 
                 Node forward_diff_parent(NodeVec & parent_derivatives, int index){

@@ -19,8 +19,9 @@ namespace md {
                 char *error_msg;
                 auto h = dlopen(dl_path.c_str(), flag);
                 if (!h) {
-                    md::gir::logger("dll_symbol")->error("Error when trying to load dynamic library {}", name);
-                    throw 2;
+                    std::string const msg = "Error when trying to load dynamic library " + name;
+                    md::gir::logger("dll_symbol")->error(msg);
+                    throw std::runtime_error(std::move(msg));
                 }
                 // set handle to cleanup the dlopen:
                 handle = std::shared_ptr<void>(h, [](void *handle) {
@@ -41,11 +42,9 @@ namespace md {
             auto handle = (T) dlsym(dll_handle, symbol_name.c_str());
             char *error_msg;
             if ((error_msg = dlerror()) != NULL) {
-                md::gir::logger("DLL")->error("Error finding in the DLL the symbol {}, reason: {}",
-                                              symbol_name, error_msg);
-                auto ptr = (int (*)(void)) dlsym(dll_handle, "eval");
-                std::cout << ptr() << std::endl;
-                throw 1;
+                std::string const msg = fmt::format("Error finding in the DLL the symbol {}, reason: {}", symbol_name, error_msg);
+                md::gir::logger("DLL")->error(msg);
+                throw std::runtime_error(std::move(msg));
             }
             return handle;
         }
@@ -54,10 +53,10 @@ namespace md {
             char *error_msg;
             auto dll_handle = dlopen((path).c_str(), RTLD_LAZY);
             if (!dll_handle) {
-                md::gir::logger("DLL")->error("Error when trying to load DLL {}", path);
-                throw 2;
+                std::string const msg = "Error when trying to load DLL " + path;
+                md::gir::logger("DLL")->error(msg);
+                throw std::runtime_error(std::move(msg));
             }
-
             return dll_handle;
         }
 
