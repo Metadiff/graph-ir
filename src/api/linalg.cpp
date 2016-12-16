@@ -49,11 +49,11 @@ namespace md{
                                                   "Node " + std::to_string(i) + " is not a matrix.");
                 } else if(nodes[i]->shape[transpositions[i]] != size){
                     op_logger("MatrixMul")->error("Incorrect shapes of node {} with shape {}. Expected size {}.",
-                                                  i, to_string(nodes[i]->shape), sym::to_string(size));
+                                                  i, to_string(nodes[i]->shape), sym::to_string(size, backend::print_str));
                     throw InvalidOperatorArgument(nodes, "MatrixMul",
                                                   "Incorrect shapes of node "  + std::to_string(i)
                                                   + " with shape " + to_string(nodes[i]->shape)
-                                                  + ". Expected size " + sym::to_string(size) + ".");
+                                                  + ". Expected size " + sym::to_string(size, backend::print_str) + ".");
                 }
                 size = nodes[i]->shape[!transpositions[i]];
             }
@@ -105,11 +105,11 @@ namespace md{
                                               "Node 0 is not a square matrix.");
             } else if(node1->shape[not transpose_inv] != node2->shape[not transpose_mul]){
                 op_logger("MatrixInverseMul")->error("Incorrect shapes - {} not equal to {}.",
-                                                     sym::to_string(node1->shape[not transpose_inv]),
-                                                     sym::to_string(node2->shape[not transpose_mul]));
+                                                     sym::to_string(node1->shape[not transpose_inv], backend::print_str),
+                                                     sym::to_string(node2->shape[not transpose_mul], backend::print_str));
                 throw InvalidOperatorArgument(NodeVec{node1, node2}, "MatrixInverseMul",
-                                              "Incorrect shapes - " + sym::to_string(node1->shape[not transpose_inv])
-                                              + " not equal to " + sym::to_string(node2->shape[not transpose_mul]) + ".");
+                                              "Incorrect shapes - " + sym::to_string(node1->shape[not transpose_inv], backend::print_str)
+                                              + " not equal to " + sym::to_string(node2->shape[not transpose_mul], backend::print_str) + ".");
             }
             // TODO check any two consecutive are inverse of each other
             // matrix_inv(matrix_inv(x)) = x

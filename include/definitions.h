@@ -17,7 +17,7 @@ namespace md{
         /** Just a pointer to GraphInternal */
         typedef GraphInternal* GraphInPtr;
         /** A symbolic integer is represented as a Polynomial over the integers */
-        typedef sym::Polynomial SymInt;
+        typedef sym::Polynomial<std::string, int64_t, uint8_t> SymInt;
         /** All shapes are represented as an array of 4 symbolic integers */
         typedef std::array<SymInt, 4> Shape;
         /** Axes is used for reduction-alike operators */
@@ -116,9 +116,9 @@ namespace md{
             /** For backends which use separate buffers per variable */
             size_t buffer_id;
             /** For backends which use a pool of memory this is the initial offset */
-            sym::Polynomial buffer_offset;
+            SymInt buffer_offset;
             /** For backends which use a pool of memory this is the total size in bytes */
-            sym::Polynomial buffer_size;
+            SymInt buffer_size;
             /** For backends which release explicitely memory this is the first computation
              * in the topological sorting at which you can reuse the memory buffer */
             size_t lifespan;

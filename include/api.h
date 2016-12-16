@@ -13,13 +13,13 @@ namespace md {
             return std::make_shared<GraphInternal>();
         }
 
-        inline Graph default_graph() {
-            static std::shared_ptr<GraphInternal> graph;
-            if (not graph) {
-                graph = create_graph();
-            }
-            return graph;
-        }
+//        inline Graph default_graph() {
+//            static std::shared_ptr<GraphInternal> graph;
+//            if (not graph) {
+//                graph = create_graph();
+//            }
+//            return graph;
+//        }
     }
 }
 

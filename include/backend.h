@@ -7,6 +7,7 @@
 
 namespace md {
     namespace backend {
+        std::function<std::string(std::string)> const print_str = [](std::string id) {return id;};
 
         template<typename T>
         struct dll_symbol {
@@ -62,7 +63,7 @@ namespace md {
 
         class AbstractMemoryManager {
         public:
-            virtual float *get(size_t id)  = 0;
+            virtual void *get(size_t id)  = 0;
         };
 
         typedef std::shared_ptr<AbstractMemoryManager> MemoryManager;

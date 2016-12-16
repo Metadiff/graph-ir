@@ -6,20 +6,6 @@
 
 namespace md{
     namespace gir{
-        Node GraphInternal::parameter(std::string scope, std::string name, DataType data_type, Shape shape){
-            auto var_name = scope;
-            var_name += props.scope_delimiter;
-            var_name += name;
-            Operator op = std::make_shared<op::Parameter>(this, var_name, data_type, shape);
-            Node node = derived_node(op);
-            node->name = var_name;
-            return node;
-        }
-
-        Node GraphInternal::parameter(std::string name, DataType data_type, Shape shape){
-            return parameter(scope, name, data_type, shape);
-        }
-
         Node GraphInternal::sym_int_node(SymInt value) {
             Operator op = std::make_shared<op::SymIntWrapper>(this, value);
             return derived_node(op);

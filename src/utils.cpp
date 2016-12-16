@@ -44,6 +44,15 @@ namespace md{
             return logger("function::" + name, level);
         }
 
+        int byte_size(DataType data_type){
+            const int factors[4] = {1, 2, 4, 8};
+            if(data_type.type == COMPLEX){
+                return factors[data_type.precision] * 2;
+            } else {
+                return factors[data_type.precision];
+            }
+        }
+
         SymInt number_of_elements(Shape const shape){
             return shape[0] * shape[1] * shape[2] * shape[3];
         }
@@ -98,8 +107,8 @@ namespace md{
                 switch (g->props.policies.implicit_broadcast){
                     case RAISE:
                         throw throw_op_iae(NodeVec{node}, op_name,
-                                     fmt::format("Implicit broadcast of node {} with shape {} to shape {}.",
-                                                 node->id, to_string(node->shape), to_string(shape)));
+                                           fmt::format("Implicit broadcast of node {} with shape {} to shape {}.",
+                                                       node->id, to_string(node->shape), to_string(shape)));
                     case WARN:
                         op_logger(op_name)->warn("Implicit broadcast of node {} with shape {} to shape {}.",
                                                  node->id, to_string(node->shape), to_string(shape));
@@ -124,9 +133,9 @@ namespace md{
                 switch (g->props.policies.implicit_cast){
                     case RAISE: {
                         throw throw_op_iae(NodeVec{node}, op_name,
-                                     fmt::format("Implicit cast from type {} to type {}.",
-                                                 to_string(node->data_type),
-                                                 to_string(data_type)));
+                                           fmt::format("Implicit cast from type {} to type {}.",
+                                                       to_string(node->data_type),
+                                                       to_string(data_type)));
                     }
                     case WARN: {
                         op_logger(op_name)->warn("Implicit cast from type {} to type {}.",
@@ -147,13 +156,13 @@ namespace md{
             for(auto i=0; i < axes.size(); ++i){
                 if(shape[axes[i]] == 1){
                     throw throw_op_iae(NodeVec{}, op_name,
-                                 fmt::format("Reduction on unit axis {} from shape {}.", axes[i], to_string(shape)));
+                                       fmt::format("Reduction on unit axis {} from shape {}.", axes[i], to_string(shape)));
                 } else if(i > 0 and axes[i] == axes[i-1]){
                     throw throw_op_iae(NodeVec{}, op_name,
-                                 fmt::format("Duplicate axis {}.", axes[i]));
+                                       fmt::format("Duplicate axis {}.", axes[i]));
                 } else if(axes[i] < 0 or axes[i] > 3){
                     throw throw_op_iae(NodeVec{}, op_name,
-                                 fmt::format("Axis is not in range [0, 3] - {}", axes[i]));
+                                       fmt::format("Axis is not in range [0, 3] - {}", axes[i]));
                 }
             }
         }
@@ -173,8 +182,8 @@ namespace md{
             return anchor->id > monitored->id;
         }
 
-        std::vector<sym::I> unique_dimensions(Graph graph) {
-            std::set<sym::I> unique;
+        std::vector<std::string> unique_dimensions(Graph graph) {
+            std::set<std::string> unique;
             for(auto i=0; i < graph->nodes.size(); ++i){
                 if(graph->nodes[i]->op->name == "SymIntWrapper"){
                     auto cast_op = std::dynamic_pointer_cast<op::SymIntWrapper>(graph->nodes[i]->op);
@@ -182,8 +191,8 @@ namespace md{
                         for (auto p = 0; p < cast_op->value.monomials[m].powers.size(); ++p) {
                             auto candidate = cast_op->value.monomials[m].powers[p].first;
                             // Check that the candidate is not a floor/ceil/min/max
-                            if (not sym::registry()->is_composite(candidate)) {
-                                unique.insert(candidate);
+                            if (candidate.type == sym::Id) {
+                                unique.insert(candidate.id);
                             }
                         }
                     }
@@ -195,8 +204,8 @@ namespace md{
                                 for (auto p = 0; p < shape[j].monomials[m].powers.size(); ++p) {
                                     auto candidate = shape[j].monomials[m].powers[p].first;
                                     // Check that the candidate is not a floor/ceil/min/max
-                                    if (not sym::registry()->is_composite(candidate)) {
-                                        unique.insert(candidate);
+                                    if (candidate.type == sym::Id) {
+                                        unique.insert(candidate.id);
                                     }
                                 }
                             }
@@ -204,14 +213,14 @@ namespace md{
                     }
                 }
             }
-            return std::vector<sym::I>(unique.begin(), unique.end());
+            return std::vector<std::string>(unique.begin(), unique.end());
         }
 
-        void verify_shapes(std::vector<std::array<long, 4>> const & input_shapes,
+        bool verify_shapes(std::vector<std::array<long, 4>> const & input_shapes,
                            std::vector<std::array<long, 4>> const & last_shapes,
                            NodeVec const & symbolic_inputs,
-                           std::unordered_map<sym::I, sym::C> & last_verified,
-                           std::vector<std::pair<SymInt, sym::C>> implicit) {
+                           std::unordered_map<std::string, int64_t> & last_verified,
+                           std::vector<std::pair<SymInt, int64_t >> implicit) {
             // Check if all shapes match
             bool changed = false;
             if(last_shapes.size() != input_shapes.size()){
@@ -230,20 +239,22 @@ namespace md{
                     for (auto j = 0; j < 4; ++j) {
                         if (not symbolic_inputs[i]->shape[j].is_constant()) {
                             implicit.push_back({symbolic_inputs[i]->shape[j], input_shapes[i][j]});
-                        } else if (symbolic_inputs[i]->shape[j].eval() != input_shapes[i][j]) {
+                        } else if (symbolic_inputs[i]->shape[j].eval({}) != input_shapes[i][j]) {
                             throw std::invalid_argument(fmt::format(
                                     "Incorrect shape of input at index {}. "
                                             "The shape on dimension {} does not match. "
                                             "Expected {}, but got {}.",
-                                    i, j, symbolic_inputs[i]->shape[j].eval(),
+                                    i, j, symbolic_inputs[i]->shape[j].eval({}),
                                     input_shapes[i][j]));
                         }
                     }
                 }
                 if (implicit.size() > 0) {
-                    last_verified = sym::registry()->deduce_values(implicit);
+                    last_verified = sym::deduce_values(implicit);
+                    return true;
                 }
             }
+            return false;
         }
     }
 }

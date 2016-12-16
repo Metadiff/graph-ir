@@ -1,125 +1,14 @@
 //
-// Created by alex on 07/11/16.
+// Created by alex on 07/12/16.
 //
 
-#include "graph_ir.h"
+#include "mock.h"
+typedef std::function<std::string(std::vector<std::string> &)> RepFunc;
+typedef std::unordered_map<size_t, RepFunc> RepMap;
 
-namespace md{
-    namespace backend{
+namespace md {
+    namespace backend {
         namespace mock {
-            typedef std::chrono::high_resolution_clock timer;
-            Outputs AbstractMockFunction::eval(VarVec & inputs) {
-                auto const start = timer::now();
-                // Check correct number of arguments
-                if(inputs.size() != gf.inputs.size()){
-                    std::string const msg = fmt::format("Incorrect number of inputs. Expected {}, but got {}.",
-                                                        gf.inputs.size(), inputs.size());
-                    function_logger(gf.name)->error("{}", msg);
-                    throw std::invalid_argument(std::move(msg));
-                }
-                std::vector<std::array<long, 4>> input_shapes(inputs.size());
-                std::transform(inputs.begin(), inputs.end(), input_shapes.begin(), [](Var x){return x->shape;});
-                // Verify arguments
-                bool changed;
-                try {
-                    changed = verify_shapes(input_shapes, last_shapes, gf.inputs, last_deduced, implicit);
-                } catch (std::exception & e){
-                    function_logger(gf.name)->error(
-                            "{} Please verify the shape of the inputs, "
-                                    "the shapes of the parameters as well as that the graph "
-                                    "the constraints on these shapes are met.", e.what());
-                    throw e;
-                }
-                if(changed) {
-                    // Update last shapes
-                    last_shapes = std::move(input_shapes);
-                    // Calculate memory
-                    manager->calculate_exact_map(last_deduced);
-                    // Set memory
-                    manager->set_memory(backend->request(manager->current_size));
-                }
-                auto const pre = timer::now();
-                // Execute function
-                auto const result = this->internal_eval(inputs, constants, params, manager, last_deduced);
-                auto const end = timer::now();
-                function_logger(gf.name)->debug("Execution time: {}ms, Overhead: {}ms",
-                                                std::chrono::duration_cast<std::chrono::microseconds>(end - pre).count(),
-                                                std::chrono::duration_cast<std::chrono::microseconds>(pre - start).count());
-                return std::move(result);
-            }
-
-            void AbstractMockFunction::initialize(std::vector<std::pair<SymInt, int64_t>> const & provided) {
-                auto deduced = sym::registry()->deduce_values(provided);
-                auto ps = gf.graph->op_map["Parameter"];
-                std::array<long, 4> shape;
-                for(auto i=0; i<ps.size(); ++i){
-                    auto cast_op = std::dynamic_pointer_cast<op::Parameter>(ps[i]->op);
-                    for(auto j=0; j<4; ++j){
-                        try {
-                            shape[j] = cast_op->shape[j].eval(deduced);
-                        } catch (const std::runtime_error& error) {
-                            std::string const msg =
-                                    fmt::format("The provided sizes were not enough to deduce the shape "
-                                                        "of parameter {} with shape {}",
-                                                cast_op->full_name, to_string(cast_op->shape));
-                            function_logger(gf.name)->error(msg);
-                            throw std::invalid_argument(msg);
-                        }
-                    }
-                    params.push_back(backend->initialize_param(cast_op->full_name, cast_op->data_type, shape));
-                }
-                implicit = provided;
-                initialized = true;
-            }
-
-            std::shared_ptr<MockStorage> MockBackend::get_param(std::string full_name) const {
-                auto found = params.find(full_name);
-                if( found != params.end()){
-                    return params.at(full_name);
-                } else {
-                    std::shared_ptr<MockStorage> result;
-                    return result;
-                }
-            };
-
-            std::shared_ptr<MockStorage> MockBackend::initialize_param(std::string full_name,
-                                                                       DataType data_type,
-                                                                       std::array<long, 4> shape) {
-                auto found = params.find(full_name);
-                if( found != params.end()){
-                    backend_logger(name)->debug("Trying to repeat initialization of parameter {}", full_name);
-                    return params.at(full_name);
-                } else {
-                    backend_logger(name)->debug("Initializing parameter {}", full_name);
-                    params[full_name] = std::make_shared<MockStorage>(data_type, shape);
-                    Var result = params[full_name];
-
-                    for(auto i=0; i < result->total_size(); ++i){
-                        result->get<float>()[i] = 0.0;
-                    }
-                    return result;
-                }
-            }
-
-            void * MockBackend::request(uint64_t size){
-                backend_logger(name)->debug("Requesting {} bytes of memory", size);
-                if(not allocated or current_size < size) {
-                    release();
-                    backend_logger(name)->debug("Allocating {} bytes of memory", size);
-                    memory = std::malloc(4 * size);
-                    current_size = size;
-                }
-                return memory;
-            }
-
-            void MockBackend::release(){
-                if(allocated) {
-                    backend_logger(name)->debug("Releasing {} bytes of memory", current_size);
-                    free(memory);
-                }
-                allocated = true;
-            }
-
             std::shared_ptr<AbstractMockFunction> MockBackend::make_source_gen_function(GraphFunction const &gf){
                 generate_sources(gf);
                 compile(gf);
@@ -143,19 +32,6 @@ namespace md{
                 }
                 return std::make_shared<MockSourceGenFunction>(shared_from_this(), gf, func_ptr, manager);
             };
-
-            std::shared_ptr<AbstractMockFunction> MockBackend::make_in_memory_function(GraphFunction const &gf){
-                return make_source_gen_function(gf);
-            }
-
-            typedef std::function<std::string(std::vector<std::string> &)> RepFunc;
-            typedef std::unordered_map<size_t, RepFunc> RepMap;
-            void write_api(std::ostream &f);
-            RepFunc build_rep(Node node, std::string name = "");
-            void write_api(std::ostream &f);
-            void write_op(Operator op, RepMap &repmap, std::ostream &f);
-            std::string to_code(DataType data_type);
-
 
             void MockBackend::compile(GraphFunction const & gf) const {
                 auto source_dir = this->source_dir / gf.name;
@@ -183,6 +59,11 @@ namespace md{
                 }
             }
 
+            std::string to_code(DataType data_type);
+            RepFunc build_rep(Node node, std::string name = "");
+            void write_api(std::ostream &f);
+            void write_op(Operator op, RepMap &repmap, std::ostream &f);
+
             void MockBackend::generate_sources(GraphFunction const & gf) const {
                 auto source_dir = this->source_dir / gf.name;
                 if (not exists(source_dir)) {
@@ -197,7 +78,7 @@ namespace md{
                 // Generate symbolic expressions
                 f << "\t// Generating symbolic expressions" << std::endl;
                 for(auto i = gf.unique_symbolics.begin(); i != gf.unique_symbolics.end(); ++i){
-                    f << "\tint64_t " << ((char)((*i) + 'a')) << " = deduced[" << (*i) << "];" << std::endl;
+                    f << "\tint64_t " << (*i) << " = deduced[\"" << (*i) << "\"];" << std::endl;
                 }
                 // Generate inputs representation
                 f << "\t// Generating input expressions" << std::endl;
@@ -219,10 +100,10 @@ namespace md{
                 f << "\tVarVec outputs;\n";
                 for (auto i = 0; i < gf.outputs.size(); ++i) {
                     f << "\toutputs.push_back(make_var(" << gf.outputs[i]->data_type << ", std::array<long, 4> {"
-                      << sym::to_code(gf.outputs[i]->shape[0]) << ", "
-                      << sym::to_code(gf.outputs[i]->shape[1]) << ", "
-                      << sym::to_code(gf.outputs[i]->shape[2]) << ", "
-                      << sym::to_code(gf.outputs[i]->shape[3]) << "}));\n";
+                      << sym::to_code(gf.outputs[i]->shape[0], print_str) << ", "
+                      << sym::to_code(gf.outputs[i]->shape[1], print_str) << ", "
+                      << sym::to_code(gf.outputs[i]->shape[2], print_str) << ", "
+                      << sym::to_code(gf.outputs[i]->shape[3], print_str) << "}));\n";
                     f << "\tauto node_" << gf.outputs[i]->id << " = outputs[" << i << "]->get<"
                       << to_code(params[i]->data_type) << ">();" << std::endl;
                     repmap.insert({gf.outputs[i]->id, build_rep(gf.outputs[i])});
@@ -234,10 +115,10 @@ namespace md{
                 f << "\tVarVec monitors;\n";
                 for (auto i = 0; i < monitors.size(); ++i) {
                     f << "\toutputs.push_back(std::make_shared<MockStorage>(f32, std::array<long, 4> {"
-                      << sym::to_code(gf.outputs[i]->shape[0]) << ", "
-                      << sym::to_code(gf.outputs[i]->shape[1]) << ", "
-                      << sym::to_code(gf.outputs[i]->shape[2]) << ", "
-                      << sym::to_code(gf.outputs[i]->shape[3]) << "}));\n";
+                      << sym::to_code(gf.outputs[i]->shape[0], print_str) << ", "
+                      << sym::to_code(gf.outputs[i]->shape[1], print_str) << ", "
+                      << sym::to_code(gf.outputs[i]->shape[2], print_str) << ", "
+                      << sym::to_code(gf.outputs[i]->shape[3], print_str) << "}));\n";
                     f << "\tauto node_" << monitors[i]->id << " = monitors[" << i << "]->get<"
                       << to_code(monitors[i]->data_type) << ">();" << std::endl;
                     repmap.insert({monitors[i]->id, build_rep(monitors[i])});
@@ -269,12 +150,23 @@ namespace md{
                 if(op->name == "Input" or op->name == "Parameter"){
                     return;
                 }
+                if(op->name == "Broadcast") {
+                    repmap[result->id] = repmap[op->get_parents()[0]->id];
+                    return;
+                }
+                if(op->name == "SymIntWrapper") {
+                    auto cast_op = std::dynamic_pointer_cast<op::SymIntWrapper>(op);
+                    repmap[result->id] = [=](std::vector<std::string> &it) {
+                        return "(" + sym::to_code(cast_op->value, print_str) + ")";
+                    };
+                    return;
+                }
                 // Write loop start
                 f << tabs << "// " << result << std::endl;
 //                f << tabs << "std::cout << " << result->id << " << std::endl;" << std::endl;
                 for (auto i = 0; i < result.order(); ++i) {
                     f << tabs << "for(auto it" << i << "=0;"
-                      << " it" << i << "<(" << sym::to_code(result->shape[i]) << ");"
+                      << " it" << i << "<(" << sym::to_code(result->shape[i], print_str) << ");"
                       << " ++it" << i << "){" << std::endl;
                     tabs += "\t";
                 }
@@ -370,32 +262,31 @@ namespace md{
                     } else if (node.order() == 2) {
                         rep += "[" + it[0] + " + " +
                                it[1] + " * (" +
-                               sym::to_code(node->shape[0]) + ")]";
+                               sym::to_code(node->shape[0], print_str) + ")]";
                     } else if (node.order() == 3) {
                         rep += "[" + it[0] + " + " +
                                it[1] + " * (" +
-                               sym::to_code(node->shape[0]) + ")" +
+                               sym::to_code(node->shape[0], print_str) + ")" +
                                it[2] + " * (" +
-                               sym::to_code(node->shape[0]) + ") * (" +
-                               sym::to_code(node->shape[1]) + ")]";
+                               sym::to_code(node->shape[0], print_str) + ") * (" +
+                               sym::to_code(node->shape[1], print_str) + ")]";
                     } else if (node.order() == 4) {
                         rep += "[" + it[0] + " + " +
                                it[1] + " * (" +
-                               sym::to_code(node->shape[0]) + ")" +
+                               sym::to_code(node->shape[0], print_str) + ")" +
                                it[2] + " * (" +
-                               sym::to_code(node->shape[0]) + ") * (" +
-                               sym::to_code(node->shape[1]) + ")" +
+                               sym::to_code(node->shape[0], print_str) + ") * (" +
+                               sym::to_code(node->shape[1], print_str) + ")" +
                                it[3] + " * (" +
-                               sym::to_code(node->shape[0]) + ") * (" +
-                               sym::to_code(node->shape[1]) + ") * (" +
-                               sym::to_code(node->shape[2]) + ")]";
+                               sym::to_code(node->shape[0], print_str) + ") * (" +
+                               sym::to_code(node->shape[1], print_str) + ") * (" +
+                               sym::to_code(node->shape[2], print_str) + ")]";
                     }
                     return rep;
                 };
             }
 
             void write_api(std::ostream &f) {
-                f << "// what?" << std::endl;
                 f << "// Disclaimer: Do not edit unless you know what you are doing\n"
                         "// Auto generated by Metadiff - MockBackend\n\n"
                         "// Includes\n"
@@ -475,4 +366,3 @@ namespace md{
         }
     }
 }
-

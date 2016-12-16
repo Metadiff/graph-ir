@@ -7,10 +7,6 @@ set(GRAPH_IR_INTEGERS_VERSION 0)
 set(GRAPH_IR_INTEGERS_VERSION 1)
 set(GRAPH_IR__VERSION ${GRAPH_IR_MAJOR_VERSION}.${GRAPH_IR_MINOR_VERSION}.${GRAPH_IR_PATCH_VERSION})
 
-# *** DEBUG ***
-set(GRAPH_IR_SHARED 1)
-# *** DEBUG ***
-
 # Build flags
 if( CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
     # Standalone build
@@ -22,7 +18,7 @@ if( CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
         set(CMAKE_CXX_FLAGS "-fPIC -Wall -Werror=return-type -Wno-unknown-pragmas -Wno-sign-compare")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Woverloaded-virtual -Wwrite-strings -Wno-unused")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
         set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
         set(CMAKE_CXX_FLAGS_RELEASE "-O3")
     endif()
@@ -43,24 +39,8 @@ add_definitions(-DBOOST_SYSTEM_SOURCE=1)
 add_definitions(-DBOOST_FILESYSTEM_SOURCE=1)
 add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED=1)
 include_directories(external/system/include external/filesystem/include)
-add_definitions(-DGRAPH_IR_BUILD_MOCK=1)
-# Add fmt
-add_subdirectory(external/fmt/fmt)
-include_directories(external/fmt)
 # Finally include this project directories
 include_directories(include)
-# Link with symints, we use static libs
-#link_libraries(symints_s)
-# Link with dl, for dynamic loading of the shared library generated
-link_libraries(dl)
-## curl is needed for downloading of files, used in utils
-#link_libraries(curl)
-
-set(FMT_SOURCES
-        ${PROJECT_SOURCE_DIR}/external/fmt/fmt/format.cc
-        ${PROJECT_SOURCE_DIR}/external/fmt/fmt/ostream.cc
-        ${PROJECT_SOURCE_DIR}/external/fmt/fmt/printf.cc
-        ${PROJECT_SOURCE_DIR}/external/fmt/fmt/posix.cc)
 
 set(BOOST_SOURCES
         ${PROJECT_SOURCE_DIR}/external/system/src/error_code.cpp
@@ -73,7 +53,7 @@ set(BOOST_SOURCES
         ${PROJECT_SOURCE_DIR}/external/filesystem/src/utf8_codecvt_facet.cpp
         ${PROJECT_SOURCE_DIR}/external/filesystem/src/windows_file_codecvt.cpp)
 
-# All of the project source files
+# All of the api source files
 set(API_SOURCES
         ${PROJECT_SOURCE_DIR}/src/api/input.cpp
         ${PROJECT_SOURCE_DIR}/src/api/constant.cpp
@@ -89,7 +69,7 @@ set(API_SOURCES
         ${PROJECT_SOURCE_DIR}/src/api/optimized.cpp
         ${PROJECT_SOURCE_DIR}/src/api/grad.cpp
         )
-
+# All of the graph IR sources
 set(GRAPH_IR_SOURCES
         ${PROJECT_SOURCE_DIR}/src/props.cpp
         ${PROJECT_SOURCE_DIR}/src/utils.cpp
@@ -97,7 +77,6 @@ set(GRAPH_IR_SOURCES
         ${PROJECT_SOURCE_DIR}/src/graph.cpp
         ${PROJECT_SOURCE_DIR}/src/print.cpp
         ${PROJECT_SOURCE_DIR}/src/abstract_operator.cpp
-        ${PROJECT_SOURCE_DIR}/src/mock.cpp
         ${PROJECT_SOURCE_DIR}/src/export/cytoscape.cpp
         ${PROJECT_SOURCE_DIR}/src/export/json.cpp
         )
@@ -105,7 +84,6 @@ set(GRAPH_IR_SOURCES
 # Add All extra sources
 list(APPEND GRAPH_IR_SOURCES ${API_SOURCES})
 list(APPEND GRAPH_IR_SOURCES ${BOOST_SOURCES})
-list(APPEND GRAPH_IR_SOURCES ${FMT_SOURCES})
 
 # Append them to all of the source fiels
 list(APPEND ALL_SOURCES ${GRAPH_IR_SOURCES})
@@ -115,16 +93,27 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
     set (ALL_SRORCES ${ALL_SRORCES} PARENT_SCOPE)
 endif()
 
-# Build libs (static by default)
+# Build library
+if(NOT DEFINED GRAPH_IR_SHARED)
+    set(GRAPH_IR_SHARED 1)
+endif()
 if(GRAPH_IR_SHARED)
-    # Create shared libs
     add_library(graph_ir SHARED ${ALL_SOURCES})
 else()
-    # Create static library
     add_library(graph_ir STATIC ${ALL_SOURCES})
 endif()
 
-# Build test example
-add_executable(try examples/src/test.cpp)
-target_link_libraries(try graph_ir)
+# Build Mock Backend
+if(NOT DEFINED BUILD_MOCK_BACKEND)
+    set(BUILD_MOCK_BACKEND 1)
+endif()
+if(BUILD_MOCK_BACKEND)
+    add_subdirectory(mock_backend)
+    # Build test example
+    add_executable(try examples/src/test.cpp)
+    target_include_directories(try PUBLIC mock_backend/include)
+    # Link libraries in correct order
+    target_link_libraries(try graph_ir mock_backend dl)
+endif()
+
 

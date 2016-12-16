@@ -5,20 +5,22 @@
 #ifndef METADIFF_GRAPH_IR_BACKEND_MOCK_H
 #define METADIFF_GRAPH_IR_BACKEND_MOCK_H
 
+#include "graph_ir.h"
+
 namespace md{
     namespace backend{
         namespace mock {
             // Forward declarations
             class MockStorage;
             class MockMemoryStorage;
-            class MockFunction;
+            class AbstractMockFunction;
             class MockBackend;
             typedef std::shared_ptr<MockStorage> Var;
             typedef std::vector<Var> VarVec;
             typedef std::pair<VarVec, VarVec> Outputs;
             typedef dll_symbol<Outputs(VarVec &inputs, VarVec &constants, VarVec &params,
                                        MemoryManager manager,
-                                       std::unordered_map<sym::I, sym::C> & deduced)> symbol;
+                                       std::unordered_map<std::string, int64_t> & deduced)> symbol;
 
             class MockStorage {
             public:
@@ -28,20 +30,20 @@ namespace md{
 
                 MockStorage(DataType data_type, std::array<long, 4> shape) :
                         data_type(data_type), shape(shape) {
-                    data = std::malloc(total_size() * 4);
+                    data = std::malloc(total_size() * byte_size(data_type));
                 }
 
                 ~MockStorage() {
                     free(data);
                 }
 
-                long total_size() {
+                size_t total_size() {
                     return shape[0] * shape[1] * shape[2] * shape[3];
                 }
 
                 template<typename T>
                 T *get() {
-                    return (T *) data;
+                    return static_cast<T*>(data);
                 }
             };
 
@@ -53,8 +55,8 @@ namespace md{
             public:
                 void *memory;
                 std::unordered_map<size_t, std::pair<SymInt, SymInt>> abstract_map;
-                std::unordered_map<size_t, std::pair<sym::I, sym::I>> current_map;
-                sym::I current_size;
+                std::unordered_map<size_t, std::pair<int64_t , int64_t >> current_map;
+                int64_t current_size;
 
                 MockMemoryManager(): current_size(0) {};
 
@@ -62,18 +64,18 @@ namespace md{
                     abstract_map[id] = {offset, size};
                 }
 
-                float *get(size_t id) {
-                    return (float *) (((uint8_t *) memory) + current_map[id].first);
+                void* get(size_t id) {
+                    return static_cast<void *>(static_cast<char *>(memory) + current_map[id].first);
                 }
 
                 void set_memory(void * memory){
                     this->memory = memory;
                 }
 
-                void calculate_exact_map(std::unordered_map<sym::I, sym::C> const & provided){
+                void calculate_exact_map(std::unordered_map<std::string, int64_t > const & provided){
                     current_size = 0;
                     for(auto i=abstract_map.begin(); i != abstract_map.end(); ++i){
-                            current_map[i->first] = {i->second.first.eval(provided), i->second.second.eval(provided)};
+                        current_map[i->first] = {i->second.first.eval(provided), i->second.second.eval(provided)};
                         current_size += current_map[i->first].second;
                     }
                 }
@@ -104,7 +106,9 @@ namespace md{
 
                 ~MockBackend() { release(); };
 
-                std::shared_ptr<MockFunction> make_function(GraphFunction const & gf);
+                std::shared_ptr<AbstractMockFunction> make_source_gen_function(GraphFunction const & gf);
+
+                std::shared_ptr<AbstractMockFunction> make_in_memory_function(GraphFunction const & gf);
 
                 std::shared_ptr<MockStorage> get_param(std::string full_name) const;
 
@@ -117,16 +121,22 @@ namespace md{
                 void release();
             };
 
-            class MockFunction {
+            class AbstractMockFunction {
             private:
+                /** Actual evaluation function */
+                virtual Outputs internal_eval(VarVec &inputs,
+                                              VarVec &constants,
+                                              VarVec &params,
+                                              MemoryManager manager,
+                                              std::unordered_map<std::string, int64_t> & deduced) = 0;
+            public:
                 /** Shared pointer to the backend */
                 std::shared_ptr<MockBackend> const backend;
                 /** The graph function */
                 GraphFunction const gf;
-                /** Shared pointer to the dll function */
-                std::shared_ptr<const symbol> const function;
                 /** Shared pointer to the manager */
                 std::shared_ptr<MockMemoryManager> manager;
+
                 /** Whether the parameters have been initialized */
                 bool initialized;
                 /** Vector of constant expressions */
@@ -134,61 +144,43 @@ namespace md{
                 /** Vector of parameters */
                 VarVec params;
                 /** Deduced symbolic integers from parameters */
-                std::vector<std::pair<SymInt, sym::C>> implicit;
+                std::vector<std::pair<SymInt, int64_t >> implicit;
                 /** Last invocation shapes */
                 std::vector<std::array<long, 4>> last_shapes;
                 /** Last deduced symbolics including parameter deductions */
-                std::unordered_map<sym::I, sym::C> last_deduced;
-            public:
-                MockFunction(std::shared_ptr<MockBackend> const backend,
-                             GraphFunction const gf,
-                             std::shared_ptr<const symbol> const function,
-                             std::shared_ptr<MockMemoryManager> const manager) :
-                        backend(backend), gf(gf), function(function), manager(manager), initialized(false) {};
+                std::unordered_map<std::string, int64_t > last_deduced;
+
+                AbstractMockFunction(std::shared_ptr<MockBackend> const backend,
+                                     GraphFunction const gf,
+                                     std::shared_ptr<MockMemoryManager> const manager) :
+                        backend(backend), gf(gf), manager(manager), initialized(false) {};
 
                 /** Initializes all the state of the function */
-                void initialize(std::vector<std::pair<SymInt, sym::C>> const & provided = {});
+                virtual void initialize(std::vector<std::pair<SymInt, int64_t >> const & provided = {});
                 /** Evaluates the function for the inputs provided */
-                Outputs eval(std::vector<std::shared_ptr<MockStorage>> & inputs);
+                virtual Outputs eval(std::vector<std::shared_ptr<MockStorage>> & inputs);
             };
 
+            class MockSourceGenFunction : public AbstractMockFunction {
+            private:
+                /** The function pointer */
+                std::shared_ptr<const symbol> const function;
 
-//            class MockBackend : public AbstractFunctionBackend<Var, Var, Var> {
-//            private:
-//                filesystem::path dll_path;
-//
-//                typedef Outputs (*func_ptr)(VarVec &inputs, VarVec &constants, VarVec &shared);
-//
-//                typedef dll_symbol<Outputs(VarVec &inputs,
-//                                           VarVec &constants,
-//                                           VarVec &shared,
-//                                           std::shared_ptr<MemoryManager> manager)> symbol;
-//                std::shared_ptr<symbol> eval_func;
-//            public:
-//                std::shared_ptr<MockMemoryManager> manager;
-//                VarVec constants;
-//                VarVec params;
-//
-//                MockBackend(GraphFunction const gf, std::string work_dir, bool debug) :
-//                        AbstractFunctionBackend("Mock", gf, work_dir, debug),
-//                        manager(std::make_shared<MockMemoryManager>()) {};
-//
-//                MockBackend(GraphFunction const gf, bool debug) :
-//                        AbstractFunctionBackend("Mock", gf, debug),
-//                        manager(std::make_shared<MockMemoryManager>()) {};
-//
-//                Outputs operator()(VarVec &inputs) {
-//                    if (eval_func) {
-//                        return eval_func->f(inputs, constants, params, manager);
-//                    } else {
-//                        throw 1;
-//                    }
-//                };
-//
-//                void initialize();
-//
-//
-//            };
+                Outputs internal_eval(VarVec &inputs,
+                                      VarVec &constants,
+                                      VarVec &params,
+                                      MemoryManager manager,
+                                      std::unordered_map<std::string, int64_t > & deduced){
+                    return function->f(inputs, constants, params, manager, deduced);
+                }
+
+            public:
+                MockSourceGenFunction(std::shared_ptr<MockBackend> const backend,
+                                      GraphFunction const gf,
+                                      std::shared_ptr<const symbol> const function,
+                                      std::shared_ptr<MockMemoryManager> const manager) :
+                        AbstractMockFunction(backend, gf, manager), function(function) {};
+            };
         }
     }
 }

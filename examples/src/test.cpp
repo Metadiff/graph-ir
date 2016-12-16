@@ -1,10 +1,9 @@
 //
 // Created by alex on 29/09/16.
 //
-#include "graph_ir.h"
-#include "boost/filesystem.hpp"
-#include "iostream"
-#include "fstream"
+
+#include "mock.h"
+#include "complex"
 
 /**
 #define debug(fmt, ...)\
@@ -27,7 +26,7 @@ md::GraphFunction build_model(){
         std::cout << "Does not exists" << std::endl;
     }
     // Use default graph
-    auto g = default_graph();
+    auto g = create_graph();
     g->name = "MNIST";
     // Dynamic Batch size
     auto batch_size = new_sym();
@@ -73,14 +72,13 @@ md::GraphFunction simple_model(SymInt a){
     g->name = "simple";
     auto input = g->matrix(md::f32, a, 12);
     auto p = g->parameter("p", md::f32, {a, 12, 1, 1});
-    auto s1 = input + p;
-    auto s2 = s1 + input;
-    return GraphFunction("simple", g, NodeVec{input}, NodeVec{s2});
+    auto s1 = input * input + p * p;
+    return GraphFunction("simple", g, NodeVec{input}, NodeVec{s1});
 }
 
 int main(){
     md::gir::console_logging(true);
-    auto n = new_sym();
+    auto n = new_sym("n");
 //    auto gf = build_model();
     auto gf = simple_model(n);
     std::ofstream f;
@@ -95,10 +93,10 @@ int main(){
     for(auto i=0; i<in->shape[0] * in->shape[1]; ++i){
         in->get<float>()[i] = 3.0;
     }
-    auto func = backend->make_function(gf);
+    auto func = backend->make_source_gen_function(gf);
     func->initialize({{n, 10}});
     mock::VarVec ins = {in}, outputs;
-    func->eval(ins);
+    std::cout << ( 2 * 3 / 3 / 2);
     std::tie(outputs, std::ignore) = func->eval(ins);
     auto o0 = outputs[0];
     std::cout << "Shape: (" << o0->shape[0] << ", "

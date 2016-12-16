@@ -7,8 +7,8 @@
 
 namespace md{
     namespace cytoscape{
-        std::string polynomial_js(sym::Polynomial polynomial);
-        std::string monomial_js(sym::Monomial monomial);
+        std::string polynomial_js(SymInt polynomial);
+        std::string monomial_js(sym::Monomial<std::string, int64_t, uint8_t> monomial);
 
         std::string shape_js(Shape shape){
             return "(" + polynomial_js(shape[0]) + "," + polynomial_js(shape[1]) + "," +
@@ -305,60 +305,12 @@ namespace md{
                       "</html>\n";
         }
 
-        std::string monomial_js(sym::Monomial monomial){
-            if (monomial.powers.size() == 0) {
-                return std::to_string(monomial.coefficient);
-            }
-            std::string result;
-            if (monomial.coefficient != 1) {
-                if (monomial.coefficient == -1) {
-                    result += "-";
-                } else {
-                    result += std::to_string(monomial.coefficient);
-                }
-            }
-            sym::RegistryMap::iterator var;
-            for (auto i = 0; i < monomial.powers.size(); ++i) {
-                if ((var = sym::registry()->floor_registry.find(monomial.powers[i].first))
-                    != sym::registry()->floor_registry.end()) {
-                    result += "floor(" + polynomial_js(var->second.first) + " / " +
-                              polynomial_js(var->second.second) + ")";
-                } else if ((var = sym::registry()->ceil_registry.find(monomial.powers[i].first))
-                           != sym::registry()->ceil_registry.end()) {
-                    result += "ceil(" + polynomial_js(var->second.first) + " / " +
-                              polynomial_js(var->second.second) + ")";
-                } else if ((var = sym::registry()->min_registry.find(monomial.powers[i].first))
-                           != sym::registry()->min_registry.end()) {
-                    result += "min(" + polynomial_js(var->second.first) + " / " +
-                              polynomial_js(var->second.second) + ")";
-                } else if ((var = sym::registry()->max_registry.find(monomial.powers[i].first))
-                           != sym::registry()->max_registry.end()) {
-                    result += "max(" + polynomial_js(var->second.first) + " / " +
-                              polynomial_js(var->second.second) + ")";
-                } else {
-                    result += ('a' + monomial.powers[i].first);
-                    auto n = monomial.powers[i].second;
-                    if(n != 1) {
-                        result += "' + '" + std::to_string(n) + "'.sup() + '";
-                    }
-                }
-            }
-            return result;
+        std::string monomial_js(sym::Monomial<std::string, int64_t, uint8_t> monomial){
+            return sym::to_string(monomial, backend::print_str);
         }
 
-        std::string polynomial_js(sym::Polynomial polynomial){
-            if (polynomial.monomials.size() == 0) {
-                return "0";
-            }
-            std::string result = monomial_js(polynomial.monomials[0]);
-            for (auto i = 1; i < polynomial.monomials.size(); ++i) {
-                if (polynomial.monomials[i].coefficient > 0) {
-                    result += "+" + monomial_js(polynomial.monomials[i]);
-                } else {
-                    result += monomial_js(polynomial.monomials[i]);
-                }
-            }
-            return result;
+        std::string polynomial_js(SymInt polynomial){
+            return sym::to_string(polynomial, backend::print_str);
         }
     }
 }

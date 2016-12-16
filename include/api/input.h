@@ -187,12 +187,27 @@ namespace md{
 //        Node scalar(DataType data_type,
 //                    std::string name = "Scalar",
 //                    Graph g = default_graph);
-        /** @brief Creates a new symbloic integer
+        /** @brief Creates a new symbolic integer
          *
          * @return
          */
-        inline SymInt new_sym(){
-            return sym::registry()->new_variable();
+        inline SymInt new_sym(std::string name = ""){
+            if(name != "") {
+                return sym::primitive<std::string, int64_t, uint8_t>(name);
+            } else {
+                // Generate random name
+                auto len = 10;
+                std::string random_name;
+                random_name.reserve(len + 2);
+                random_name += "__";
+                static const char alphanum[] = "0123456789"
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                        "abcdefghijklmnopqrstuvwxyz";
+                for (int i = 0; i < len; ++i) {
+                    random_name += alphanum[rand() % (sizeof(alphanum) - 1)];
+                }
+                return sym::primitive<std::string, int64_t, uint8_t>(random_name);
+            }
         }
     }
 }

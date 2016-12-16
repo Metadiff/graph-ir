@@ -42,7 +42,7 @@ namespace md{
          * @param level
          * @return
          */
-       Logger logger(std::string const name, LogLevel const level = LogLevel::trace);
+        Logger logger(std::string const name, LogLevel const level = LogLevel::trace);
 
         /** @brief Returns a logger registered to the GIR sink, with a prefix graph::
          *
@@ -75,6 +75,13 @@ namespace md{
          * @return
          */
         Logger function_logger(std::string const name, LogLevel const level = LogLevel::trace);
+
+        /** @brief Returns the number of bytes needed for a single number of the given type
+         *
+         * @param data_type
+         * @return
+         */
+        int byte_size(DataType data_type);
 
         /** @brief Calculates the number total number of elements in a Shape
          *
@@ -174,7 +181,7 @@ namespace md{
          * @param monitored
          * @return
          */
-        std::vector<sym::I> unique_dimensions(Graph graph);
+        std::vector<std::string> unique_dimensions(Graph graph);
 
         /** @brief Verifies that the input_shapes have consistent shapes.
          * If they are the same as last_shapes directly return.
@@ -187,11 +194,11 @@ namespace md{
          * @param last_verified
          * @param implicit
          */
-        void verify_shapes(std::vector<std::array<long, 4>> const &  input_shapes,
+        bool verify_shapes(std::vector<std::array<long, 4>> const &  input_shapes,
                            std::vector<std::array<long, 4>> const & last_shapes,
                            NodeVec const & symbolic_inputs,
-                           std::unordered_map<sym::I, sym::C> & last_verified,
-                           std::vector<std::pair<SymInt, sym::C>> implicit);
+                           std::unordered_map<std::string, int64_t> & last_verified,
+                           std::vector<std::pair<SymInt, int64_t>> implicit);
     }
 }
 

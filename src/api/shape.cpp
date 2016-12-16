@@ -100,12 +100,12 @@ namespace md{
             if (number_of_elements(node->shape) != number_of_elements(shape)) {
                 // If the number of elements is different throw an error.
                 op_logger("Reshape")->error("The number of elements can not change from {} to {}",
-                                            sym::to_string(number_of_elements(node->shape)),
-                                            sym::to_string(number_of_elements(shape)));
+                                            sym::to_string(number_of_elements(node->shape), backend::print_str),
+                                            sym::to_string(number_of_elements(shape), backend::print_str));
                 throw InvalidOperatorArgument(NodeVec{node}, "Reshape",
                                               "The number of elements can not change from "
-                                              + sym::to_string(number_of_elements(node->shape)) + " to "
-                                              + sym::to_string(number_of_elements(shape)));
+                                              + sym::to_string(number_of_elements(node->shape), backend::print_str) + " to "
+                                              + sym::to_string(number_of_elements(shape), backend::print_str));
             } else if(node->shape == shape){
                 // If reshaping to the same shape do nothing
                 return alias(node);

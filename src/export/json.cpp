@@ -54,7 +54,7 @@ namespace md{
             writer.StartArray();
             for(auto i=0; i<4; ++i){
                 if(shape[i].is_constant()){
-                    writer.Int64(shape[i].eval());
+                    writer.Int64(shape[i].eval({}));
                 } else {
                     export_sym_int(shape[i], writer);
                 }
@@ -63,7 +63,7 @@ namespace md{
         }
 
         void export_sym_int(SymInt const sym_int,  PrettyWriter<StringBuffer>& writer){
-            writer.String(sym::to_string(sym_int));
+            writer.String(sym::to_string(sym_int, backend::print_str));
         }
 
 //        void export_execution_data(ExecutionData execution, PrettyWriter<StringBuffer>& writer){
