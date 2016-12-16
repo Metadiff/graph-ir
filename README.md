@@ -68,29 +68,21 @@ in order.
 to be hidden from the overall graph and to be optimized on its own. 
 This will provide a form of encapsulation when the user needs it. 
 
-4. *MaxAndArgMax* 
 
-5. *SortAndArgSort*
+1. *Convolution* 
 
-6. *Convolution* 
+2. *MaxPooling*
 
-7. *MaxPooling*
+3. *Indexing*
 
-8. *RandomIntegers*
+4. *GradientIndexing*
 
-9. *QRDecomposition*
-
-10. *CholeskyDecomposition*
-
-11. *EigenDecomposition*
-
-12. *SVD*
 
 ### The Native Backend
 
 Unit testing and verification of the **GIR** is crucial for the project. 
 In order to faciliate this without developing a significantly sophisticated
-general backend, a simple native C++ backend is needed. This most likely 
+general backend, a simple native mock C++ backend is needed. This most likely 
 will be a highly inefficient and slow for large tasks, however it will 
 be sufficient for verification of automatic differentiation rules. 
 
