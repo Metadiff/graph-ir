@@ -56,19 +56,6 @@ backend which to faciliate unit testing on very small problems.
 
 ### List of operators that have not yet been implemented
 
-1. *MultiOutputOperator* - this will be an abstract operator encapsulating 
-all operators which have more than one output.
-
-2. *MultiIndexOperator* - currently each operator can have a single output.
-For this the *MultiOutputOperator* will have a single output, but it will 
-be indexed by *MultiIndexOperator* and retrieve all of the relevant outputs 
-in order. 
-
-3. *SubRoutineOperator* - the subroutine will allow complex computation
-to be hidden from the overall graph and to be optimized on its own. 
-This will provide a form of encapsulation when the user needs it. 
-
-
 1. *Convolution* 
 
 2. *MaxPooling*
@@ -76,6 +63,10 @@ This will provide a form of encapsulation when the user needs it.
 3. *Indexing*
 
 4. *GradientIndexing*
+
+5. *SubRoutineOperator* - the subroutine will allow complex computation
+to be hidden from the overall graph and to be optimized on its own. 
+This will provide a form of encapsulation when the user needs it.
 
 
 ### The Native Backend
