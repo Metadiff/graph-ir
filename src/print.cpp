@@ -66,14 +66,7 @@ namespace md{
         }
 
         std::string to_string(Device const device){
-//            if(device == host()){
-//                return "Host";
-//            }
-            switch (device.type) {
-                case CPU: return "Cpu[" + std::to_string(device.id) + "]";
-                default: return "Gpu[" + std::to_string(device.id) + "]";
-//                case GPU:
-            }
+            return fmt::format("{}[{}]", to_string(device.type), device.id);
         }
 
         std::string to_string(Shape const shape){
@@ -84,11 +77,20 @@ namespace md{
         }
 
         std::string to_string(Node const node){
-            std::stringstream ss;
-            ss << "|"  << std::setw(4) << node->id << "|"
-               << int(node->is_input_dependent) << int(node->is_differentiable) << "|"
-               << std::setw(20) << node->shape << "|" << node->data_type << "|" << node->op->name;
-            return ss.str();
+            std::string s = fmt::format("Node[{},{}]{} = {}(", node->id,
+                                        to_string(node->data_type),
+                                        to_string(node->shape), node->op->name);
+            auto ancestors = node->op->get_ancestors();
+            if(ancestors.size() > 0) {
+                s += std::to_string(ancestors[0]->id);
+            }
+            for(auto i=1; i< ancestors.size(); ++i){
+                s += ", " + std::to_string(ancestors[i]->id);
+            }
+            return s + ")";
+//            ss << "|"  << std::setw(4) << node->id << "|"
+//               << int(node->is_input_dependent) << int(node->is_differentiable) << "|"
+//               << std::setw(20) << node->shape << "|" << node->data_type << "|" << node->op->name;
         }
 
         std::string to_string(NodeVec const & nodes){

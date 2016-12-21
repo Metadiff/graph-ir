@@ -113,7 +113,7 @@ namespace md{
 
         Updates GraphInternal::copy_into(Graph new_graph, std::vector<bool> const & mask,
                                          Updates const & provided,
-                                         bool allow_input_copies, bool allow_shared_copies,
+                                         bool allow_input_copies, bool allow_parameter_copies,
                                          bool copy_updates) const {
             // Verify that the left nodes in the mapped are from this graph and the right are from the new
             for(auto it = provided.begin(); it != provided.end(); ++it){
@@ -133,7 +133,7 @@ namespace md{
             for (auto i = 0; i < n; i++) {
                 // Only nodes that are masked
                 if (mask[i]) {
-                    g_logger(name)->trace("Copying node {} resulting in node {}", i, new_graph->nodes.size());
+                    g_logger(name)->trace("Copying node {} resulting in {}.", i, new_graph->nodes.size());
                     // Check if this is a mapped node
                     auto it = provided.find(nodes[i]);
                     if(it != provided.end()){
@@ -142,19 +142,19 @@ namespace md{
                     }
                     // Check if it is an input node
                     if(nodes[i]->op->name == "Input" and not allow_input_copies){
-                        g_logger(name)->error("The input node {} did not had a provided mapped value during copying"
-                                                      "and allow_input_copies=false.", i);
-                        throw InternalGraphError("CopyInto", "The input node "
-                                                             + std::to_string(i)
-                                                             + " did not had a provided mapped value during copying"
-                                                                     "and allow_input_copies=false.");
-                    } else if(nodes[i]->op->name == "SharedInput" and not allow_shared_copies){
-                        g_logger(name)->error("The shared node {} did not had a provided mapped value during copying "
-                                                      "and allow_shared_copies=false.", i);
-                        throw InternalGraphError("CopyInto", "The shared node "
-                                                             + std::to_string(i)
-                                                             + " did not had a provided mapped value during copying "
-                                                                     "and allow_shared_copies=false.");
+                        auto const msg = fmt::format("The input {} "
+                                                             "did not had a provided mapped value during "
+                                                             "copying and allow_input_copies=false.",
+                                                     to_string(nodes[i]));
+                        g_logger(name)->error(msg);
+                        throw InternalGraphError("CopyInto", msg);
+                    } else if(nodes[i]->op->name == "SharedInput" and not allow_parameter_copies){
+                        auto const msg = fmt::format("The parameter {} "
+                                                             "did not had a provided mapped value during "
+                                                             "copying and allow_parameter_copies=false.",
+                                                     to_string(nodes[i]));
+                        g_logger(name)->error(msg);
+                        throw InternalGraphError("CopyInto", msg);
                     }
                     // Get all of the ancestors of the node and find their corresponding nodes
                     // in the new graph

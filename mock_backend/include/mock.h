@@ -21,6 +21,7 @@ namespace md{
             typedef dll_symbol<Outputs(VarVec &inputs, VarVec &constants, VarVec &params,
                                        MemoryManager manager,
                                        std::unordered_map<std::string, int64_t> & deduced)> symbol;
+            typedef sym::ImplicitValues <std::string, int64_t, uint8_t> ImplicitValues;
 
             class MockStorage {
             public:
@@ -156,7 +157,7 @@ namespace md{
                         backend(backend), gf(gf), manager(manager), initialized(false) {};
 
                 /** Initializes all the state of the function */
-                virtual void initialize(std::vector<std::pair<SymInt, int64_t >> const & provided = {});
+                virtual void initialize(ImplicitValues const & provided = {});
                 /** Evaluates the function for the inputs provided */
                 virtual Outputs eval(std::vector<std::shared_ptr<MockStorage>> & inputs);
             };

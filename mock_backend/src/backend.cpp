@@ -56,7 +56,7 @@ namespace md{
                 allocated = true;
             }
 
-            void AbstractMockFunction::initialize(std::vector<std::pair<SymInt, int64_t >> const & provided) {
+            void AbstractMockFunction::initialize(ImplicitValues const & provided) {
                 auto deduced = sym::deduce_values(provided);
                 auto ps = gf.graph->op_map["Parameter"];
                 std::array<long, 4> shape;

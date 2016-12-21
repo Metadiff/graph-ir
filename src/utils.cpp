@@ -191,7 +191,7 @@ namespace md{
                         for (auto p = 0; p < cast_op->value.monomials[m].powers.size(); ++p) {
                             auto candidate = cast_op->value.monomials[m].powers[p].first;
                             // Check that the candidate is not a floor/ceil/min/max
-                            if (candidate.type == sym::Id) {
+                            if (candidate.type == sym::Variable) {
                                 unique.insert(candidate.id);
                             }
                         }
@@ -204,7 +204,7 @@ namespace md{
                                 for (auto p = 0; p < shape[j].monomials[m].powers.size(); ++p) {
                                     auto candidate = shape[j].monomials[m].powers[p].first;
                                     // Check that the candidate is not a floor/ceil/min/max
-                                    if (candidate.type == sym::Id) {
+                                    if (candidate.type == sym::Variable) {
                                         unique.insert(candidate.id);
                                     }
                                 }

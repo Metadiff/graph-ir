@@ -193,12 +193,12 @@ namespace md{
          */
         inline SymInt new_sym(std::string name = ""){
             if(name != "") {
-                return sym::primitive<std::string, int64_t, uint8_t>(name);
+                return sym::variable<std::string, int64_t, uint8_t>(name);
             } else {
                 // Generate random name
-                auto len = 10;
+                auto len = 5;
                 std::string random_name;
-                random_name.reserve(len + 2);
+                random_name.reserve(len + 4);
                 random_name += "__";
                 static const char alphanum[] = "0123456789"
                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -206,7 +206,8 @@ namespace md{
                 for (int i = 0; i < len; ++i) {
                     random_name += alphanum[rand() % (sizeof(alphanum) - 1)];
                 }
-                return sym::primitive<std::string, int64_t, uint8_t>(random_name);
+                random_name += "__";
+                return sym::variable<std::string, int64_t, uint8_t>(random_name);
             }
         }
     }

@@ -210,6 +210,25 @@ namespace md{
              */
             DataType limit_type(DataType data_type) const;
 
+            /** @brief Creates a parameter withing the provided scope
+            *
+            * @param scope
+            * @param name
+            * @param data_type
+            * @param shape
+            * @return
+            */
+            Node parameter(std::string scope, std::string name, DataType data_type, Shape shape);
+
+            /** @brief Creates a parameter withing the current scope
+             *
+             * @param name
+             * @param data_type
+             * @param shape
+             * @return
+             */
+            Node parameter(std::string name, DataType data_type, Shape shape);
+
             /** @brief Creates a four dimensional variable in the default_graph
              *
              * @param data_type
@@ -238,14 +257,14 @@ namespace md{
                          SymInt shape3,
                          std::string name = "Tensor4");
 
-            /** @brief Creates a four dimensional variable in default_graph
-             *
-             * @param data_type
-             * @param name
-             * @return
-             */
-            Node tensor4(DataType data_type,
-                         std::string name = "Tensor4");
+//            /** @brief Creates a four dimensional variable in default_graph
+//             *
+//             * @param data_type
+//             * @param name
+//             * @return
+//             */
+//            Node tensor4(DataType data_type,
+//                         std::string name = "Tensor4");
 
             /** @brief Creates a three dimensional variable in the default_graph
              *
@@ -273,14 +292,14 @@ namespace md{
                          SymInt shape2,
                          std::string name = "Tensor3");
 
-            /** @brief Creates a three dimensional variable in the default_graph
-             *
-             * @param data_type
-             * @param name
-             * @return
-             */
-            Node tensor3(DataType data_type,
-                         std::string name = "Tensor3");
+//            /** @brief Creates a three dimensional variable in the default_graph
+//             *
+//             * @param data_type
+//             * @param name
+//             * @return
+//             */
+//            Node tensor3(DataType data_type,
+//                         std::string name = "Tensor3");
 
             /** @brief Creates a matrix variable in the default_graph
              *
@@ -306,14 +325,14 @@ namespace md{
                         SymInt shape1,
                         std::string name = "Matrix");
 
-            /** @brief Creates a matrix variable in the default_graph
-             *
-             * @param data_type
-             * @param name
-             * @return
-             */
-            Node matrix(DataType data_type,
-                        std::string name = "Matrix");
+//            /** @brief Creates a matrix variable in the default_graph
+//             *
+//             * @param data_type
+//             * @param name
+//             * @return
+//             */
+//            Node matrix(DataType data_type,
+//                        std::string name = "Matrix");
 
             /** @brief Creates a square matrix variable in the default_graph
              *
@@ -337,14 +356,14 @@ namespace md{
                         SymInt shape,
                         std::string name = "Vector");
 
-            /** @brief Creates a row vector variable in the default_graph
-             *
-             * @param data_type
-             * @param name
-             * @return
-             */
-            Node vector(DataType data_type,
-                        std::string name = "Vector");
+//            /** @brief Creates a row vector variable in the default_graph
+//             *
+//             * @param data_type
+//             * @param name
+//             * @return
+//             */
+//            Node vector(DataType data_type,
+//                        std::string name = "Vector");
 
             /** @brief Creates a scalar variable in the default_graph
              *
@@ -363,25 +382,6 @@ namespace md{
              * @return
              */
             Node tensor_as(Node node, std::string name = "");
-
-            /** @brief Creates a parameter withing the provided scope
-             *
-             * @param scope
-             * @param name
-             * @param data_type
-             * @param shape
-             * @return
-             */
-            Node parameter(std::string scope, std::string name, DataType data_type, Shape shape);
-
-            /** @brief Creates a parameter withing the current scope
-             *
-             * @param name
-             * @param data_type
-             * @param shape
-             * @return
-             */
-            Node parameter(std::string name, DataType data_type, Shape shape);
 
             /** Creates a variable wrapping a SymInt
              *
